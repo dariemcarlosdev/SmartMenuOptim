@@ -1,0 +1,10 @@
+﻿namespace SmartMenuOptim.Shared.Models.Dtos
+{
+    public class SaleRecord
+    {
+        public int Id { get; set; }
+        public string DishName { get; set; }
+        public int QuantitySold { get; set; }
+        public DateTime SaleDate { get; set; }
+    }
+}

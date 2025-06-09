@@ -1,0 +1,18 @@
+﻿@page "/dashboard"
+@using SmartMenuOptim.Shared.Data
+@inject NavigationManager NavigationManager
+
+<h3>Dashboard</h3>
+
+<ul>
+    @foreach (var record in MockDataStore.GetSaleRecords())
+    {
+        <li>
+        @record.DishName:  @record.QuantitySold sold on -@record.SaleDate.ToString("d")
+        </li>
+    }
+</ul>
+
+@code {
+
+}

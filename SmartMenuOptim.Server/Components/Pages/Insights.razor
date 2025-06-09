@@ -1,0 +1,33 @@
+﻿@page "/insights"
+@using SmartMenuOptim.Server.Services
+@using SmartMenuOptim.Shared.Models
+@inject IAIService AIService
+
+<h3>AI Menu Recomendation</h3>
+
+@code {
+    private InsightResponse insight;
+
+    protected override void OnInitialized()
+    {
+        insight = AIService.GetMenuRecomendation();
+    }
+}
+
+@if (insight is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Confidence Score</h5>
+            <p class="card-text"><strong>Confidence: </strong>@insight.ConfidenceScore</p>
+            <p class="card-text"><strong>Suggestion: </strong>@insight.Recomendation</p>
+        </div>
+    </div>
+}
+else
+{
+    <p>Loading...</p>
+}
+@code {
+    // You can add any additional logic or methods here if needed
+}

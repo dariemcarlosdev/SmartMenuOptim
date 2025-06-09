@@ -1,0 +1,24 @@
+﻿@page "/reviews"
+@using SmartMenuOptim.Server.Services
+@using SmartMenuOptim.Shared.Models
+@inject IAIService AIService
+
+
+<h3>Reviews</h3>
+
+@code {
+    private IEnumerable<Review> reviews;
+
+    protected override void OnInitialized()
+    {
+        reviews =  AIService.AnalizeReviews();
+    }
+}
+
+@foreach (var review in reviews)
+{
+    <div class="review-card">
+        <p><strong>@review.CustomerName:</strong>@review.Comment</p>
+        <p><strong>Sentiment Score::</strong> @review.SentimentScore</p>
+    </div>
+}
