@@ -1,0 +1,139 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SmartMenuOptim.API.Data;
+using SmartMenuOptim.Shared.Models;
+
+// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+
+namespace SmartMenuOptim.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ReviewsController : ControllerBase
+    {
+        private readonly ILogger<ReviewsController> _logger;
+        private readonly AppDbContext _context;
+
+        // GET: api/<ReviewsController>
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Review>>> Get()
+        {
+            try
+            {
+                var reviews = await _context.Reviews.ToListAsync();
+                return Ok(reviews);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching reviews.");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // GET api/<ReviewsController>/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Review>> Get(int id)
+        {
+            try
+            {
+                var review = await _context.Reviews.FindAsync(id);
+                if (review == null)
+                {
+                    return NotFound();
+                }
+                return Ok(review);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching the review.");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // POST api/<ReviewsController>
+        [HttpPost]
+        public async Task<ActionResult<Review>> Post([FromBody] Review review)
+        {
+            if (review == null)
+            {
+                return BadRequest("Review cannot be null");
+            }
+            try
+            {
+                _context.Reviews.Add(review);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction(nameof(Get), new { id = review.Id }, review);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while creating the review.");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // PUT api/<ReviewsController>/5
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Review>> Put(int id, [FromBody] Review review)
+        {
+            if (review == null || review.Id != id)
+            {
+                return BadRequest("Review cannot be null and ID must match");
+            }
+            try
+            {
+                var existingReview = await _context.Reviews.FindAsync(id);
+                if (existingReview == null)
+                {
+                    return NotFound();
+                }
+                existingReview.CustomerName = review.CustomerName;
+                existingReview.Comment = review.Comment;
+                existingReview.SentimentScore = review.SentimentScore;
+                _context.Reviews.Update(existingReview);
+                await _context.SaveChangesAsync();
+                return Ok(existingReview);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ReviewExists(id))
+                {
+                    return NotFound();
+                }
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while updating the review.");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // DELETE api/<ReviewsController>/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var review = await _context.Reviews.FindAsync(id);
+                if (review == null)
+                {
+                    return NotFound();
+                }
+                _context.Reviews.Remove(review);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while deleting the review.");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+
+        private bool ReviewExists(int id)
+        {
+            return _context.Reviews.Any(e => e.Id == id);
+        }
+    }
+}
