@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SmartMenuOptim.Shared.Models;
-using SmartMenuOptim.Shared.Models.Dtos;
 
 namespace SmartMenuOptim.Shared.Data
 {
