@@ -11,8 +11,8 @@ namespace SmartMenuOptim.API.Controllers
     [ApiController]
     public class ReviewsController : ControllerBase
     {
-        private readonly ILogger<ReviewsController> _logger;
-        private readonly AppDbContext _context;
+        private readonly ILogger<ReviewsController>? _logger;
+        private readonly AppDbContext? _context;
 
         // GET: api/<ReviewsController>
         [HttpGet]
