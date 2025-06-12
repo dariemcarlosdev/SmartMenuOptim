@@ -14,6 +14,12 @@ namespace SmartMenuOptim.API.Controllers
         private readonly ILogger<ReviewsController>? _logger;
         private readonly AppDbContext? _context;
 
+        public ReviewsController(ILogger<ReviewsController> logger, AppDbContext context)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
         // GET: api/<ReviewsController>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Review>>> Get()
