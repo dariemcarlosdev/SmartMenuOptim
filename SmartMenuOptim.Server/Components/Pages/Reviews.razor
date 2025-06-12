@@ -2,23 +2,33 @@
 @using SmartMenuOptim.Server.Services
 @using SmartMenuOptim.Shared.Models
 @inject IAIService AIService
+@inject IReviewService ReviewService
 
 
 <h3>Reviews</h3>
 
-@code {
-    private IEnumerable<Review> reviews;
-
-    protected override void OnInitialized()
+@if (reviews == null || !reviews.Any())
+{
+    <p>No reviews available.</p>
+}
+else
+{
+    <p>Total Reviews: @reviews.Count()</p>
+    @foreach (var review in reviews)
     {
-        reviews =  AIService.AnalizeReviews();
+        <div class="card mt-2 p-2">
+            <p><strong>@review.CustomerName:</strong>@review.Comment</p>
+            <p><strong>Sentiment Score::</strong> @review.SentimentScore</p>
+        </div>
     }
 }
 
-@foreach (var review in reviews)
-{
-    <div class="review-card">
-        <p><strong>@review.CustomerName:</strong>@review.Comment</p>
-        <p><strong>Sentiment Score::</strong> @review.SentimentScore</p>
-    </div>
+
+@code {
+    private IEnumerable<Review> reviews;
+
+    protected override async Task OnInitializedAsync()
+    {
+        reviews = await ReviewService.GetReviewsAsync();
+    }
 }

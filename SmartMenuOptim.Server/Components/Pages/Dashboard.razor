@@ -1,18 +1,37 @@
 ﻿@page "/dashboard"
 @using SmartMenuOptim.Shared.Data
+@using SmartMenuOptim.Shared.Models
 @inject NavigationManager NavigationManager
+@inject ISaleRecordService SaleRecordService
 
 <h3>Dashboard</h3>
 
-<ul>
-    @foreach (var record in MockDataStore.GetSaleRecords())
-    {
-        <li>
-        @record.DishName:  @record.QuantitySold sold on -@record.SaleDate.ToString("d")
-        </li>
-    }
-</ul>
+@if (saleRecords == null || !saleRecords.Any())
+{
+    <p>No sale records available.</p>
+}
+else
+{
+    <p>Total Sales: @saleRecords.Count</p>
+
+    <ul>
+        @foreach (var record in saleRecords)
+        {
+            <li>
+                @record.DishName:  @record.QuantitySold sold on - @record.SaleDate.ToString("d")
+            </li>
+        }
+    </ul>
+})
+
 
 @code {
 
+    private List<SaleRecord> saleRecords;
+
+    // This method is called when the component is initialized.
+    protected override async Task OnInitializedAsync()
+    {
+        saleRecords = await SaleRecordService.GetSaleRecordsAsync();
+    }
 }
