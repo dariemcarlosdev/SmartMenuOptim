@@ -10,7 +10,7 @@ internal class ReviewService : IReviewService
     }
 
     public async Task<List<Review>> GetReviewsAsync()
-       => await _httpClient.GetFromJsonAsync<List<Review>>("api/salerecords") ?? [];
+       => await _httpClient.GetFromJsonAsync<List<Review>>("api/reviews") ?? [];
 
     public async Task AddReviewAsync(Review review)
     {
