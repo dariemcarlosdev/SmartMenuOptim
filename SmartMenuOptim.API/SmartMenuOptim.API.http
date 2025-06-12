@@ -1,6 +1,10 @@
-@SmartMenuOptim.API_HostAddress = http://localhost:5008
+@SmartMenuOptim.API_HostAddress = https://localhost:44388
 
-GET {{SmartMenuOptim.API_HostAddress}}/weatherforecast/
+GET {{SmartMenuOptim.API_HostAddress}}/api/Reviews
 Accept: application/json
 
 ###
+
+GET {{SmartMenuOptim.API_HostAddress}}/api/Reviews/1
+Accept: application/json
+
