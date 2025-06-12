@@ -20,7 +20,7 @@
       },
       "dotnetRunMessages": true
     },
-    "http": {
+    "http.Development": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "swagger",
@@ -30,7 +30,7 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5008"
     },
-    "https": {
+    "https.Development": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "swagger",
@@ -60,7 +60,7 @@
       "publishAllPorts": true,
       "useSSL": true
     },
-    "Container Production (Dockerfile)": {
+    "Container(Dockerfile).Production": {
       "commandName": "Docker",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
