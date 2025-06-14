@@ -4,7 +4,6 @@ namespace SmartMenuOptim.Server.Services
 {
     public interface IAIService
     {
-        InsightResponse GetMenuRecomendation();
-        IEnumerable<Review> AnalizeReviews();
+        Task<AiRecomendationResponse?> GetRecommendationsAsync(List<SaleRecord> sales, List<Review> reviews);
     }
 }
