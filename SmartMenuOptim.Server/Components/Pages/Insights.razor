@@ -1,33 +1,52 @@
 ﻿@page "/insights"
 @using SmartMenuOptim.Server.Services
 @using SmartMenuOptim.Shared.Models
-@inject IAIService AIService
+@inject IAIService AIService // Injecting the AI service to get recommendations
+@inject IReviewService ReviewService // Injecting the review service to get reviews
+@inject ISaleRecordService SaleRecordService // Injecting the sale record service to get sales data
 
-<h3>AI Menu Recomendation</h3>
+<h3>🔍 AI-Powered Dish Recommendations</h3>
 
-@code {
-    private InsightResponse insight;
-
-    protected override void OnInitialized()
-    {
-        insight = AIService.GetMenuRecomendation();
-    }
-}
-
-@if (insight is not null)
+@if(isloading)
 {
-    <div class="card">
+       <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading recomendations...</span>
+    </div>
+}
+else if (recommendations != null)
+{
+    <div class="card mb-3">
         <div class="card-body">
-            <h5 class="card-title">Confidence Score</h5>
-            <p class="card-text"><strong>Confidence: </strong>@insight.ConfidenceScore</p>
-            <p class="card-text"><strong>Suggestion: </strong>@insight.Recomendation</p>
+            <h5 class="card-title">Top Recommended Dishes</h5>
+            <p class="card-text">Based on sales and reviews, we recommend:</p>
+            <ul>
+                @foreach (var dish in recommendations.RecomendedDishes)
+                {
+                    <li>@dish</li>
+                }
+            </ul>
         </div>
+        <p class="text-muted"><strong>Strategy Note:</strong> @recommendations.StrategyNote</p>
     </div>
 }
 else
 {
-    <p>Loading...</p>
+    <p>No recommendations available at this time.Try again later.</p>
 }
+
+
+
 @code {
-    // You can add any additional logic or methods here if needed
+    private AiRecomendationResponse? recommendations;
+    private bool isloading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sales = await SaleRecordService.GetSaleRecordsAsync();
+        var reviews = await ReviewService.GetReviewsAsync();
+
+        recommendations = await AIService.GetRecommendationsAsync(sales,reviews);
+        isloading = false; // Set loading to false after data is fetched
+    }
 }
+
