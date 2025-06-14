@@ -8,6 +8,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IAIService, AIService>();
+builder.Services.AddScoped<ISaleRecordService, SaleRecordService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddLogging();
 
 // Add httpClient for external API calls
 builder.Services.AddHttpClient("BackendAPI",client =>
@@ -15,9 +18,7 @@ builder.Services.AddHttpClient("BackendAPI",client =>
     client.BaseAddress = new Uri("https://localhost:7119/");
 });
 
-builder.Services.AddScoped<ISaleRecordService, SaleRecordService>();
-builder.Services.AddScoped<IReviewService, ReviewService>();
-
+builder.Logging.AddConsole();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
