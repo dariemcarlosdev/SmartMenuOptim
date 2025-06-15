@@ -11,13 +11,18 @@ namespace SmartMenuOptim.API.Controllers
     [ApiController]
     public class ReviewsController : ControllerBase
     {
-        private readonly ILogger<ReviewsController>? _logger;
-        private readonly AppDbContext? _context;
+        private readonly ILogger<ReviewsController> _logger;
+        private readonly AppDbContext _context;
 
         public ReviewsController(ILogger<ReviewsController> logger, AppDbContext context)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            if(_context == null)
+            {
+                _logger.LogError("Database context is not initialized.");
+                throw new InvalidOperationException("Database context is not initialized.");
+            }
         }
 
         // GET: api/<ReviewsController>
@@ -87,6 +92,10 @@ namespace SmartMenuOptim.API.Controllers
             }
             try
             {
+                if(_context == null) {
+                    return StatusCode(500, "Database context is not initialized.");
+                }
+
                 var existingReview = await _context.Reviews.FindAsync(id);
                 if (existingReview == null)
                 {
@@ -109,7 +118,10 @@ namespace SmartMenuOptim.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while updating the review.");
+                if (_logger != null)
+                {
+                    _logger.LogError(ex, "An error occurred while updating the review.");
+                };
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -118,6 +130,11 @@ namespace SmartMenuOptim.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            if (_context == null)
+            {
+                return StatusCode(500, "Database context is not initialized.");
+            }
+
             try
             {
                 var review = await _context.Reviews.FindAsync(id);
@@ -139,7 +156,7 @@ namespace SmartMenuOptim.API.Controllers
 
         private bool ReviewExists(int id)
         {
-            return _context.Reviews.Any(e => e.Id == id);
+           return _context.Reviews.Any(e => e.Id == id);
         }
     }
 }

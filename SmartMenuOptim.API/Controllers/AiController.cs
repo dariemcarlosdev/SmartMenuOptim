@@ -5,20 +5,24 @@ namespace SmartMenuOptim.API.Controllers
 {
     [ApiController]
     [Route("api/ai")]
-    public class AiController : Controller
+    public class AiController : ControllerBase
     {
 
+
+        // This endpoint simulates AI recommendations based on reviews and sales records.
         [HttpPost("recommend")]
         public ActionResult<AiRecomendationRequest> Recommend([FromBody] AiRecomendationRequest request)
-        { 
-            if(request.saleRecords == null || !request.saleRecords.Any())
+        {
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(request));
+            // Validate the request
+            if (request.SaleRecords == null || !request.SaleRecords.Any())
             {
                 return BadRequest("Sale records cannot be empty.");
             }
 
             // Simulate AI recommendation logic: recommend the top 2 dishes based on sales records
             // LINQ 
-            var recommendedDishes = request.saleRecords
+            var recommendedDishes = request.SaleRecords
                 .GroupBy(sr => sr.DishName)
                 .Select(g => new
                 {

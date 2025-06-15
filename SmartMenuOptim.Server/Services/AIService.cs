@@ -17,8 +17,8 @@ namespace SmartMenuOptim.Server.Services
         {
             var request = new AiRecomendationRequest
             {
-                saleRecords = sales,
-                reviews = reviews
+                SaleRecords = sales,
+                Reviews = reviews
             };
 
             try

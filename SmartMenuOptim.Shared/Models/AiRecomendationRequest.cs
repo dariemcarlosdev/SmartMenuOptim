@@ -8,7 +8,7 @@ namespace SmartMenuOptim.Shared.Models
 {
     public class AiRecomendationRequest
     {
-        public List<Review> reviews { get; set; } = [];
-        public List<SaleRecord> saleRecords { get; set; } = [];
+        public List<Review> Reviews { get; set; } = [];
+        public List<SaleRecord> SaleRecords { get; set; } = [];
     }
 }
