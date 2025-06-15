@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SmartMenuOptim.Shared.Models;
+using SmartMenuOptim.Shared.Data.Entities;
 
 namespace SmartMenuOptim.Shared.Data
 {

@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 //using Microsoft.VisualStudio.TestPlatform.TestHost;
-using SmartMenuOptim.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 //using SmartMenuOptim.Server; // <-- Add this using statement
 using SmartMenuOptim.API;
+using SmartMenuOptim.Shared.Data.Entities;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {

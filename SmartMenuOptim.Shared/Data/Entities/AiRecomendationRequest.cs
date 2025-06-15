@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartMenuOptim.Shared.Models
+namespace SmartMenuOptim.Shared.Data.Entities
 {
     public class AiRecomendationRequest
     {

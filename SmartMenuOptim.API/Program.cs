@@ -1,6 +1,9 @@
 
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.API.Data;
+using SmartMenuOptim.Shared.Data;
+using Microsoft.AspNetCore.Builder; // Add this using directive  
+using Microsoft.AspNetCore.Hosting; // Add this using directive  
+using Microsoft.Extensions.Hosting; // Add this using directive  
 
 namespace SmartMenuOptim.API;
 

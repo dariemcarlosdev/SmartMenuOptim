@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Shared.Models;
+using SmartMenuOptim.Shared.Data.Entities;
 
-namespace SmartMenuOptim.API.Data
+namespace SmartMenuOptim.Shared.Data
 {
     public class AppDbContext : DbContext
     {

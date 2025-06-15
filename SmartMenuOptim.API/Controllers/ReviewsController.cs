@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.API.Data;
-using SmartMenuOptim.Shared.Models;
+using SmartMenuOptim.Shared.Data;
+using SmartMenuOptim.Shared.Data.Entities;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 

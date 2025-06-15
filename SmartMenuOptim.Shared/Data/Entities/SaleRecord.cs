@@ -1,4 +1,4 @@
-﻿namespace SmartMenuOptim.Shared.Models
+﻿namespace SmartMenuOptim.Shared.Data.Entities
 {
     public class SaleRecord
     {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.API.Controllers;
-using SmartMenuOptim.Shared.Models;
+using SmartMenuOptim.Shared.Data.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
