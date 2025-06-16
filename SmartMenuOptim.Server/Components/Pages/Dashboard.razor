@@ -1,7 +1,6 @@
 ﻿@page "/dashboard"
 @using SmartMenuOptim.Shared.Data
 @using SmartMenuOptim.Shared.Data.Entities
-@using SmartMenuOptim.Shared.Models
 @inject NavigationManager NavigationManager
 @inject ISaleRecordService SaleRecordService
 
@@ -30,10 +29,7 @@ else
 
     private List<SaleRecord> saleRecords;
 
-    public Dashboard(List<SaleRecord> saleRecords)
-    {
-        this.saleRecords = saleRecords;
-    }
+
 
     // This method is called when the component is initialized.
     protected override async Task OnInitializedAsync()

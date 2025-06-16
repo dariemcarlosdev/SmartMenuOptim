@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.Shared.Data.Entities;
-using SmartMenuOptim.Shared.Data.Entities;
 
 namespace SmartMenuOptim.API.Controllers
 {

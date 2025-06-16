@@ -17,6 +17,6 @@ internal class SaleRecordService : ISaleRecordService
 
     public async Task<List<SaleRecord>> GetSaleRecordsAsync()
         // Retrieves all sale records from the API
-       => await _httpClient.GetFromJsonAsync<List<SaleRecord>>("api/salerecords") ?? [];
+       => await _httpClient.GetFromJsonAsync<List<SaleRecord>>("api/SaleRecords") ?? [];
 
 }
