@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Shared.Data;
 using SmartMenuOptim.Shared.Data.Entities;
+using SmartMenuOptim.Shared.Data.Interfaces;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -13,26 +14,26 @@ namespace SmartMenuOptim.API.Controllers
     public class ReviewsController : ControllerBase
     {
         private readonly ILogger<ReviewsController> _logger;
-        private readonly AppDbContext _context;
+        private readonly IUnityOfWork _unityOfWork;
 
-        public ReviewsController(ILogger<ReviewsController> logger, AppDbContext context)
+        public ReviewsController(ILogger<ReviewsController> logger, IUnityOfWork unityOfWork)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            if(_context == null)
+            _unityOfWork = unityOfWork ?? throw new ArgumentNullException(nameof(unityOfWork));
+            if(_unityOfWork == null)
             {
-                _logger.LogError("Database context is not initialized.");
-                throw new InvalidOperationException("Database context is not initialized.");
+                _logger.LogError("UnityOfWork is not initialized properly.");
+                throw new InvalidOperationException("UnityOfWork is not initialized properly.");
             }
         }
 
         // GET: api/<ReviewsController>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Review>>> Get()
+        public async Task<ActionResult<IEnumerable<Review>>> GetAllReviews()
         {
             try
             {
-                var reviews = await _context.Reviews.ToListAsync();
+                var reviews = await _unityOfWork.Reviews.GetAllAsync();
                 return Ok(reviews);
             }
             catch (Exception ex)
@@ -44,11 +45,11 @@ namespace SmartMenuOptim.API.Controllers
 
         // GET api/<ReviewsController>/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Review>> Get(int id)
+        public async Task<ActionResult<Review>> GetReviewById(int id)
         {
             try
             {
-                var review = await _context.Reviews.FindAsync(id);
+                var review = await _unityOfWork.Reviews.GetByIdAsync(id);
                 if (review == null)
                 {
                     return NotFound();
@@ -64,7 +65,7 @@ namespace SmartMenuOptim.API.Controllers
 
         // POST api/<ReviewsController>
         [HttpPost]
-        public async Task<ActionResult<Review>> Post([FromBody] Review review)
+        public async Task<ActionResult<Review>> CreateReview([FromBody] Review review)
         {
             if (review == null)
             {
@@ -72,9 +73,9 @@ namespace SmartMenuOptim.API.Controllers
             }
             try
             {
-                _context.Reviews.Add(review);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(Get), new { id = review.Id }, review);
+                await _unityOfWork.Reviews.AddAsync(review);
+                await _unityOfWork.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetReviewById), new { id = review.Id }, review); // This will return the created review with its ID in the response.
             }
             catch (Exception ex)
             {
@@ -85,7 +86,7 @@ namespace SmartMenuOptim.API.Controllers
 
         // PUT api/<ReviewsController>/5
         [HttpPut("{id}")]
-        public async Task<ActionResult<Review>> Put(int id, [FromBody] Review review)
+        public async Task<ActionResult<Review>> UpdateReview(int id, [FromBody] Review review)
         {
             if (review == null || review.Id != id)
             {
@@ -93,11 +94,12 @@ namespace SmartMenuOptim.API.Controllers
             }
             try
             {
-                if(_context == null) {
+               if(_unityOfWork == null)
+                {
                     return StatusCode(500, "Database context is not initialized.");
                 }
 
-                var existingReview = await _context.Reviews.FindAsync(id);
+                var existingReview = await _unityOfWork.Reviews.GetByIdAsync(id);
                 if (existingReview == null)
                 {
                     return NotFound();
@@ -105,8 +107,9 @@ namespace SmartMenuOptim.API.Controllers
                 existingReview.CustomerName = review.CustomerName;
                 existingReview.Comment = review.Comment;
                 existingReview.SentimentScore = review.SentimentScore;
-                _context.Reviews.Update(existingReview);
-                await _context.SaveChangesAsync();
+                
+                _unityOfWork.Reviews.Update(existingReview);
+                await _unityOfWork.SaveChangesAsync();
                 return Ok(existingReview);
             }
             catch (DbUpdateConcurrencyException)
@@ -129,22 +132,22 @@ namespace SmartMenuOptim.API.Controllers
 
         // DELETE api/<ReviewsController>/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> DeleteReview(int id)
         {
-            if (_context == null)
+            if(_unityOfWork == null)
             {
                 return StatusCode(500, "Database context is not initialized.");
-            }
+            }   
 
             try
             {
-                var review = await _context.Reviews.FindAsync(id);
+                var review = await _unityOfWork.Reviews.GetByIdAsync(id);
                 if (review == null)
                 {
                     return NotFound();
                 }
-                _context.Reviews.Remove(review);
-                await _context.SaveChangesAsync();
+                _unityOfWork.Reviews.Delete(review);
+                await _unityOfWork.SaveChangesAsync();
                 return NoContent();
             }
             catch (Exception ex)
@@ -157,7 +160,7 @@ namespace SmartMenuOptim.API.Controllers
 
         private bool ReviewExists(int id)
         {
-           return _context.Reviews.Any(e => e.Id == id);
+           return _unityOfWork.Reviews.ExistsAsync(id).GetAwaiter().GetResult();
         }
     }
 }
