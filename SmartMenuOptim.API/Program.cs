@@ -7,7 +7,9 @@ using Microsoft.Extensions.Hosting;
 using SmartMenuOptim.Shared.Data.Repositories;
 using SmartMenuOptim.Shared.Data.Interfaces;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting; // Add this using directive  
+using System.Threading.RateLimiting;
+using SmartMenuOptim.API.Services;
+using SmartMenuOptim.API.Services.Interfaces; // Add this using directive  
 
 namespace SmartMenuOptim.API;
 
@@ -40,6 +42,8 @@ public class Program
         builder.Services.AddScoped<IUnityOfWork, UnityOfWork>();
         // Registering the Repository service
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        // Registering the SentimentService
+        builder.Services.AddScoped<ISentimentService, SentimentService>();
 
         // Add CORS policy to allow cross-origin requests from the frontend
         var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
