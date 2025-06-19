@@ -14,13 +14,26 @@
 else
 {
     <p>Total Reviews: @reviews.Count()</p>
+    <p>
+        <strong>Average All Reviews Sentiment Score:</strong> @(reviews.Average(r => r.SentimentScore).ToString("F1"))
+        (@(reviews.Average(r => r.SentimentScore) > 0.75 ? "😊" :
+           reviews.Average(r => r.SentimentScore) < 0.4 ? "😠" : "😐"))
+    </p>
     @foreach (var review in reviews)
-    {
+    {  // Display each review with sentiment score and emoji. review.SentimentScore one decimal place
+
         <div class="card mt-2 p-2">
             <p><strong>@review.CustomerName:</strong>@review.Comment</p>
-            <p><strong>Sentiment Score::</strong> @review.SentimentScore</p>
+            <p><strong>Sentiment Score:</strong>
+                @review.SentimentScore
+                (@(review.SentimentScore > 0.75 ? "😊" :
+                   review.SentimentScore < 0.4 ? "😠" : "😐"))
+                </p>
         </div>
     }
+
+
+    
 }
 
 
