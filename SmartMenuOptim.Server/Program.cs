@@ -1,5 +1,6 @@
 using SmartMenuOptim.Server.Components;
 using SmartMenuOptim.Server.Services;
+using SmartMenuOptim.Server.Services.Interfaces;
 
 namespace SmartMenuOptim.Server;
 public class Program
@@ -15,6 +16,7 @@ public class Program
         builder.Services.AddScoped<IAIService, AIService>();
         builder.Services.AddScoped<ISaleRecordService, SaleRecordService>();
         builder.Services.AddScoped<IReviewService, ReviewService>();
+        builder.Services.AddScoped<IUnderperformingService, UnderperformingService>();
         builder.Services.AddLogging();
 
         // Add httpClient for external API calls
