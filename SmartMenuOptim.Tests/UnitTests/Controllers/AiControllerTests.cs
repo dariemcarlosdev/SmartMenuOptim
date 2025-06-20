@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Moq;
 using SmartMenuOptim.API.Controllers;
 using SmartMenuOptim.Shared.Data.Entities;
+using SmartMenuOptim.Shared.Data.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,12 +21,19 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         // 4. Returning top two dishes based on sales.
         // 5. Handling ties in sales records.
 
+        private readonly IUnityOfWork _mockUnityOfWork;
+
+        //mock constructor to initialize the IUnityOfWork
+        public AiControllerTests()
+        {
+            _mockUnityOfWork = new Mock<IUnityOfWork>().Object; // Using Moq to create a mock of IUnityOfWork
+        }
 
         [Fact]
         public void Recommend_ReturnBadRequest_WhenSaleRecordsIsNull()
         {
             // Arrange: Define the controller and request with null sale records
-            var controller = new AiController();
+            var controller = new AiController(_mockUnityOfWork);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
@@ -44,7 +53,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         public void Recommend_ReturnBadRequest_WhenSaleRecordsIsEmpty()
         {
             // Arrange: Define the controller and request with empty sale records
-            var controller = new AiController();
+            var controller = new AiController(_mockUnityOfWork);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
@@ -61,7 +70,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         public void Recommend_ReturnOk_WhithTopTwoDishes()
         {
             // Arrange: Arrange defines the context for the test.Define the controller and request with valid sale records. 
-            var controller = new AiController();
+            var controller = new AiController(_mockUnityOfWork);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
@@ -91,7 +100,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         public void Recommend_ReturnOk_WhenTopDishesAreTied()
         {
             // Arrange: Define the controller and request with sale records where two dishes are tied
-            var controller = new AiController();
+            var controller = new AiController(_mockUnityOfWork);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
