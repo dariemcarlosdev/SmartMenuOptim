@@ -1,43 +1,58 @@
 ﻿@page "/insights"
 @using SmartMenuOptim.Server.Services
+@using SmartMenuOptim.Server.Services.Interfaces
 @using SmartMenuOptim.Shared.Data.Entities
-@inject IAIService AIService // Injecting the AI service to get recommendations
-@inject IReviewService ReviewService // Injecting the review service to get reviews
-@inject ISaleRecordService SaleRecordService // Injecting the sale record service to get sales data
+@inject IAIService AIService
+@inject IReviewService ReviewService
+@inject ISaleRecordService SaleRecordService
 
-<h3>🔍 AI-Powered Dish Recommendations</h3>
-
-@if(isloading)
-{
-       <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading recomendations...</span>
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>🔍 AI-Powered Dish Insights</h2>
+        <p class="text-muted">Get data-driven suggestions to maximize flavor and profits.</p>
     </div>
-}
-else if (recommendations != null)
-{
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">Top Recommended Dishes</h5>
-            <p class="card-text">Based on sales and reviews, we recommend:</p>
-            <ul>
-                @foreach (var dish in recommendations.RecomendedDishes)
-                {
-                    <li>@dish</li>
-                }
-            </ul>
+
+    @if (isloading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <span class="ms-2 align-self-center">Loading recommendations page...</span>
         </div>
-        <p class="text-muted"><strong>Strategy Note:</strong> @recommendations.StrategyNote</p>
-    </div>
-}
-else
-{
-    <p>No recommendations available at this time.Try again later.</p>
-}
+    }
+    else if (recommendations == null)
+    {
+        <div class="alert alert-info text-center">🔄 Loading sales data...</div>
+    }
+    else if (rcomendeddishes == null)
+    {
+       <div class="alert alert-warning text-center">
+        🎉 No recommendations available at this time. Please try again later. 🔁
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title">🍽️ Top Dish Recommendations</h4>
+                <p class="card-text">These selections are curated from recent sales trends and review sentiments:</p>
+                <ul class="list-group list-group-flush">
+                    @foreach (var dish in recommendations.RecomendedDishes)
+                    {
+                        <li class="list-group-item">⭐ @dish</li>
+                    }
+                </ul>
+            </div>
+            <div class="card-footer text-muted">
+                <strong>📌 Strategy Note:</strong> @recommendations.StrategyNote
+            </div>
+        </div>
+    }
 
-
+</div>
 
 @code {
     private AiRecomendationResponse? recommendations;
+    private List<string> rcomendeddishes;
     private bool isloading = true;
 
     protected override async Task OnInitializedAsync()
@@ -45,8 +60,8 @@ else
         var sales = await SaleRecordService.GetSaleRecordsAsync();
         var reviews = await ReviewService.GetReviewsAsync();
 
-        recommendations = await AIService.GetRecommendationsAsync(sales,reviews);
-        isloading = false; // Set loading to false after data is fetched
+        recommendations = await AIService.GetRecommendationsAsync(sales, reviews);
+        rcomendeddishes = recommendations?.RecomendedDishes ?? new List<string>();
+        isloading = false;
     }
 }
-

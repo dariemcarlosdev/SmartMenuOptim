@@ -1,47 +1,69 @@
 ﻿@page "/reviews"
 @using SmartMenuOptim.Server.Services
+@using SmartMenuOptim.Server.Services.Interfaces
 @using SmartMenuOptim.Shared.Data.Entities
 @inject IAIService AIService
 @inject IReviewService ReviewService
 
-
-<h3>📄 Reviews</h3>
-
-@if (reviews == null || !reviews.Any())
-{
-    <p>No reviews available.</p>
-}
-else
-{
-    <p>Total Reviews: @reviews.Count()</p>
-    <p>
-        <strong>Average All Reviews Sentiment Score:</strong> @(reviews.Average(r => r.SentimentScore).ToString("F1"))
-        (@(reviews.Average(r => r.SentimentScore) > 0.75 ? "😊" :
-           reviews.Average(r => r.SentimentScore) < 0.4 ? "😠" : "😐"))
-    </p>
-    @foreach (var review in reviews)
-    {  // Display each review with sentiment score and emoji. review.SentimentScore one decimal place
-
-        <div class="card mt-2 p-2">
-            <p><strong>@review.CustomerName:</strong>@review.Comment</p>
-            <p><strong>Sentiment Score:</strong>
-                @review.SentimentScore
-                (@(review.SentimentScore > 0.75 ? "😊" :
-                   review.SentimentScore < 0.4 ? "😠" : "😐"))
-                </p>
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>📝 Customer Reviews</h2>
+        <p class="text-muted">What your diners are saying — powered by AI-driven sentiment analysis.</p>
+    </div>
+    @if (isloading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <span class="ms-2 align-self-center">Loading reviews page...</span>
         </div>
     }
 
+    @if (reviews == null)
+    {
+        <div class="alert alert-info text-center">🔄 Loading reviews...</div>
+    }
+    else if (!reviews.Any())
+    {
+        <div class="alert alert-warning text-center">📭 No reviews available at the moment.</div>
+    }
+    else
+    {
+        <div class="mb-3 text-center">
+            <h5>Total Reviews: <span class="badge bg-secondary">@reviews.Count()</span></h5>
+            <h6 class="text-muted">
+                Average Sentiment Score:
+                <strong>@reviews.Average(r => r.SentimentScore).ToString("F1")</strong>
+                (@(reviews.Average(r => r.SentimentScore) > 0.75 ? "😊" :
+                   reviews.Average(r => r.SentimentScore) < 0.4 ? "😠" : "😐"))
+            </h6>
+        </div>
 
-    
-}
-
+        @foreach (var review in reviews)
+        {
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">@review.CustomerName says:</h6>
+                    <p class="card-text">"@review.Comment"</p>
+                    <div class="text-end">
+                        <small class="text-muted">
+                            Sentiment: <strong>@review.SentimentScore.ToString("F1")</strong>
+                            (@(review.SentimentScore > 0.75 ? "😊" :
+                               review.SentimentScore < 0.4 ? "😠" : "😐"))
+                        </small>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
 
 @code {
     private List<Review>? reviews;
+    private bool isloading = true;
 
     protected override async Task OnInitializedAsync()
     {
         reviews = await ReviewService.GetReviewsAsync();
+        isloading = false;
     }
 }

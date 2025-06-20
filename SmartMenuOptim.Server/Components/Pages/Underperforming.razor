@@ -1,0 +1,69 @@
+﻿@page "/underperforming"
+@using SmartMenuOptim.Server.Services.Interfaces
+@using SmartMenuOptim.Shared.Data.Dtos
+@inject IUnderperformingService UnderperformingService
+
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>📉 Underperforming Dishes</h2>
+        <p class="text-muted">
+            Leverage sales insights and customer sentiment to spot and improve your weakest menu items.
+        </p>
+    </div>
+    @if (isloading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <span class="ms-2 align-self-center">Loading underperformance dishes page...</span>
+        </div>
+    }
+    @if (underperformingDishes == null)
+    {
+        <div class="alert alert-info text-center">🔄 Loading underperforming dishes data...</div>
+    }
+    else if (!underperformingDishes.Any())
+    {
+        <div class="alert alert-success text-center">
+            🎉 No underperforming dishes found. Everything's running smoothly!
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Dish Name</th>
+                        <th class="text-end">Total Sales</th>
+                        <th class="text-center">Avg Sentiment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dish in underperformingDishes)
+                    {
+                        <tr>
+                            <td>@dish.DishName</td>
+                            <td class="text-end">@dish.TotalSales</td>
+                            <td class="text-center">
+                                @dish.AverageSentiment.ToString("P0")
+                                @(dish.AverageSentiment < 0.4 ? "😠" :
+                                    dish.AverageSentiment < 0.6 ? "😐" : "🙂")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<UnderperformingDishDTO>? underperformingDishes;
+    private bool isloading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        underperformingDishes = await UnderperformingService.GetUnderperformingDishesAsync();
+        isloading = false;
+    }
+}
