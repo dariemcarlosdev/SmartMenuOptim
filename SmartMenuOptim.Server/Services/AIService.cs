@@ -1,4 +1,5 @@
-﻿using SmartMenuOptim.Shared.Data.Entities;
+﻿using SmartMenuOptim.Server.Services.Interfaces;
+using SmartMenuOptim.Shared.Data.Entities;
 
 namespace SmartMenuOptim.Server.Services
 {
