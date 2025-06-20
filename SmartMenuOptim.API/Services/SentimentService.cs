@@ -5,6 +5,9 @@ using SmartMenuOptim.Shared.Data.Entities;
 
 namespace SmartMenuOptim.API.Services
 {
+    /// <summary>
+    /// Service for analyzing sentiment using Azure Text Analytics of Azure Cognitive Services resource.
+    /// </summary>
     public class SentimentService : ISentimentService
     {
         private readonly TextAnalyticsClient _textAnalyticsClient;
