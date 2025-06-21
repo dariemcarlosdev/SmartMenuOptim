@@ -19,12 +19,25 @@ namespace SmartMenuOptim.API.Controllers
 
 
         // This controller handles AI-related operations, such as generating recommendations based on sales records and reviews.
+        // Set of improvements:
+        // 1. Use of AsQueryable() for better LINQ operations on the repository.
+        // 2. Use of AsNoTracking() for read-only queries to improve performance.
+        // 3. Use of parallel processing for in-memory LINQ operations to improve performance.
+        // 4. Use of StringSplitOptions to handle whitespace and trimming in dish names.
+        // 5. Use of StringComparison.OrdinalIgnoreCase for case-insensitive string comparisons.
+        // 6. Selecting only necessary fields in queries to optimize performance.
+        // 7. Using Query() method to get an IQueryable for further LINQ operations on the repository, allowing for efficient filtering and grouping in the database.
+        // 8. Using Task-based asynchronous programming for database operations to improve responsiveness and scalability.
+        // 9. Filter records from the last 7 days to focus on recent data, which is more relevant for performance analysis.
 
-        // Add Endpoint for underperforming dishes based on reviews and sales records.
+        /// <summary>
+        /// Endpoint to get underperforming dishes based on reviews and sales records.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("underperforming-dishes")]
         public async Task<ActionResult<IEnumerable<UnderperformingDishDTO>>> GetUnderperformingDishes()
         {
-            // Only consider sales from the last 7 days
+            // Filter by Date Reduce Data Volume Early: If you only care about recent reviews (e.g., last 7 days), filter reviews by date before loading them into memory.
             var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
             // // Calculate total sales for each dish in the last 7 days
@@ -44,7 +57,6 @@ namespace SmartMenuOptim.API.Controllers
             // Fetch all reviews with non-null comments (project only needed fields
             var allReviews = await _unityOfWork.Reviews.Query()
                 .Where(r => r.Comment != null)
-                //.Where(r => r.Comment != null && r.CreatedDate >= sevenDaysAgo) // for optimization, filter reviews with non-null comments, add CreatedDate property to Review entity if needed
                 .Select(r => new { r.Comment, r.SentimentScore }) //for optimization, only select necessary fields
                 .AsNoTracking()
                 .ToListAsync();
