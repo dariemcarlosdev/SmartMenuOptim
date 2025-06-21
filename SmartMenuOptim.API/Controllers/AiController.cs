@@ -95,7 +95,12 @@ namespace SmartMenuOptim.API.Controllers
             return Ok(underperformingDishes);
         }
 
-        // This endpoint simulates AI recommendations based on reviews and sales records.
+        /// <summary>
+        /// Endpoint to get AI recommendations based on sales records and reviews.This endpoint simulates the logic AI recommendations based on reviews and sales records.
+        /// This feature can be implemented with AI service like Azure OpenAI to generate recommendations based on sales records and reviews.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("recommend")]
         public ActionResult<AiRecomendationRequest> Recommend([FromBody] AiRecomendationRequest request)
         {
