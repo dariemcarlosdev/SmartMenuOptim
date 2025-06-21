@@ -45,7 +45,7 @@
                     <h6 class="card-title">@review.CustomerName says:</h6>
                     <p class="card-text">"@review.Comment"</p>
                     <div class="text-end">
-                        <small class="text-muted">
+                        <small>
                             Sentiment: <strong>@review.SentimentScore.ToString("F1")</strong>
                             (@(review.SentimentScore > 0.75 ? "😊" :
                                review.SentimentScore < 0.4 ? "😠" : "😐"))

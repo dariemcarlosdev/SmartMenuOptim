@@ -7,14 +7,6 @@
     text-align: center;
 }
 
-.background-image {
-    background-image: url('images/smart1.jpg'); /* Replace with your image URL */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    width: 100%;
-    height: 100vh; /* Full viewport height */
-}
 
 .hero-section {
     background: url('/images/restaurant-bg.jpg') no-repeat center center;
@@ -35,16 +27,40 @@ body, main {
     padding: 0;
 }
 
-.hero-section {
-    margin-bottom: 0;
-    margin-left: 0;
+
+.card {
+    border-radius: 12px;
+    border: none;
+/*    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+*/    background-color: #fff;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
-article,
-.content,
-.container {
-    margin-top: 0;
-    padding-top: 0;
-    margin-left: 0;
-    padding-left: 0;
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    }
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.card-text {
+    color: #555;
+    font-style: italic;
+    margin-bottom: 1rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.text-end small {
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
 }
