@@ -1,26 +1,44 @@
-**/.classpath
-**/.dockerignore
-**/.env
-**/.git
-**/.gitignore
-**/.project
-**/.settings
-**/.toolstarget
+## Build Folders ##
+**/bin
+**/obj
+**/out
+**/TestResults
 **/.vs
 **/.vscode
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/azds.yaml
-**/bin
-**/charts
+
+## User-specific files ##
+**/*.suo
+**/*.user
+**/*.userosscache
+**/*.sln.docstates
+
+## Logs ##
+**/*.log
+
+## Others ##
+**/.DS_Store
+**/.idea
+**/*.publishsettings
+
+## Docker ##
+**/.dockerignore
+**/.docker
 **/docker-compose*
 **/Dockerfile*
-**/node_modules
-**/npm-debug.log
-**/obj
+
+## Secrets ##
+**/appsettings.*.Secrets.json
+**/appsettings.Secrets.json
+**/appsettings.Local.Secrets.json
+**/appsettings.Development.Secrets.json
 **/secrets.dev.yaml
 **/values.dev.yaml
+
+## git ##
+**/.git
+
+**/.classpath
+**/.env
 LICENSE
 README.md
 !**/.gitignore
@@ -28,3 +46,18 @@ README.md
 !.git/config
 !.git/packed-refs
 !.git/refs/heads/**
+
+## Others ##
+
+**/.project
+**/.settings
+**/.toolstarget
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/azds.yaml
+**/charts
+**/node_modules
+**/npm-debug.log
+**/packages
+
