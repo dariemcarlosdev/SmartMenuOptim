@@ -1,6 +1,5 @@
 
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Shared.Data;
 using Microsoft.AspNetCore.Builder; // Add this using directive  
 using Microsoft.AspNetCore.Hosting; // Add this using directive  
 using Microsoft.Extensions.Hosting;
@@ -9,7 +8,9 @@ using SmartMenuOptim.Shared.Data.Interfaces;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using SmartMenuOptim.API.Services;
-using SmartMenuOptim.API.Services.Interfaces; // Add this using directive  
+using SmartMenuOptim.API.Services.Interfaces;
+using SmartMenuOptim.Shared.Data.Context;
+using SmartMenuOptim.API.Data; // Add this using directive  
 
 namespace SmartMenuOptim.API;
 

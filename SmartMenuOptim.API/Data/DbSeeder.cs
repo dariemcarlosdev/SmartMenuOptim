@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json.Linq;
+using SmartMenuOptim.Shared.Data.Context;
 using SmartMenuOptim.Shared.Data.Entities;
 
-namespace SmartMenuOptim.Shared.Data
+namespace SmartMenuOptim.API.Data
 {
     public static class DbSeeder
     {
