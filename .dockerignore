@@ -1,63 +1,74 @@
-## Build Folders ##
-**/bin
-**/obj
-**/out
-**/TestResults
-**/.vs
-**/.vscode
+#Since my Docker context is project-level (SmartMenuOptim.API), the following .dockerignore is optimized specifically for that folder. 
+#It ensures only necessary files are sent to the Docker daemon, improving build performance and keeping secrets and dev files out of the image.
 
-## User-specific files ##
-**/*.suo
-**/*.user
-**/*.userosscache
-**/*.sln.docstates
+# Best Practices:
+# Make sure you build from the folder where this .dockerignore lives (SmartMenuOptim.API) to take full advantage of its scoped exclusions.
+# Avoid including sensitive files like appsettings.json in production builds unless explicitly required — instead, pass values via environment variables or secret managers.
+# If you're using Dockerfile for development and Dockerfile.prod for production, you can selectively include/exclude them.
 
-## Logs ##
-**/*.log
 
-## Others ##
-**/.DS_Store
-**/.idea
-**/*.publishsettings
+# Build artifacts
+bin/
+obj/
+out/
+TestResults/
 
-## Docker ##
-**/.dockerignore
-**/.docker
-**/docker-compose*
-**/Dockerfile*
+# IDE/editor folders
+.vs/
+.vscode/
+.idea/
 
-## Secrets ##
-**/appsettings.*.Secrets.json
-**/appsettings.Secrets.json
-**/appsettings.Local.Secrets.json
-**/appsettings.Development.Secrets.json
-**/secrets.dev.yaml
-**/values.dev.yaml
+# User-specific and temp files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.jfm
 
-## git ##
-**/.git
+# Logs
+*.log
+npm-debug.log
 
-**/.classpath
-**/.env
+# Secrets and config files (do not copy into image)
+appsettings.*.Secrets.json
+appsettings.Secrets.json
+appsettings.Local.Secrets.json
+appsettings.Development.Secrets.json
+appsettings.json
+secrets.dev.yaml
+values.dev.yaml
+
+# Docker and compose
+.dockerignore
+.docker/
+docker-compose*
+Dockerfile*
+
+# Git
+.git/
+*.gitignore
+
+# Package and dependency folders
+node_modules/
+packages/
+
+# Local DB files
+*.db
+*.dbmdl
+
+# Misc/IDE tools
+.project
+.settings/
+.toolstarget
+.classpath
+
+# Azure Dev Spaces / Helm / Kubernetes
+azds.yaml
+charts/
+
+# Environment files
+.env
+
+# Optional (non-build docs/licenses)
 LICENSE
 README.md
-!**/.gitignore
-!.git/HEAD
-!.git/config
-!.git/packed-refs
-!.git/refs/heads/**
-
-## Others ##
-
-**/.project
-**/.settings
-**/.toolstarget
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/azds.yaml
-**/charts
-**/node_modules
-**/npm-debug.log
-**/packages
-
