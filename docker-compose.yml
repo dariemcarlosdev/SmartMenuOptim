@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: smartmenuoptim_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: SmartMenuDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  smartmenuoptim_api:
+    build:
+      context: ./SmartMenuOptim.API
+    container_name: smartmenuoptim_api
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=postgres;Port=5432;Database=SmartMenuDb;User Id=postgres;Password=admin123;TrustServerCertificate=True;
+      - Azure__TextAnalytics__Endpoint=https://aicognitiveservicetextanalytics.cognitiveservices.azure.com/
+      - Azure__TextAnalytics__Key=250i2euYOUa01tzhenxBA2GlZPxGBdH7p7ahnnKN0DXN91wBSAohJQQJ99BFACYeBjFXJ3w3AAAaACOGIdMC
+    ports:
+      - "5000:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:

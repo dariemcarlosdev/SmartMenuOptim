@@ -1,33 +1,67 @@
 ﻿@page "/insights"
 @using SmartMenuOptim.Server.Services
-@using SmartMenuOptim.Shared.Models
+@using SmartMenuOptim.Server.Services.Interfaces
+@using SmartMenuOptim.Shared.Data.Entities
 @inject IAIService AIService
+@inject IReviewService ReviewService
+@inject ISaleRecordService SaleRecordService
 
-<h3>AI Menu Recomendation</h3>
-
-@code {
-    private InsightResponse insight;
-
-    protected override void OnInitialized()
-    {
-        insight = AIService.GetMenuRecomendation();
-    }
-}
-
-@if (insight is not null)
-{
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Confidence Score</h5>
-            <p class="card-text"><strong>Confidence: </strong>@insight.ConfidenceScore</p>
-            <p class="card-text"><strong>Suggestion: </strong>@insight.Recomendation</p>
-        </div>
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>🔍 AI-Powered Dish Insights</h2>
+        <p class="text-muted">Get data-driven suggestions to maximize flavor and profits.</p>
     </div>
-}
-else
-{
-    <p>Loading...</p>
-}
+
+    @if (isloading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <span class="ms-2 align-self-center">Loading recommendations page...</span>
+        </div>
+    }
+    else if (recommendations == null)
+    {
+        <div class="alert alert-info text-center">🔄 Loading sales data...</div>
+    }
+    else if (rcomendeddishes == null)
+    {
+       <div class="alert alert-warning text-center">
+        🎉 No recommendations available at this time. Please try again later. 🔁
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title">🍽️ Top Dish Recommendations</h4>
+                <p class="card-text">These selections are curated from recent sales trends and review sentiments:</p>
+                <ul class="list-group list-group-flush">
+                    @foreach (var dish in recommendations.RecomendedDishes)
+                    {
+                        <li class="list-group-item">⭐ @dish</li>
+                    }
+                </ul>
+            </div>
+            <div class="card-footer text-muted">
+                <strong>📌 Strategy Note:</strong> @recommendations.StrategyNote
+            </div>
+        </div>
+    }
+
+</div>
+
 @code {
-    // You can add any additional logic or methods here if needed
+    private AiRecomendationResponse? recommendations;
+    private List<string> rcomendeddishes;
+    private bool isloading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sales = await SaleRecordService.GetSaleRecordsAsync();
+        var reviews = await ReviewService.GetReviewsAsync();
+
+        recommendations = await AIService.GetRecommendationsAsync(sales, reviews);
+        rcomendeddishes = recommendations?.RecomendedDishes ?? new List<string>();
+        isloading = false;
+    }
 }

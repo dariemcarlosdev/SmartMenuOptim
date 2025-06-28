@@ -1,32 +1,45 @@
-﻿using SmartMenuOptim.Shared.Models;
+﻿using SmartMenuOptim.Server.Services.Interfaces;
+using SmartMenuOptim.Shared.Data.Entities;
 
 namespace SmartMenuOptim.Server.Services
 {
     public class AIService : IAIService
     {
-        public InsightResponse GetMenuRecomendation() => new InsightResponse
-        {
-            ConfidenceScore = 0.95,
-            Recomendation = "Promote Ribeye Steak on weekends."
-        };
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<AIService> _logger;
 
-        public IEnumerable<Review> AnalizeReviews() => new List<Review>
+        public AIService( IHttpClientFactory httpClientFactory, ILogger<AIService> logger)
         {
-            new Review
+            _httpClient = httpClientFactory.CreateClient("BackendAPI");
+            _logger = logger;
+        }
+
+        public async Task<AiRecomendationResponse?> GetRecommendationsAsync(List<SaleRecord> sales, List<Review> reviews)
+        {
+            var request = new AiRecomendationRequest
             {
-                Id = 1,
-                CustomerName = "John Doe",
-                Comment = "The food was amazing!",
-                SentimentScore = 0.9
-            },
-            new Review
+                SaleRecords = sales,
+                Reviews = reviews
+            };
+
+            try
             {
-                Id = 2,
-                CustomerName = "Jane Smith",
-                Comment = "Not satisfied with the service.",
-                SentimentScore = -0.5
+                var response = await _httpClient.PostAsJsonAsync("api/ai/recommend", request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<AiRecomendationResponse>();
+                }
+                else
+                {
+                    _logger.LogError($"AI recommendation failed with status code {response.StatusCode}");
+                    return null;
+                }
             }
-        };
-
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting AI recommendations");
+                return null;
+            }
+        }
     }
 }
