@@ -118,7 +118,7 @@ namespace SmartMenuOptim.API.Controllers
         {
             Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(request));
             // Validate the request
-            if (request.SaleRecords == null || !request.SaleRecords.Any())
+            if (request.SaleRecords == null || !request.SaleRecords.Any() || request.SaleRecords.Any(sr => sr == null))
             {
                 return BadRequest("Sale records cannot be empty.");
             }
