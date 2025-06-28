@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ env-dev/setup-GithubActions-CI-CD-Pipeline ]
+    branches: [ env-dev/GithubActions-Pipeline ]
 
 jobs:
   build-test:
