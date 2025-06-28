@@ -69,8 +69,16 @@ jobs:
       with:
         languages: csharp
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore SmartMenuOptim.sln
+
+    - name: Build Solution
+      run: dotnet build SmartMenuOptim.sln --no-restore --configuration Release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
