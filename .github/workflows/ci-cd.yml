@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ env-dev/GithubActions-Pipeline ]
+    branches: [ GithubActions-Pipeline/hotfix-pgsql-offline-ci-test ]
 
 jobs:
   build-test:
@@ -34,6 +34,10 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore
+
+      # --- Ensure database migrations are applied before tests ---
+    - name: Apply EF Core Migrations
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
