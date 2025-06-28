@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
+using Npgsql;
 using SmartMenuOptim.Shared.Data.Context;
 using SmartMenuOptim.Shared.Data.Entities;
 
@@ -12,6 +14,30 @@ namespace SmartMenuOptim.API.Data
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             Console.WriteLine("🌱 Seeding database...");
+
+            // adding retry logic 
+
+            const int maxRetries = 10;
+            int retryCount = 0;
+            bool dbReady = false;
+
+            while (!dbReady && retryCount < maxRetries)
+            {
+                try
+                {
+                    
+                    dbContext.Database.Migrate(); // Ensure schema is created
+                    dbReady = true;
+                }
+                catch (NpgsqlException ex)
+                {
+                    retryCount++;
+                    Console.WriteLine($"⏳ Waiting for database connection... attempt {retryCount}/{maxRetries} - { ex.Message}");
+                    Thread.Sleep(3000);
+                }
+            }
+            if (!dbReady)
+                throw new Exception("❌ Could not connect to DB or apply migrations after retries.");
 
             // Check if the database is already seeded
             if (!dbContext.SaleRecords.Any())

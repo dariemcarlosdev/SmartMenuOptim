@@ -1,4 +1,4 @@
-
+﻿
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder; // Add this using directive  
 using Microsoft.AspNetCore.Hosting; // Add this using directive  
@@ -19,6 +19,28 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+
+        // Clear default config sources
+        builder.Configuration.Sources.Clear();
+
+        // ✅ Dual source configuration logic
+        var environment = builder.Environment;
+
+        if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+        {
+            // Use UserSecrets locally
+            builder.Configuration
+                .AddUserSecrets<Program>(optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables();
+        }
+        else
+        {
+            // Use secrets.json in Docker or other envs
+            builder.Configuration
+                .AddJsonFile("/app/secrets.json", optional: false, reloadOnChange: false)
+                .AddEnvironmentVariables();
+        }
 
         //Implement rate limiting and throttling
         builder.Services.AddRateLimiter(options =>
