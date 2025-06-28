@@ -15,7 +15,7 @@ namespace SmartMenuOptim.API.Data
 
             Console.WriteLine("🌱 Seeding database...");
 
-            // adding retry logic 
+            // adding retry logic for database connection. This ensures that the application waits for the database to be ready before applying migrations or seeding data.
 
             const int maxRetries = 10;
             int retryCount = 0;
