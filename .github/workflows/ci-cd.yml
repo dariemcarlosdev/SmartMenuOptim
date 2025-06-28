@@ -45,7 +45,21 @@ jobs:
 
       # --- Ensure database migrations are applied before tests ---
     - name: Apply EF Core Migrations
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=SmartMenuDb;Username=postgres;Password=admin123"
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
+
+      # --- List tables after migration to verify
+    - name: List tables after migration
+      run: |
+       sudo apt-get install -y postgresql-client
+       PGPASSWORD=admin123 psql -h localhost -U postgres -d SmartMenuDb -c '\dt'
+
+       # --- Run tests with coverage ---
+    - name: Run tests with coverage
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=SmartMenuDb;Username=postgres;Password=admin123"
+      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
 
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
