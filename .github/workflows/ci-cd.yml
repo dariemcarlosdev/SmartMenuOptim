@@ -35,6 +35,14 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
+      # Install the EF Core CLI tool globally to manage migrations
+    - name: Install EF Core CLI
+      run: dotnet tool install --global dotnet-ef
+  
+      # Add this to ensure dotnet tools (like dotnet-ef) are on the PATH
+    - name: Add dotnet tools to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
       # --- Ensure database migrations are applied before tests ---
     - name: Apply EF Core Migrations
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
