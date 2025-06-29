@@ -49,30 +49,18 @@ jobs:
         ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=SmartMenuDb;Username=postgres;Password=admin123"
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
+      # Apply EF Core migrations
+    - name: Apply database migrations
+      run: dotnet ef database update --project SmartMenuOptim/SmartMenuOptim.csproj
+
       # --- List tables after migration to verify
     - name: List tables after migration
       run: |
        sudo apt-get install -y postgresql-client
        PGPASSWORD=admin123 psql -h localhost -U postgres -d SmartMenuDb -c '\dt'
 
-       # --- Run tests with coverage ---
-    - name: Run tests with coverage
-      env:
-        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=SmartMenuDb;Username=postgres;Password=admin123"
-      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
-
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
-
-    - name: Run tests with coverage
-      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: '**/TestResults/*.trx'
 
     - name: Upload code coverage
       if: always()
