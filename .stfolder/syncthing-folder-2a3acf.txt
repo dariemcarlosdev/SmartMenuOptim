@@ -1,0 +1,5 @@
+# This directory is a Syncthing folder marker.
+# Do not delete.
+
+folderID: zpfkx-2jefy
+created: 2025-06-28T20:27:31-04:00
