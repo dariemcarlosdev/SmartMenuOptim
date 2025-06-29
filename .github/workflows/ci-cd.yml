@@ -2,7 +2,17 @@ name: CI/CD Pipeline for SmartMenuOptim
 
 on:
   push:
-    branches: [ GithubActions-Pipeline/hotfix-pgsql-offline-ci-test ]
+    branches:
+        - Staging
+        - dev
+        - master
+        - env-dev/*
+  pull_request:
+    branches:
+        - Staging
+        - dev
+        - master
+        - env-dev/* 
 
 jobs:
   build-test:
