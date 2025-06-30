@@ -82,14 +82,17 @@ jobs:
     - name: Security check - vulnerable packages
       run: dotnet list package --vulnerable
 
+      # --- This step publish the application ---
+    - name: Publish app
+      run: dotnet publish SmartMenuOptim.sln --configuration Release --output ./publish
+    
+
     - name: Publish build artifacts
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: publish
-        path: |
-          **/bin/Release/net9.0/publish/
-          !**/obj/**
+        path: ./publish
 
   codeql-analysis:
     name: CodeQL Analysis
