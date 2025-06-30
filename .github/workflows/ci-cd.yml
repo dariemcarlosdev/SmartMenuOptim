@@ -125,7 +125,7 @@ jobs:
   # --- Optional: Deploy to Azure Web App ---
   # Uncomment and configure the following job if you want to deploy to Azure
   deploy-azure:
-    needs: build-test
+    needs: [build-test, Codeql-analysis]
     runs-on: ubuntu-latest
     steps:
     - name: Download build artifacts
