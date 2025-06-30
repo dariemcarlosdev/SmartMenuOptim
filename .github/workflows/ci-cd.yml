@@ -182,7 +182,7 @@ jobs:
   notify-on-failure:
     if: failure()
     runs-on: ubuntu-latest
-    needs: [build-test, codeql-analysis]
+    needs: [build-test, codeql-analysis,deploy-azure]
     steps:
     - name: Send email on failure
       uses: dawidd6/action-send-mail@v3
@@ -202,7 +202,7 @@ jobs:
   notify-on-success:
     if: success()
     runs-on: ubuntu-latest
-    needs: [build-test, codeql-analysis]
+    needs: [build-test, codeql-analysis,deploy-azure]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
