@@ -117,7 +117,7 @@ namespace SmartMenuOptim.API.Controllers
         public ActionResult<AiRecomendationRequest> Recommend([FromBody] AiRecomendationRequest request)
         {
             Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(request));
-            // Validate the request
+            // Validating the request 
             if (request.SaleRecords == null || !request.SaleRecords.Any() || request.SaleRecords.Any(sr => sr == null))
             {
                 return BadRequest("Sale records cannot be empty.");
