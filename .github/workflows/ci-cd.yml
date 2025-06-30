@@ -124,21 +124,21 @@ jobs:
 
   # --- Optional: Deploy to Azure Web App ---
   # Uncomment and configure the following job if you want to deploy to Azure
-  # deploy-azure:
-  #   needs: build-test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Download build artifacts
-  #     uses: actions/download-artifact@v4
-  #     with:
-  #       name: publish
-  #       path: ./publish
-  #   - name: Deploy to Azure Web App
-  #     uses: azure/webapps-deploy@v3
-  #     with:
-  #       app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-  #       publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-  #       package: ./publish
+  deploy-azure:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish
+        path: ./publish
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./publish
 
   # --- Optional: Deploy to AWS Elastic Beanstalk ---
   # Uncomment and configure the following job if you want to deploy to AWS
