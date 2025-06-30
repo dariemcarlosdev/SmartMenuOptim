@@ -1,4 +1,11 @@
-name: CI/CD Pipeline for SmartMenuOptim
+
+# This GitHub Actions workflow is designed to build, test, and deploy the SmartMenuOptim application.
+
+# Correct CI/CD Publishing Strategy:
+# I should only publish the entry projects (API and Server), each to a separate output directory. You do NOT need to publish SmartMenuOptim.Shared or SmartMenuOptim.Tests.
+
+# SmartMenuOptim.Shared will be included automatically as a dependency when publishing API or Server.
+# SmartMenuOptim.Tests should only be used for dotnet test, not for publish.name: CI/CD Pipeline for SmartMenuOptim
 
 on:
   push:
@@ -83,8 +90,14 @@ jobs:
       run: dotnet list package --vulnerable
 
       # --- This step publish the application ---
-    - name: Publish app
-      run: dotnet publish SmartMenuOptim.sln --configuration Release --output ./publish
+    # - name: Publish app
+    #   run: dotnet publish SmartMenuOptim.sln --configuration Release --output ./publish
+
+    - name: Publish API app
+      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --output ./publish/api
+
+    - name: Publish Server app
+      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --output ./publish/server
     
 
     - name: Publish build artifacts
