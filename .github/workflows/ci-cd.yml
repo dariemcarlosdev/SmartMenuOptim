@@ -92,7 +92,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: publish
-        path: ./publish
+        path:  ./publish
 
   codeql-analysis:
     name: CodeQL Analysis
@@ -136,6 +136,20 @@ jobs:
       with:
         name: publish
         path: ./publish
+    
+      # --- ADD THIS STEP: Apply EF Core Migration to Azure PostgreSQL ---
+    # - name: Install EF Core CLI
+    #   run: dotnet tool install --global dotnet-ef
+
+    # - name: Add dotnet tools to PATH
+    #   run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    # - name: Apply EF Core Migrations to Azure PostgreSQL
+    #   if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/Staging'
+    #   env:
+    #       ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_POSTGRES_CONNECTION_STRING }}
+    #   run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
+
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
@@ -186,14 +200,17 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     needs: [build-test, codeql-analysis,deploy-azure]
+    env:
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
     steps:
     - name: Send email on failure
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: smtp.gmail.com
         server_port: 465
-        username: ${{ secrets.SMTP_USERNAME }}
-        password: ${{ secrets.SMTP_PASSWORD }}
+        username: ${{ env.SMTP_USERNAME }}
+        password: ${{ env.SMTP_PASSWORD }}
         subject: "GitHub Actions CI/CD Pipeline Failed"
         to: softevolutionsl@gmail.com
         from: ${{ secrets.SMTP_USERNAME }}
