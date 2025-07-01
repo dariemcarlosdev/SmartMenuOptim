@@ -140,15 +140,15 @@ jobs:
 
   # --- Optional: Deploy to Azure Web App ---
   # Uncomment and configure the following job if you want to deploy to Azure
-  deploy-azure:
-    needs: [build-test, Codeql-analysis]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: publish
-        path: ./publish
+  # deploy-azure:
+  #   needs: [build-test, Codeql-analysis]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Download build artifacts
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: publish
+  #       path: ./publish
     
       # --- ADD THIS STEP: Apply EF Core Migration to Azure PostgreSQL ---
     # - name: Install EF Core CLI
@@ -164,6 +164,9 @@ jobs:
     #   run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
   deploy-azure-server:
     needs: [build-test, codeql-analysis]
+    env:
+      AZURE_WEBAPP_SERVER_NAME: ${{ secrets.AZURE_WEBAPP_SERVER_NAME }}
+      AZURE_WEBAPP_SERVER_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
     runs-on: ubuntu-latest
     steps:
     - name: Download build artifacts
@@ -175,12 +178,15 @@ jobs:
     - name: Deploy Blazor Server to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ secrets.AZURE_WEBAPP_SERVER_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
+        app-name: ${{ env.AZURE_WEBAPP_SERVER_NAME }}
+        publish-profile: ${{ env.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
         package: ./publish/server
 
   deploy-azure-api:
     needs: [build-test, codeql-analysis]
+    env:
+      AZURE_WEBAPP_API_NAME: ${{ secrets.AZURE_WEBAPP_API_NAME }}
+      AZURE_WEBAPP_API_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
     runs-on: ubuntu-latest
     steps:
     - name: Download build artifacts
@@ -192,8 +198,8 @@ jobs:
     - name: Deploy API to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ secrets.AZURE_WEBAPP_API_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
+        app-name: ${{ env.AZURE_WEBAPP_API_NAME }}
+        publish-profile: ${{ env.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
         package: ./publish/api
 
   # --- Optional: Deploy to AWS Elastic Beanstalk ---
@@ -238,7 +244,7 @@ jobs:
   notify-on-failure:
     if: failure()
     runs-on: ubuntu-latest
-    needs: [build-test, codeql-analysis,deploy-azure]
+    needs: [build-test,codeql-analysis,deploy-azure-server,deploy-azure-api]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
@@ -261,7 +267,7 @@ jobs:
   notify-on-success:
     if: success()
     runs-on: ubuntu-latest
-    needs: [build-test, codeql-analysis,deploy-azure]
+    needs: [ build-test,codeql-analysis,deploy-azure-server,deploy-azure-api]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
