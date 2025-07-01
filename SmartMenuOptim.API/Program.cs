@@ -29,16 +29,21 @@ public class Program
 
         if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
         {
-            // Use UserSecrets locally
             builder.Configuration
                 .AddUserSecrets<Program>(optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
         }
+        else if (Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME") != null) // Running in Azure App Service
+        {
+            builder.Configuration
+                .AddEnvironmentVariables(); // Use App Settings from Azure
+        }
         else
         {
-            // Use secrets.json in Docker or other envs
+            // For Docker containers or other hosting scenarios
             builder.Configuration
-                .AddJsonFile("/app/secrets.json", optional: false, reloadOnChange: false)
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("/app/secrets.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables();
         }
 
