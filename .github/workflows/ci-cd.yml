@@ -162,13 +162,39 @@ jobs:
     #   env:
     #       ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_POSTGRES_CONNECTION_STRING }}
     #   run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
+  deploy-azure-server:
+    needs: [build-test, codeql-analysis]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish
+        path: ./publish
 
-    - name: Deploy to Azure Web App
+    - name: Deploy Blazor Server to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ./publish
+        app-name: ${{ secrets.AZURE_WEBAPP_SERVER_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
+        package: ./publish/server
+
+  deploy-azure-api:
+    needs: [build-test, codeql-analysis]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish
+        path: ./publish
+
+    - name: Deploy API to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_API_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
+        package: ./publish/api
 
   # --- Optional: Deploy to AWS Elastic Beanstalk ---
   # Uncomment and configure the following job if you want to deploy to AWS
