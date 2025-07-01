@@ -267,7 +267,7 @@ jobs:
   notify-on-success:
     if: success()
     runs-on: ubuntu-latest
-    needs: [ build-test,codeql-analysis,deploy-azure-server,deploy-azure-api]
+    needs: [build-test, codeql-analysis,deploy-azure]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
