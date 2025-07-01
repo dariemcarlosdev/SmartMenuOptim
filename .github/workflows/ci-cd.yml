@@ -89,9 +89,6 @@ jobs:
     - name: Security check - vulnerable packages
       run: dotnet list package --vulnerable
 
-      # --- This step publish the application ---
-    # - name: Publish app
-    #   run: dotnet publish SmartMenuOptim.sln --configuration Release --output ./publish
 
     - name: Publish API app
       run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --output ./publish/api
@@ -138,30 +135,6 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
 
-  # --- Optional: Deploy to Azure Web App ---
-  # Uncomment and configure the following job if you want to deploy to Azure
-  # deploy-azure:
-  #   needs: [build-test, Codeql-analysis]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Download build artifacts
-  #     uses: actions/download-artifact@v4
-  #     with:
-  #       name: publish
-  #       path: ./publish
-    
-      # --- ADD THIS STEP: Apply EF Core Migration to Azure PostgreSQL ---
-    # - name: Install EF Core CLI
-    #   run: dotnet tool install --global dotnet-ef
-
-    # - name: Add dotnet tools to PATH
-    #   run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-    # - name: Apply EF Core Migrations to Azure PostgreSQL
-    #   if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/Staging'
-    #   env:
-    #       ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_POSTGRES_CONNECTION_STRING }}
-    #   run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
   deploy-azure-server:
     needs: [build-test, codeql-analysis]
     env:
@@ -201,6 +174,28 @@ jobs:
         app-name: ${{ env.AZURE_WEBAPP_API_NAME }}
         publish-profile: ${{ env.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
         package: ./publish/api
+    
+        # --- Run EF Core migrations AFTER deployment ---
+        # Best practice to run EF Core migrations after the API is deployed, so your migrations match the deployed code.
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x' 
+       
+    - name: Install EF Core CLI
+      run: dotnet tool install --global dotnet-ef
+
+    - name: Add dotnet tools to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Apply EF Core Migrations to Azure PostgreSQL
+      if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/Staging'
+      env:
+        ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
+
+
 
   # --- Optional: Deploy to AWS Elastic Beanstalk ---
   # Uncomment and configure the following job if you want to deploy to AWS
