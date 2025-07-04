@@ -38,13 +38,13 @@ namespace SmartMenuOptim.API.Controllers
         public async Task<ActionResult<IEnumerable<UnderperformingDishDTO>>> GetUnderperformingDishes()
         {
             // Filter by Date Reduce Data Volume Early: If you only care about recent reviews (e.g., last 7 days), filter reviews by date before loading them into memory.
-            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+            var oneYearAgo = DateTime.UtcNow.AddDays(-360); //change to -7 for last 365 days, with the current logic we are looking for last 360 days
 
             // // Calculate total sales for each dish in the last 7 days
             // ShowCase1: This block uses the Query() method to get an IQueryable for further LINQ operations on the repository, allowing for efficient filtering and grouping in the database.
 
             var saleRecords = await _unityOfWork.SaleRecords.Query() 
-                .Where(sr => sr.SaleDate >= sevenDaysAgo) // for optimization, filter records from the last 7 days
+                .Where(sr => sr.SaleDate >= oneYearAgo) // for optimization, filter records from the last 7 days
                 .AsQueryable()
                 .AsNoTracking()
                 .GroupBy(sr => sr.DishName)
