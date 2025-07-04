@@ -86,7 +86,7 @@ public class Program
                 {
                     policy.WithOrigins(
                         "https://localhost:7060",
-                        "https://your-frontend.com"
+                        "https://smartmenu-server.azurewebsites.net/" // This is the Azure App Service URL for the frontend app. Include it if you want to allow requests from the deployed frontend.
                     )
                     .AllowAnyMethod()
                     .AllowAnyHeader();
