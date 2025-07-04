@@ -31,6 +31,10 @@ public class Program
         builder.Logging.AddConsole();
         var app = builder.Build();
 
+        var config = app.Services.GetRequiredService<IConfiguration>();
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("BackendAPI BaseUrl from config: {BaseUrl}", config["BackendApi:BaseUrl"]);
+
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
