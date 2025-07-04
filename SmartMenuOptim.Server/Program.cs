@@ -1,6 +1,7 @@
 using SmartMenuOptim.Server.Components;
 using SmartMenuOptim.Server.Services;
 using SmartMenuOptim.Server.Services.Interfaces;
+using Azure.Identity;
 
 namespace SmartMenuOptim.Server;
 public class Program
@@ -8,6 +9,16 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        // Add Key Vault configuration( before configuration is built) and then Get Key Vault name from environment/app settings (recommended)
+        // This is to ensure that the Key Vault secrets are available before any services are added
+        var keyVaultName = builder.Configuration["KeyVaultName"]; // Set this in Azure App Settings
+        if (!string.IsNullOrEmpty(keyVaultName))
+        {
+            var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+            builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+        }
+
 
         // Add services to the container.
         builder.Services.AddRazorComponents()
@@ -23,7 +34,7 @@ public class Program
         builder.Services.AddHttpClient("BackendAPI", (serviceProvider, client) =>
         {
             var config = serviceProvider.GetRequiredService<IConfiguration>();
-            var baseUrl = config["BackendApi:BaseUrl"];
+            var baseUrl = config["BackendApi:BaseUrl"]; // access the BaseUrl from configuration
             //client.BaseAddress = new Uri("https://localhost:7119/");
             client.BaseAddress = new Uri(baseUrl);
         });
