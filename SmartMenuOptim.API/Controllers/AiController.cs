@@ -104,7 +104,7 @@ namespace SmartMenuOptim.API.Controllers
                                               DishName = s.DishName,
                                               TotalSales = s.TotalSales,
                                               AverageSentiment = Math.Round(rev.AverageSentiment, 2)
-                                          }).ToList();
+                                          }).OrderBy(d => d.AverageSentiment).ToList();
 
             return Ok(underperformingDishes);
         }
