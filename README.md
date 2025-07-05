@@ -1,65 +1,57 @@
-## Environment-Based Configuration & Secrets Management
+# SmartMenuOptim CI/CD Pipeline - Workflow Description
 
-### Overview
+This GitHub Actions workflow automates the build, test, static analysis, deployment, and notification steps for the SmartMenuOptim application.
 
-SmartMenuOptim.Server uses a layered configuration strategy to securely manage settings across environments (development, production) and support best practices for secret management.
+## Trigger Events
 
-### Configuration Sources (In Precedence Order)
-
-1. **Azure App Service Application Settings**  
-   Key-value pairs set in the Azure Portal override any values in config files or Key Vault.
-2. **Azure Key Vault**  
-   All secrets and sensitive configuration (such as API keys and endpoints) are stored here.
-3. **appsettings.Production.json**  
-   Used for non-secret, production-specific settings that are safe to include in source control.
-4. **appsettings.Development.json**  
-   Used for local developer overrides; not included in production deployments.
-5. **appsettings.json**  
-   Default application configuration.
-
-### How It Works
-
-- **Local Development:**  
-  - Place non-secret configs in `appsettings.Development.json`.
-  - Secrets can be stored in [user secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) (for dev) or in environment variables.
-- **Production (Azure):**
-  - Most secrets (e.g., `BackendApi:BaseUrl`) are stored in Azure Key Vault.
-  - The app is configured to read the Key Vault name from the `KeyVaultName` app setting in Azure App Service.
-  - The system-assigned Managed Identity of the App Service is granted access to Key Vault.
-  - Non-secret settings can be set in `appsettings.Production.json` or via App Service Application Settings.
-
-### How to Add a New Secret or Override a Setting in Production
-
-1. **Add to Azure Key Vault:**
-   - Go to your Key Vault in Azure.
-   - Add a secret using double-dash notation for nested config (e.g., `BackendApi--BaseUrl` for `BackendApi:BaseUrl`).
-2. **Update App Service Application Settings:**
-   - In Azure Portal, go to your App Service > Configuration.
-   - Add or override a setting by key name (these take precedence over Key Vault).
-3. **(Optional) Add to appsettings.Production.json:**
-   - Only for non-secrets or settings safe to commit.
-
-### Best Practices
-
-- **Never commit secrets** to source control or to any `appsettings.*.json` file.
-- Prefer Azure Key Vault for all sensitive values.
-- Use App Service Application Settings for quick overrides and for the `KeyVaultName` parameter.
-- Use [user secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) locally for development secrets.
-
-### Example: Key Vault Secret Naming Convention
-
-| Key Vault Secret Name    | .NET Configuration Key            |
-|-------------------------|-----------------------------------|
-| `BackendApi--BaseUrl`   | `BackendApi:BaseUrl`              |
-| `ConnectionStrings--Sql`| `ConnectionStrings:Sql`           |
-
-### Useful References
-
-- [Azure Key Vault .NET Integration Docs](https://learn.microsoft.com/en-us/azure/key-vault/secrets/quick-create-net)
-- [ASP.NET Core Configuration Providers](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/)
-- [Best Practices for Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets)
+- Runs on pushes and pull requests to:
+  - `Staging`
+  - `master`
+  - Any branch matching `env-dev/*` or `env-staging/*`
 
 ---
 
-**Questions?**  
-See the comments in `Program.cs` for configuration logic, or open an issue for further clarification!
+## Jobs Overview
+
+### 1. Build & Test (`build-test`)
+- Sets up Ubuntu with PostgreSQL 17 as a service.
+- Restores .NET 9 dependencies, installs EF Core CLI, and applies local database migrations.
+- Builds the solution, runs tests, and uploads code coverage.
+- Publishes only the API and Server projects (not Shared or Tests).
+- Uploads build artifacts for deployment.
+
+### 2. Static Analysis (`codeql-analysis`)
+- Runs GitHub CodeQL for security and code quality analysis on C# code.
+
+### 3. Deploy API & Server to Azure (`deploy-azure-api`, `deploy-azure-server`)
+- Downloads published artifacts.
+- Deploys API and Server apps separately to Azure Web Apps using publish profiles.
+- Applies EF Core migrations directly to the production Azure PostgreSQL database after deployment (on select branches).
+
+### 4. Notifications (`notify-on-success`, `notify-on-failure`)
+- Sends email notifications to the team on CI/CD success or failure.
+
+---
+
+## Additional (Commented Out) Options
+
+- Templates for AWS Elastic Beanstalk and Docker Hub deployment are present but currently disabled.
+
+---
+
+## Why Docker Is Not Used in This Workflow
+
+Docker files and containers are not currently utilized in any jobs of this workflow. This is because the CI/CD pipeline is designed to build, test, and deploy .NET projects directly using the .NET SDK and native tooling provided by GitHub-hosted runners. The deployment process targets Azure Web Apps, which natively support .NET application deployments without requiring Docker containers. Should the deployment strategy change in the future (e.g., moving to containerized environments or orchestrators), Docker jobs and steps can be easily integrated, as commented examples are already provided in the workflow.
+
+---
+
+## Key Workflow Practices
+
+- Publishes only entry-point projects (API and Server), not libraries or tests.
+- Applies database migrations both locally (before tests) and in production (after deployment).
+- Performs security and code quality checks before deployment.
+- Sends notifications to keep the team informed of status.
+
+---
+
+
