@@ -13,6 +13,11 @@ using SmartMenuOptim.Shared.Data.Entities;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {
+    // This class is responsible for testing the AI recommendation endpoint in the SmartMenuOptim API. Integration tests are used to verify that the endpoint behaves as expected when given valid input data.
+    // Integration tests are crucial for ensuring that the API endpoints work correctly with the underlying data layer and business logic.
+    // Integration tests typically involve making HTTP requests to the API and verifying the responses, ensuring that the entire stack (from the controller to the database) works as intended.
+    // It differs from unit tests, which focus on testing individual components in isolation without external dependencies.
+    
     public class RecommendEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
@@ -20,7 +25,7 @@ namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
         {
             _client = factory.CreateClient();
         }
-
+        /// PostRecommend_WithValidRequest_Returns200Ok is a test method that verifies the behavior of the AI recommendation endpoint when provided with a valid request.
         [Fact]
         public async Task PostRecommend_WithValidRequest_Returns200Ok()
         {
