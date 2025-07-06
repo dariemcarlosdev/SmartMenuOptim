@@ -11,15 +11,17 @@ on:
   push:
     branches:
         - Staging
-        - dev
+        # - dev
         - master
-        - env-dev/*
+        - env-dev/*       
+        - env-staging/*
   pull_request:
     branches:
         - Staging
-        - dev
+        # - dev
         - master
-        - env-dev/* 
+        - env-dev/*
+        - env-staging/*
 
 jobs:
   build-test:

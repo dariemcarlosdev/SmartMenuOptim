@@ -32,17 +32,24 @@ public class Program
 
         if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
         {
+            Console.WriteLine("Loading configuration from User Secrets and Environment Variables (Development mode)");
+
+            // Running in local development environment (not in Docker) load secrets from user secrets.
             builder.Configuration
                 .AddUserSecrets<Program>(optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
         }
         else if (Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME") != null) // Running in Azure App Service
         {
+            Console.WriteLine("Loading configuration from Azure App Service environment variables");
+            // Running in Azure App Service, load configuration from environment variables
             builder.Configuration
                 .AddEnvironmentVariables(); // Use App Settings from Azure
         }
         else
         {
+            Console.WriteLine("Loading configuration from /app/secrets.json and Environment Variables (Docker/Other)");
+            
             // For Docker containers or other hosting scenarios
             builder.Configuration
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -67,7 +74,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection string is missing!")));
 
         // Registering the UnityOfWork service
         builder.Services.AddScoped<IUnityOfWork, UnityOfWork>();
@@ -86,7 +93,7 @@ public class Program
                 {
                     policy.WithOrigins(
                         "https://localhost:7060",
-                        "https://your-frontend.com"
+                        "https://smartmenu-server.azurewebsites.net/" // This is the Azure App Service URL for the frontend app. Include it if you want to allow requests from the deployed frontend.
                     )
                     .AllowAnyMethod()
                     .AllowAnyHeader();

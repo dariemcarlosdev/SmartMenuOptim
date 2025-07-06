@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace SmartMenuOptim.Tests.UnitTests.Controllers
 {
+    // This class contains unit tests for the AiController class in the SmartMenuOptim API.
     public class AiControllerTests
     {
         // Each test method should be independent and test a specific scenario.

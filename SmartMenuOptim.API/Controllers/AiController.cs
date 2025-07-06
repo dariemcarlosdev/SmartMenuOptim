@@ -38,13 +38,13 @@ namespace SmartMenuOptim.API.Controllers
         public async Task<ActionResult<IEnumerable<UnderperformingDishDTO>>> GetUnderperformingDishes()
         {
             // Filter by Date Reduce Data Volume Early: If you only care about recent reviews (e.g., last 7 days), filter reviews by date before loading them into memory.
-            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+            var oneYearAgo = DateTime.UtcNow.AddDays(-360); //change to -7 for last 365 days, with the current logic we are looking for last 360 days
 
             // // Calculate total sales for each dish in the last 7 days
             // ShowCase1: This block uses the Query() method to get an IQueryable for further LINQ operations on the repository, allowing for efficient filtering and grouping in the database.
 
             var saleRecords = await _unityOfWork.SaleRecords.Query() 
-                .Where(sr => sr.SaleDate >= sevenDaysAgo) // for optimization, filter records from the last 7 days
+                .Where(sr => sr.SaleDate >= oneYearAgo) // for optimization, filter records from the last 7 days
                 .AsQueryable()
                 .AsNoTracking()
                 .GroupBy(sr => sr.DishName)
@@ -61,22 +61,24 @@ namespace SmartMenuOptim.API.Controllers
                 .AsNoTracking()
                 .ToListAsync();
             
-            var dishNames = saleRecords.Select(sr => sr.DishName.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var dishNames = saleRecords.Select(sr => sr.DishName.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList(); // This selects distinct dish names from the sale records, trimming any whitespace and ensuring case insensitivity.
 
 
-                var sentimentResults = dishNames
+            var sentimentResults = dishNames
                 .AsParallel() // for the in-memory LINQ if the dataset is large processing to improve performance.
                 .Select(dishName =>
                 {
+                    // Dish name normalization: split by spaces and trim entries to handle cases like "Pizza Margherita" vs "Pizza  Margherita"
                     var dishWords = dishName
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    
+
+                    // Assuming that the dish name is a key word in the review comment, we can check if any of the words in the dish name are present in the review comments.
                     var matchingReviews = allReviews
                         .Where(r => r.Comment != null &&
                                     dishWords.Any(word =>
                                     r.Comment.Contains(dishName, StringComparison.OrdinalIgnoreCase)))
                         .ToList();
-
+                    // Return an anonymous object with the dish name and the average sentiment score for that dish
                     return new
                     {
                         DishName = dishName,
@@ -102,7 +104,7 @@ namespace SmartMenuOptim.API.Controllers
                                               DishName = s.DishName,
                                               TotalSales = s.TotalSales,
                                               AverageSentiment = Math.Round(rev.AverageSentiment, 2)
-                                          }).ToList();
+                                          }).OrderBy(d => d.AverageSentiment).ToList();
 
             return Ok(underperformingDishes);
         }
@@ -123,7 +125,7 @@ namespace SmartMenuOptim.API.Controllers
                 return BadRequest("Sale records cannot be empty.");
             }
 
-            // Simulate AI recommendation logic: recommend the top 2 dishes based on sales records
+            // Simulate AI recommendation logic: recommend the top 3 dishes based on sales records
             // LINQ 
             var recommendedDishes = request.SaleRecords
                 .GroupBy(sr => sr.DishName)
@@ -133,7 +135,7 @@ namespace SmartMenuOptim.API.Controllers
                     TotalSold = g.Sum(sr => sr.QuantitySold)
                 })
                 .OrderByDescending(g => g.TotalSold)
-                .Take(2)
+                .Take(3)
                 .Select(g => g.Dish)
                 .ToList();
 

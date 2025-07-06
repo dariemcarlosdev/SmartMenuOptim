@@ -84,11 +84,14 @@ namespace SmartMenuOptim.API.Controllers
             {
                 return BadRequest("Customer name and comment cannot be empty");
             }
-            else if (review.SentimentScore < 0 || review.SentimentScore > 1)
+
+            //This check is commented out because the sentiment score is now being calculated by the sentiment analysis service.
+            //else if (review.SentimentScore < 0 || review.SentimentScore > 1)
+            //{
+            //    return BadRequest("Sentiment score must be between 0 and 1");
+            //}
+            else
             {
-                return BadRequest("Sentiment score must be between 0 and 1");
-            }
-            else {
                 // Validate the review object
                 if (!ModelState.IsValid)
                 {
