@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SmartMenuOptim.API.Controllers;
+using SmartMenuOptim.API.Services.Interfaces;
+using SmartMenuOptim.Server.Services.Interfaces;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
 using System;
@@ -23,18 +25,20 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         // 5. Handling ties in sales records.
 
         private readonly IUnityOfWork _mockUnityOfWork;
+        private readonly IAiImprovementStrategyService _mock; // Mocking the service if needed for further tests
 
         //mock constructor to initialize the IUnityOfWork
         public AiControllerTests()
         {
             _mockUnityOfWork = new Mock<IUnityOfWork>().Object; // Using Moq to create a mock of IUnityOfWork
+            _mock = new Mock<IAiImprovementStrategyService>().Object; // Mocking the service if needed for further tests
         }
 
         [Fact]
         public void Recommend_ReturnBadRequest_WhenSaleRecordsIsNull()
         {
             // Arrange: Define the controller and request with null sale records
-            var controller = new AiController(_mockUnityOfWork);
+            var controller = new AiController(_mockUnityOfWork, _mock);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
@@ -54,7 +58,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         public void Recommend_ReturnBadRequest_WhenSaleRecordsIsEmpty()
         {
             // Arrange: Define the controller and request with empty sale records
-            var controller = new AiController(_mockUnityOfWork);
+            var controller = new AiController(_mockUnityOfWork, _mock);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
@@ -71,7 +75,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         public void Recommend_ReturnOk_WhithTopTwoDishes()
         {
             // Arrange: Arrange defines the context for the test.Define the controller and request with valid sale records. 
-            var controller = new AiController(_mockUnityOfWork);
+            var controller = new AiController(_mockUnityOfWork, _mock);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
@@ -91,9 +95,12 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
 
             // Verify the recommended dishes and strategy note
             Assert.NotNull(response);
-            Assert.Equal(2, response.RecomendedDishes.Count);
-            Assert.Contains("Pizza", response.RecomendedDishes);
-            Assert.Contains("Pasta", response.RecomendedDishes);
+            Assert.Equal(3, response.RecomendedDishes.Count);
+            Assert.Collection(response.RecomendedDishes,
+                dish => Assert.Equal("Pizza", dish),
+                dish => Assert.Equal("Pasta", dish),
+                dish => Assert.Equal("Burger", dish)
+            );
             Assert.Equal("Boost these items with promotions and track review sentiment to refine.", response.StrategyNote);
         }
 
@@ -101,7 +108,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         public void Recommend_ReturnOk_WhenTopDishesAreTied()
         {
             // Arrange: Define the controller and request with sale records where two dishes are tied
-            var controller = new AiController(_mockUnityOfWork);
+            var controller = new AiController(_mockUnityOfWork, _mock);
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>(),
@@ -122,9 +129,15 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
 
             // Verify the recommended dishes and strategy note
             Assert.NotNull(response);
-            Assert.Equal(2, response.RecomendedDishes.Count);
-            Assert.Contains("Pizza", response.RecomendedDishes);
-            Assert.Contains("Burger", response.RecomendedDishes); // Both Pizza and Burger should be included
+            Assert.Equal(3, response.RecomendedDishes.Count);
+            Assert.Collection(response.RecomendedDishes,
+                dish => Assert.Equal("Pizza", dish),
+                dish => Assert.Equal("Burger", dish),
+                dish => Assert.Equal("Pasta", dish)
+                );
+            // Strategy note should still be the same
+            Assert.Equal("Boost these items with promotions and track review sentiment to refine.", response.StrategyNote);
+
         }
     }
 }
