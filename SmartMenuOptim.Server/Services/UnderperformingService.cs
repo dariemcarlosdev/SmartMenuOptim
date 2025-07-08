@@ -17,7 +17,7 @@ namespace SmartMenuOptim.Server.Services
 
         public async Task<List<UnderperformingDishDTO>> GetUnderperformingDishesAsync()
         {
-            return await httpClient.GetFromJsonAsync<List<UnderperformingDishDTO>>("api/ai/underperforming-dishes")
+            return await httpClient.GetFromJsonAsync<List<UnderperformingDishDTO>>("api/ai/underperforming")
                    ?? [];
         }
 
