@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data.Dtos;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
@@ -11,10 +12,13 @@ namespace SmartMenuOptim.API.Controllers
     public class AiController : ControllerBase
     {
         private readonly IUnityOfWork _unityOfWork;
+        //Inject IAiImprovementService _aiImprovementService into the controller
+        private readonly IAiImprovementStrategyService _aiImprovementService;
 
-        public AiController(IUnityOfWork unityOfWork)
+        public AiController(IUnityOfWork unityOfWork, IAiImprovementStrategyService aiImprovementService)
         {
             _unityOfWork = unityOfWork ?? throw new ArgumentNullException(nameof(unityOfWork));
+            _aiImprovementService = aiImprovementService ?? throw new ArgumentNullException(nameof(aiImprovementService));
         }
 
 
@@ -34,7 +38,7 @@ namespace SmartMenuOptim.API.Controllers
         /// Endpoint to get underperforming dishes based on reviews and sales records.
         /// </summary>
         /// <returns></returns>
-        [HttpGet("underperforming-dishes")]
+        [HttpGet("underperforming")]
         public async Task<ActionResult<IEnumerable<UnderperformingDishDTO>>> GetUnderperformingDishes()
         {
             // Filter by Date Reduce Data Volume Early: If you only care about recent reviews (e.g., last 7 days), filter reviews by date before loading them into memory.
@@ -82,6 +86,7 @@ namespace SmartMenuOptim.API.Controllers
                     return new
                     {
                         DishName = dishName,
+                        Comment = matchingReviews.Select(r => r.Comment).ToList(),
                         AverageSentiment = matchingReviews.Any()
                             ? matchingReviews.Average(r => r.SentimentScore)
                             : (double?)null
@@ -91,7 +96,8 @@ namespace SmartMenuOptim.API.Controllers
                 .Select(x => new
                 {
                     x.DishName,
-                    AverageSentiment = x.AverageSentiment.Value
+                    AverageSentiment = x.AverageSentiment.Value,
+                    x.Comment
                 })
                 .ToList();
 
@@ -103,7 +109,9 @@ namespace SmartMenuOptim.API.Controllers
                                           {
                                               DishName = s.DishName,
                                               TotalSales = s.TotalSales,
-                                              AverageSentiment = Math.Round(rev.AverageSentiment, 2)
+                                              AverageSentiment = Math.Round(rev.AverageSentiment, 2),
+                                              Comments = rev.Comment
+
                                           }).OrderBy(d => d.AverageSentiment).ToList();
 
             return Ok(underperformingDishes);
@@ -147,5 +155,16 @@ namespace SmartMenuOptim.API.Controllers
             return Ok(response);
         }
 
+        [HttpPost("underperforming/strategies")]
+        public async Task<ActionResult<string>> GetImprovementStrategies([FromBody] List<UnderperformingDishDTO> underperformingDishes)
+        {
+            // Validate input
+            if (underperformingDishes == null || !underperformingDishes.Any())
+            {
+                return BadRequest("The list of underperforming dishes cannot be null or empty.");
+            }
+            var strategyNote = await _aiImprovementService.GetImprovementStrategyAsync(underperformingDishes);
+            return Ok(strategyNote);
+        }
     }
 }

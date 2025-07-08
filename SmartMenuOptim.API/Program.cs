@@ -82,6 +82,10 @@ public class Program
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         // Registering the SentimentService
         builder.Services.AddScoped<ISentimentService, SentimentService>();
+        // Registering the AiImprovementService
+        builder.Services.AddScoped<IAiImprovementStrategyService, AiImprovementService>();
+        // Registering the OpenIaGptService
+        builder.Services.AddScoped<IOpenIAGptService, OpenIaGptService>();
 
         // Add CORS policy to allow cross-origin requests from the frontend
         var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
