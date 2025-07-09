@@ -4,9 +4,25 @@ using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data.Dtos;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
+using System.Security.Principal;
 
 namespace SmartMenuOptim.API.Controllers
 {
+    /*
+     The AiController.cs file defines an ASP.NET Core API controller for AI-related operations in your application. It exposes endpoints for:
+     
+     1.	Getting underperforming dishes based on recent sales and review sentiment.
+     2.	Recommending top dishes based on sales and positive review sentiment.
+     3.	Generating improvement strategies for underperforming dishes using an AI strategy service.
+
+    Key features:
+    Uses dependency injection for data access (IUnityOfWork) and AI strategy logic (IAiImprovementStrategyService).
+    Optimizes data queries with AsNoTracking, AsQueryable, and LINQ grouping/filtering.
+    Filters and processes data in-memory for performance, including parallelization for large datasets.
+    Returns DTOs for API responses, focusing on recent and relevant data for recommendations and analysis.
+    This controller is central to the AI-driven analytics and recommendation features of your application. 
+     */
+     
     [ApiController]
     [Route("api/ai")]
     public class AiController : ControllerBase
@@ -133,9 +149,30 @@ namespace SmartMenuOptim.API.Controllers
                 return BadRequest("Sale records cannot be empty.");
             }
 
-            // Simulate AI recommendation logic: recommend the top 3 dishes based on sales records
-            // LINQ 
+            if (request.Reviews == null || !request.Reviews.Any() || request.Reviews.Any(r => r == null))
+            {
+                return BadRequest("Reviews cannot be empty.");
+            }
+
+            // Filter reviews to get only those with positive sentiment (> 0.6), non-empty comment, and non-empty customer name.
+            // Select the comment from each review, ensure uniqueness, and convert to a list.
+            // Purpose:This list of positive review comments is used to identify dishes that have received positive feedback, which is then used for generating dish recommendations.
+            
+             var positiveSentimentDishes = request.Reviews
+                .Where(r => r.SentimentScore > 0.6 && !string.IsNullOrWhiteSpace(r.Comment) && !string.IsNullOrWhiteSpace(r.CustomerName))
+                .Select(r => r.Comment)
+                .Distinct()
+                .ToList();
+
+            // This block generates dish recommendations based on sales records and positive review sentiment:
+            // 1. Filters sale records to include only those where the dish name matches any comment from positiveSentimentDishes (i.e., dishes with positive reviews).
+            // 2. Groups the filtered sale records by dish name.
+            // 3. For each group, calculates the total quantity sold.
+            // 4. Orders the groups by total sold in descending order.
+            // 5. Takes the top 3 dishes.
+            // 6. Selects only the dish names for the final recommendation list.
             var recommendedDishes = request.SaleRecords
+                .Where(sr => positiveSentimentDishes.Any(dish => sr.DishName.Contains(dish, StringComparison.OrdinalIgnoreCase)))
                 .GroupBy(sr => sr.DishName)
                 .Select(g => new
                 {
