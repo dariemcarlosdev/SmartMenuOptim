@@ -136,11 +136,13 @@ namespace SmartMenuOptim.API.Controllers
         /// <summary>
         /// Endpoint to get AI recommendations based on sales records and reviews.This endpoint simulates the logic AI recommendations based on reviews and sales records.
         /// This feature can be implemented with AI service like Azure OpenAI to generate recommendations based on sales records and reviews.
+        /// // OpenAI's GPT-3.5 Turbo is used to generate these recommendations based on the provided reviews and sale records.
+        // ML models can also be used to analyze patterns in customer reviews and sales data, providing a more data-driven approach to menu optimization.
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("recommend")]
-        public ActionResult<AiRecomendationRequest> Recommend([FromBody] AiRecomendationRequest request)
+        public ActionResult<AiRecomendationResponse> Recommend([FromBody] AiRecomendationRequest request)
         {
             Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(request));
             // Validating the request 
@@ -165,14 +167,18 @@ namespace SmartMenuOptim.API.Controllers
                 .ToList();
 
             // This block generates dish recommendations based on sales records and positive review sentiment:
-            // 1. Filters sale records to include only those where the dish name matches any comment from positiveSentimentDishes (i.e., dishes with positive reviews).
+            // 1. Filters sale records to include only those where the dish name appears in any positive review comment (case-insensitive).
+            //    For example, if a review comment says "spaguetti carbonara was espectacular" and the dish name is "Spaguetti Carbonara",
+            //    the dish will be recommended if the sentiment is positive.
             // 2. Groups the filtered sale records by dish name.
             // 3. For each group, calculates the total quantity sold.
             // 4. Orders the groups by total sold in descending order.
             // 5. Takes the top 3 dishes.
             // 6. Selects only the dish names for the final recommendation list.
             var recommendedDishes = request.SaleRecords
-                .Where(sr => positiveSentimentDishes.Any(dish => sr.DishName.Contains(dish, StringComparison.OrdinalIgnoreCase)))
+                .Where(sr => positiveSentimentDishes.Any(comment =>
+                    !string.IsNullOrWhiteSpace(comment) &&
+                    comment.Contains(sr.DishName, StringComparison.OrdinalIgnoreCase)))
                 .GroupBy(sr => sr.DishName)
                 .Select(g => new
                 {
