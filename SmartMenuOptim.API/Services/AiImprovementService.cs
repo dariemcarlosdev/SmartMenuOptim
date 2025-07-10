@@ -6,6 +6,7 @@ using System.Text;
 using OpenAI.Chat;
 using OpenAI;
 using Microsoft.Extensions.Logging;
+using SmartMenuOptim.Shared.Data.Interfaces;
 
 namespace SmartMenuOptim.API.Services
 {
@@ -13,11 +14,13 @@ namespace SmartMenuOptim.API.Services
     {
         private readonly IOpenIAGptService _gpt;
         private readonly ILogger<AiImprovementService> _logger;
+        private readonly IUnityOfWork _unityOfWork;
 
-        public AiImprovementService(IOpenIAGptService openIAGptService, ILogger<AiImprovementService> logger)
+        public AiImprovementService(IOpenIAGptService openIAGptService, ILogger<AiImprovementService> logger, IUnityOfWork unityOfWork)
         {
             this._gpt = openIAGptService ?? throw new ArgumentNullException(nameof(openIAGptService));
             this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this._unityOfWork = unityOfWork; // Assuming unityOfWork is injected or set later
         }
 
         /// <summary>
@@ -26,22 +29,29 @@ namespace SmartMenuOptim.API.Services
         /// <param name="underperformingDishes"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public async Task<string> GetImprovementStrategyAsync(List<UnderperformingDishDTO> underperformingDishes)
+        public async Task<string> GetImprovementStrategyAsync(UnderperformingDishDTO underperformingDishes)
         {
             try
             {
                 // Validate input
-                if (underperformingDishes == null || underperformingDishes.Count == 0)
+                if (underperformingDishes == null)
                 {
-                    throw new ArgumentException("The list of underperforming dishes cannot be null or empty.");
+                    throw new ArgumentNullException(nameof(underperformingDishes), "The underperforming dishes cannot be null.");
                 }
+
+                // Get reviews.Comments for underperforming dish where comment contain underperformaceDies.DishName
+                var reviews = await _unityOfWork.Reviews.GetAllAsync();                
+                underperformingDishes.Comments = reviews
+                    .Where(c => c.Comment.Contains(underperformingDishes.DishName, StringComparison.OrdinalIgnoreCase))
+                    .Select(c => c.Comment)
+                    .ToList();
+
 
                 var prompt = new StringBuilder();
                 prompt.AppendLine("The following dishes are underperforming based on sales and customer sentiment. Suggest improvement strategies for each dish:");
-                foreach (var dish in underperformingDishes)
-                {
-                    prompt.AppendLine($"- {dish.DishName}: {dish.TotalSales} sales, {dish.AverageSentiment:F2} sentiment, {dish.Comments.ToList()} negative comments");
-                }
+
+               prompt.AppendLine($"- {underperformingDishes.DishName}: {underperformingDishes.TotalSales} sales, {underperformingDishes.AverageSentiment:F2} sentiment, {underperformingDishes.Comments} negative comments");
+
 
                 var systemChatMessage = "You are a culinary expert and menu optimization specialist. Your task is to analyze underperforming dishes based on sales, customer sentiment and negative comments, and provide actionable suggestions for improvement. Consider factors such as ingredients, presentation, pricing, and customer preferences.";
 

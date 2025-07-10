@@ -198,16 +198,16 @@ namespace SmartMenuOptim.API.Controllers
             return Ok(response);
         }
 
-        [HttpPost("underperforming/strategies")]
-        public async Task<ActionResult<string>> GetImprovementStrategies([FromBody] List<UnderperformingDishDTO> underperformingDishes)
+        [HttpPost("underperforming/improve-dish-strategy")]
+        public async Task<ActionResult<string>> GetImprovementStrategies([FromBody] UnderperformingDishDTO underperformingDishes)
         {
             // Validate input
-            if (underperformingDishes == null || !underperformingDishes.Any())
+            if (underperformingDishes == null)
             {
                 return BadRequest("The list of underperforming dishes cannot be null or empty.");
             }
-            var strategyNote = await _aiImprovementService.GetImprovementStrategyAsync(underperformingDishes);
-            return Ok(strategyNote);
+            var GptStrategy = await _aiImprovementService.GetImprovementStrategyAsync(underperformingDishes);
+            return Ok(GptStrategy);
         }
     }
 }
