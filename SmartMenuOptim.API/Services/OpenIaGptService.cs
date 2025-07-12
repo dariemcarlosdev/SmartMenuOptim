@@ -27,6 +27,9 @@ namespace SmartMenuOptim.API.Services
 
         public OpenIaGptService(IConfiguration config, ILogger<OpenIaGptService> logger)
         {
+            // config in Deployment should contain Azure:OpenAI:Endpoint, Azure:OpenAI:Key, and Azure:OpenAI:Deployment
+            //Theses keys in Azure App Service can be set in the Application Settings section or using Azure Key Vault(IConfiguration config  will get the value from Key Vault via App Settings.)
+
             var endpoint = config["Azure:OpenAI:Endpoint"];
             var key = config["Azure:OpenAI:Key"];
             _deploymentName = config["Azure:OpenAI:Deployment"]; // Default deployment name, can be overridden by configuration
