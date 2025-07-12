@@ -33,12 +33,11 @@
 }
 
 .custom-modal-size {
-    width: 600px; /* Fixed width */
-    max-width: 90vw; /* Responsive fallback */
-    height: 500px; /* Fixed height */
-    max-height: 90vh; /* Responsive fallback */
-    display: flex;
-    flex-direction: column;
+    width: 700px; /* or your preferred width */
+    max-width: 95vw;
+    height: 600px; /* or your preferred height */
+    max-height: 90vh;
+    
 }
 
 .custom-modal-body {
@@ -47,5 +46,22 @@
     height: 350px; /* Or use calc(100% - header/footer) */
     max-height: 350px; /* This makes the body scrollable */
     /* Optional padding, background, etc. */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+   
+
+/*Make Modal Responsive on Small Screens:To ensure the modal adapts for mobile, use media queries:
+This makes the modal nearly full screen on small devices.
+Adjust 120px if your header/footer are larger or smaller.
+*/
+@media (max-width: 700px) {
+    .custom-modal-size {
+        width: 98vw;
+        height: 90vh;
+        max-width: 98vw;
+        max-height: 90vh;
+    }
+
+    .custom-modal-body {
+        max-height: calc(90vh - 120px); /* Adjust based on header/footer size */
+        height: auto;
+    }
 }
