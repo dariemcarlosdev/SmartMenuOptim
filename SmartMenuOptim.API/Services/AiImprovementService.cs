@@ -16,7 +16,10 @@ namespace SmartMenuOptim.API.Services
         private readonly ILogger<AiImprovementService> _logger;
         private readonly IUnityOfWork _unityOfWork;
 
-        public AiImprovementService(IOpenIAGptService openIAGptService, ILogger<AiImprovementService> logger, IUnityOfWork unityOfWork)
+        public AiImprovementService(IOpenIAGptService openIAGptService,
+            ILogger<AiImprovementService> logger,
+            IUnityOfWork unityOfWork
+            )
         {
             this._gpt = openIAGptService ?? throw new ArgumentNullException(nameof(openIAGptService));
             this._logger = logger ?? throw new ArgumentNullException(nameof(logger));

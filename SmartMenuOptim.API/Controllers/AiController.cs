@@ -198,15 +198,28 @@ namespace SmartMenuOptim.API.Controllers
             return Ok(response);
         }
 
-        [HttpPost("underperforming/improve-dish-strategy")]
-        public async Task<ActionResult<string>> GetImprovementStrategies([FromBody] UnderperformingDishDTO underperformingDishes)
+        /// <summary>
+        /// Endpoint to get AI improvement strategy for underperforming dishes.
+        /// </summary>
+        /// <param name="underperformingDish"></param>
+        /// <returns></returns>
+        [HttpPost("underperforming/improve-strategy")]
+        public async Task<ActionResult<string>> GetImprovementStrategy([FromQuery] string name, [FromQuery] int sales, [FromQuery] double sentiment)
         {
-            // Validate input
-            if (underperformingDishes == null)
+            // Create an instance of UnderperformingDishDTO from the query parameters
+            var underperformingDish = new UnderperformingDishDTO
             {
-                return BadRequest("The list of underperforming dishes cannot be null or empty.");
+                DishName = name,
+                TotalSales = sales,
+                AverageSentiment = sentiment
+            };
+
+            // Validate input
+            if (underperformingDish == null)
+            {
+                return BadRequest("Underperforming dish cannot be null.");
             }
-            var GptStrategy = await _aiImprovementService.GetImprovementStrategyAsync(underperformingDishes);
+            var GptStrategy = await _aiImprovementService.GetImprovementStrategyAsync(underperformingDish);
             return Ok(GptStrategy);
         }
     }
