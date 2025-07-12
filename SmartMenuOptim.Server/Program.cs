@@ -1,7 +1,8 @@
+using Azure.Identity;
+using MudBlazor.Services;
 using SmartMenuOptim.Server.Components;
 using SmartMenuOptim.Server.Services;
 using SmartMenuOptim.Server.Services.Interfaces;
-using Azure.Identity;
 
 namespace SmartMenuOptim.Server;
 public class Program
@@ -18,8 +19,8 @@ public class Program
             var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
             builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
         }
-
-
+        // 
+        builder.Services.AddMudServices(); // <-- This line is required for MudBlazor dialogs, snackbars, etc.
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
@@ -27,7 +28,6 @@ public class Program
         builder.Services.AddScoped<IAIService, AIService>();
         builder.Services.AddScoped<ISaleRecordService, SaleRecordService>();
         builder.Services.AddScoped<IReviewService, ReviewService>();
-        builder.Services.AddScoped<IUnderperformingService, UnderperformingService>();
         builder.Services.AddLogging();
 
         // Add httpClient for external API calls

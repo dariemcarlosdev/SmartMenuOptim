@@ -1,7 +1,9 @@
 ﻿@page "/underperforming"
 @using SmartMenuOptim.Server.Services.Interfaces
 @using SmartMenuOptim.Shared.Data.Dtos
-@inject IUnderperformingService UnderperformingService
+@using MudBlazor
+@inject IAIService aIService
+@inject IDialogService DialogService
 
 <div class="container mt-4">
     <div class="text-center mb-4">
@@ -33,37 +35,107 @@
             <table class="table table-bordered table-striped">
                 <thead class="table-dark">
                     <tr>
-                        <th>Dish Name</th>
-                        <th class="text-end">Total Sales</th>
+                        <th class="text-center">Dish Name</th>
+                        <th class="text-center">Total Sales</th>
                         <th class="text-center">Avg Sentiment</th>
+                        <th class="text-center"></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var dish in underperformingDishes)
                     {
                         <tr>
-                            <td>@dish.DishName</td>
-                            <td class="text-end">@dish.TotalSales</td>
+                            <td class ="text-center">@dish.DishName</td>
+                            <td class ="text-center">@dish.TotalSales</td>
                             <td class="text-center">
                                 @dish.AverageSentiment.ToString("P0")
                                 @(dish.AverageSentiment < 0.4 ? "😠" :
                                     dish.AverageSentiment < 0.6 ? "😐" : "🙂")
                             </td>
+                    <td class="text-center">
+                        <button class="btn btn-outline-primary btn-sm"
+                                @onclick="() => ShowImproveModal(dish)">
+                            💡 Improve
+                        </button>
+                    </td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
-    }
+    }    
+    <AiSuggestionModal Show="@showModal"  
+                       Title="@($"AI Suggestion for {selectedDish?.DishName}")"  
+                       OnClose="CloseModal"
+                       TypingText="@aiSuggestion"
+                       Typing="@(loadingSuggestion == false && !string.IsNullOrEmpty(aiSuggestion))"
+                       TypingDelay="25">
+        @if (loadingSuggestion)  
+        {  
+            <div class="d-flex justify-content-center align-items-center" style="height: 100px;">  
+                <div class="spinner-border" role="status" aria-hidden="true"></div>  
+                <span class="ms-3">Generating improvement suggestion...</span>  
+            </div>  
+        }  
+        else if (string.IsNullOrEmpty(aiSuggestion) && showModal)
+        {  
+            <div class="alert alert-warning">
+                Could not retrieve a suggestion. Please try again later.
+            </div>
+        }
+    </AiSuggestionModal>
 </div>
-
 @code {
     private List<UnderperformingDishDTO>? underperformingDishes;
     private bool isloading = true;
 
+    //Modal State. It is used to show the AI suggestion modal.
+    private bool showModal = false;
+    private UnderperformingDishDTO? selectedDish;
+    private string? aiSuggestion;
+    private bool loadingSuggestion = false;
+
     protected override async Task OnInitializedAsync()
     {
-        underperformingDishes = await UnderperformingService.GetUnderperformingDishesAsync();
+        underperformingDishes = await aIService.GetUnderperformingDishesAsync();
         isloading = false;
+    }
+    private async void ShowImproveModal(UnderperformingDishDTO dish)
+    {
+        // Reset modal state
+        selectedDish = dish;
+        showModal = true;
+        loadingSuggestion = true;
+        aiSuggestion = null;
+        StateHasChanged(); // Force UI update to show loading state
+
+        // Call the AI service to get improvement suggestions
+        try
+        {
+            var response = await aIService.GetImprovementStrategyAsync(dish);
+            if (!string.IsNullOrEmpty(response))
+            {
+                aiSuggestion = response;
+            }
+            else
+            {
+                aiSuggestion = "Failed to fetch suggestion. Please try again later.";
+            }
+
+
+        }
+        catch (Exception ex)
+        {
+            aiSuggestion = $"Error fetching suggestion: {ex.Message}";
+        }
+        loadingSuggestion = false;
+        StateHasChanged(); // Update UI with the fetched suggestion
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedDish = null;
+        aiSuggestion = null;
     }
 }
