@@ -51,9 +51,13 @@ namespace SmartMenuOptim.API.Services
 
 
                 var prompt = new StringBuilder();
-                prompt.AppendLine("The following dishes are underperforming based on sales and customer sentiment. Suggest improvement strategies for each dish:");
+                //prompt.AppendLine("The following dishes are underperforming based on sales and customer sentiment. Suggest improvement strategies for each dish:");
 
-               prompt.AppendLine($"- {underperformingDishes.DishName}: {underperformingDishes.TotalSales} sales, {underperformingDishes.AverageSentiment:F2} sentiment, {underperformingDishes.Comments} negative comments");
+               prompt.AppendLine($"Suggest 3–5 actionable improvements for the dish- '{underperformingDishes.DishName}'," +
+                   $" which has low sales ({underperformingDishes.TotalSales})," +
+                   $" and low sentiment ({underperformingDishes.AverageSentiment:F2})," +
+                   $" and negative comment '{underperformingDishes.Comments}'." +
+                   $" Focus on promotions, recipe updates, or presentation ideas.");
 
 
                 var systemChatMessage = "You are a culinary expert and menu optimization specialist. Your task is to analyze underperforming dishes based on sales, customer sentiment and negative comments, and provide actionable suggestions for improvement. Consider factors such as ingredients, presentation, pricing, and customer preferences.";
