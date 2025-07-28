@@ -34,10 +34,10 @@ namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
             {
                 SaleRecords = new List<SaleRecord>
                 {
-                    new SaleRecord { DishName = "Pizza", QuantitySold = 10, SaleDate = DateTime.UtcNow },
-                    new SaleRecord { DishName = "Pasta", QuantitySold = 5, SaleDate = DateTime.UtcNow },
-                    new SaleRecord { DishName = "Salad", QuantitySold = 2, SaleDate = DateTime.UtcNow },
-                    new SaleRecord { DishName = "Pizza", QuantitySold = 15, SaleDate = DateTime.UtcNow }
+                    new SaleRecord { DishId = 1, QuantitySold = 10, SaleDate = DateTime.UtcNow },
+                    new SaleRecord { DishId = 2, QuantitySold = 5, SaleDate = DateTime.UtcNow },
+                    new SaleRecord { DishId = 3, QuantitySold = 2, SaleDate = DateTime.UtcNow },
+                    new SaleRecord { DishId = 1, QuantitySold = 15, SaleDate = DateTime.UtcNow }
                 },
                 Reviews = new List<Review>
                 {

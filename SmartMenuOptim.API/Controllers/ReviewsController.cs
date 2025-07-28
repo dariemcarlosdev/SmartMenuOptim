@@ -80,6 +80,16 @@ namespace SmartMenuOptim.API.Controllers
             {
                 return BadRequest("Review cannot be null");
             }
+            // Set DateCreated to now if not set
+            if (review.DateCreated == default)
+            {
+                review.DateCreated = DateTime.UtcNow;
+            }
+            // Set Rating to default (e.g., 0) if not set or out of range
+            if (review.Rating < 1 || review.Rating > 5)
+            {
+                review.Rating = 0;
+            }
             else if (string.IsNullOrWhiteSpace(review.CustomerName) || string.IsNullOrWhiteSpace(review.Comment))
             {
                 return BadRequest("Customer name and comment cannot be empty");

@@ -43,7 +43,7 @@
                     @foreach (var record in saleRecords)
                     {
                         <tr>
-                            <td>@record.DishName</td>
+                            <td>@record.Dish.Name</td> <!-- Replace with dish name lookup if needed -->
                             <td class="text-end">@record.QuantitySold</td>
                             <td class="text-center">@record.SaleDate.ToString("MMM dd, yyyy")</td>
                         </tr>

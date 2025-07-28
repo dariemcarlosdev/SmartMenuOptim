@@ -11,7 +11,10 @@ namespace SmartMenuOptim.Shared.Data.Interfaces
     {
         IRepository<SaleRecord> SaleRecords { get; }
         IRepository<Review> Reviews { get; }
-
+        IRepository<Dish> Dishes { get; } // Add Dishes repository for lookup
+        IRepository<Category> Categories { get; } // Add Categories repository for lookup
+        IRepository<Customer> Customers { get; } // Add Customers repository for authentication/profile
+        IRepository<AdminUser> AdminUsers { get; } // Add AdminUsers repository for admin logic
         Task<int> SaveChangesAsync();
     }
 }

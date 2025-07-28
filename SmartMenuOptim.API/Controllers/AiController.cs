@@ -57,51 +57,43 @@ namespace SmartMenuOptim.API.Controllers
         [HttpGet("underperforming")]
         public async Task<ActionResult<IEnumerable<UnderperformingDishDTO>>> GetUnderperformingDishes()
         {
-            // Filter by Date Reduce Data Volume Early: If you only care about recent reviews (e.g., last 7 days), filter reviews by date before loading them into memory.
-            var oneYearAgo = DateTime.UtcNow.AddDays(-360); //change to -7 for last 365 days, with the current logic we are looking for last 360 days
+            // Get thresholds from the first admin user (or use defaults)
+            var admin = await _unityOfWork.AdminUsers.Query().OrderBy(a => a.Id).FirstOrDefaultAsync();
+            double salesThreshold = admin?.SalesThreshold ?? 35;
+            double sentimentThreshold = admin?.SentimentThreshold ?? 0.6;
 
-            // // Calculate total sales for each dish in the last 7 days
-            // ShowCase1: This block uses the Query() method to get an IQueryable for further LINQ operations on the repository, allowing for efficient filtering and grouping in the database.
+            var oneYearAgo = DateTime.UtcNow.AddDays(-360);
 
-            var saleRecords = await _unityOfWork.SaleRecords.Query() 
-                .Where(sr => sr.SaleDate >= oneYearAgo) // for optimization, filter records from the last 7 days
+            // Group sales by DishId and DishName
+            var saleRecords = await _unityOfWork.SaleRecords.Query()
+                .Where(sr => sr.SaleDate >= oneYearAgo)
                 .AsQueryable()
                 .AsNoTracking()
-                .GroupBy(sr => sr.DishName)
+                .GroupBy(sr => new { sr.DishId, sr.Dish.Name })
                 .Select(g => new
                 {
-                    DishName = g.Key,
+                    DishId = g.Key.DishId,
+                    DishName = g.Key.Name,
                     TotalSales = g.Sum(sr => sr.QuantitySold)
                 }).ToListAsync();
 
-            // Fetch all reviews with non-null comments (project only needed fields
+            // Get all reviews with DishId
             var allReviews = await _unityOfWork.Reviews.Query()
                 .Where(r => r.Comment != null)
-                .Select(r => new { r.Comment, r.SentimentScore }) //for optimization, only select necessary fields
+                .Select(r => new { r.DishId, r.Comment, r.SentimentScore })
                 .AsNoTracking()
                 .ToListAsync();
-            
-            var dishNames = saleRecords.Select(sr => sr.DishName.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList(); // This selects distinct dish names from the sale records, trimming any whitespace and ensuring case insensitivity.
 
-
-            var sentimentResults = dishNames
-                .AsParallel() // for the in-memory LINQ if the dataset is large processing to improve performance.
-                .Select(dishName =>
+            // Group reviews by DishId for only dishes in saleRecords
+            var sentimentResults = saleRecords
+                .Select(sale =>
                 {
-                    // Dish name normalization: split by spaces and trim entries to handle cases like "Pizza Margherita" vs "Pizza  Margherita"
-                    var dishWords = dishName
-                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                    // Assuming that the dish name is a key word in the review comment, we can check if any of the words in the dish name are present in the review comments.
                     var matchingReviews = allReviews
-                        .Where(r => r.Comment != null &&
-                                    dishWords.Any(word =>
-                                    r.Comment.Contains(dishName, StringComparison.OrdinalIgnoreCase)))
+                        .Where(r => r.DishId == sale.DishId)
                         .ToList();
-                    // Return an anonymous object with the dish name and the average sentiment score for that dish
                     return new
                     {
-                        DishName = dishName,
+                        DishId = sale.DishId,
                         Comment = matchingReviews.Select(r => r.Comment).ToList(),
                         AverageSentiment = matchingReviews.Any()
                             ? matchingReviews.Average(r => r.SentimentScore)
@@ -111,24 +103,25 @@ namespace SmartMenuOptim.API.Controllers
                 .Where(x => x.AverageSentiment.HasValue)
                 .Select(x => new
                 {
-                    x.DishName,
+                    x.DishId,
                     AverageSentiment = x.AverageSentiment.Value,
                     x.Comment
                 })
                 .ToList();
 
-            // Merge the two lists to find underperforming dishes in the last 7 days
-            var underperformingDishes = ( from s in saleRecords
-                                          join rev in sentimentResults on s.DishName equals rev.DishName
-                                          where s.TotalSales <=35 && rev.AverageSentiment < 0.6
-                                          select new UnderperformingDishDTO
-                                          {
-                                              DishName = s.DishName,
-                                              TotalSales = s.TotalSales,
-                                              AverageSentiment = Math.Round(rev.AverageSentiment, 2),
-                                              Comments = rev.Comment
-
-                                          }).OrderBy(d => d.AverageSentiment).ToList();
+            // Compose underperforming dishes
+            var underperformingDishes = (from s in saleRecords
+                                         join rev in sentimentResults
+                                           on s.DishId equals rev.DishId
+                                         where s.TotalSales <= salesThreshold && rev.AverageSentiment < sentimentThreshold
+                                         select new UnderperformingDishDTO
+                                         {
+                                             DishId = s.DishId,
+                                             DishName = s.DishName,
+                                             TotalSales = s.TotalSales,
+                                             AverageSentiment = Math.Round(rev.AverageSentiment, 2),
+                                             Comments = rev.Comment
+                                         }).OrderBy(d => d.AverageSentiment).ToList();
 
             return Ok(underperformingDishes);
         }
@@ -137,7 +130,7 @@ namespace SmartMenuOptim.API.Controllers
         /// Endpoint to get AI recommendations based on sales records and reviews.This endpoint simulates the logic AI recommendations based on reviews and sales records.
         /// This feature can be implemented with AI service like Azure OpenAI to generate recommendations based on sales records and reviews.
         /// // OpenAI's GPT-3.5 Turbo is used to generate these recommendations based on the provided reviews and sale records.
-        // ML models can also be used to analyze patterns in customer reviews and sales data, providing a more data-driven approach to menu optimization.
+        /// ML models can also be used to analyze patterns in customer reviews and sales data, providing a more data-driven approach to menu optimization.
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -175,11 +168,17 @@ namespace SmartMenuOptim.API.Controllers
             // 4. Orders the groups by total sold in descending order.
             // 5. Takes the top 3 dishes.
             // 6. Selects only the dish names for the final recommendation list.
+            var dishNames = request.SaleRecords
+                .Where(sr => sr.Dish != null)
+                .Select(sr => sr.Dish.Name)
+                .Distinct()
+                .ToList();
+
             var recommendedDishes = request.SaleRecords
-                .Where(sr => positiveSentimentDishes.Any(comment =>
+                .Where(sr => sr.Dish != null && positiveSentimentDishes.Any(comment =>
                     !string.IsNullOrWhiteSpace(comment) &&
-                    comment.Contains(sr.DishName, StringComparison.OrdinalIgnoreCase)))
-                .GroupBy(sr => sr.DishName)
+                    comment.Contains(sr.Dish.Name, StringComparison.OrdinalIgnoreCase)))
+                .GroupBy(sr => sr.Dish.Name)
                 .Select(g => new
                 {
                     Dish = g.Key,

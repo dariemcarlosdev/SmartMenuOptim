@@ -117,7 +117,7 @@ namespace SmartMenuOptim.API.Controllers
                 // Update the properties of the sale record
                 existingSaleRecord.SaleDate = SaleRecord.SaleDate;
                 existingSaleRecord.QuantitySold = SaleRecord.QuantitySold;
-                existingSaleRecord.DishName = SaleRecord.DishName;
+                existingSaleRecord.Dish.Name = SaleRecord.Dish.Name;
 
                 _unityOfWork.SaleRecords.Update(existingSaleRecord);
                 await _unityOfWork.SaveChangesAsync();

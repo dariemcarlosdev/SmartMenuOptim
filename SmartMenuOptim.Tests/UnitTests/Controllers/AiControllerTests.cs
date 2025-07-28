@@ -82,15 +82,15 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>
-                {   new Review { CustomerName = "Jonh", SentimentScore=0.6, Comment = "Pizza was delicious" },
-                    new Review { CustomerName = "Kim", SentimentScore=0.8, Comment = "Burger was great" },
-                    new Review { CustomerName = "Dariem", SentimentScore=0.5, Comment = "Pasta was okay" }
+                {   new Review { CustomerName = "Jonh", SentimentScore=0.6, Comment = "Pizza was delicious", DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 5 },
+                    new Review { CustomerName = "Kim", SentimentScore=0.8, Comment = "Burger was great", DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 4 },
+                    new Review { CustomerName = "Dariem", SentimentScore=0.5, Comment = "Pasta was okay", DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 3 }
                 },
                 SaleRecords = new List<SaleRecord>
                 {
-                    new SaleRecord { DishName = "Pizza", QuantitySold = 10 },
-                    new SaleRecord { DishName = "Burger", QuantitySold = 5 },
-                    new SaleRecord { DishName = "Pasta", QuantitySold = 8 }
+                    new SaleRecord { DishId = 1, QuantitySold = 10 },
+                    new SaleRecord { DishId = 2, QuantitySold = 5 },
+                    new SaleRecord { DishId = 3, QuantitySold = 8 }
                 }
             };
             // Act: Act define the action to be tested.Desire to call the Recommend method.
@@ -102,7 +102,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
 
             // Verify the recommended dishes and strategy note
             Assert.NotNull(response);
-            Assert.Equal(1, response.RecomendedDishes.Count);
+            Assert.Single(response.RecomendedDishes); // Only one dish should be recommended based on the highest sales
             Assert.Equal("Boost these items with promotions and track review sentiment to refine.", response.StrategyNote);
         }
 
@@ -117,16 +117,16 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             var request = new AiRecomendationRequest
             {
                 Reviews = new List<Review>
-                {   new Review { CustomerName = "Jonh", SentimentScore=0.6, Comment = "Pizza was delicious" },
-                    new Review { CustomerName = "Kim", SentimentScore=0.8, Comment = "Burger was great" },
-                    new Review { CustomerName = "Dariem", SentimentScore=0.5, Comment = "Pasta was okay" }
+                {   new Review { CustomerName = "Jonh", SentimentScore=0.6, Comment = "Pizza was delicious", DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 5 },
+                    new Review { CustomerName = "Kim", SentimentScore=0.8, Comment = "Burger was great", DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 4 },
+                    new Review { CustomerName = "Dariem", SentimentScore=0.5, Comment = "Pasta was okay", DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 3 }
                 }
                 ,
                 SaleRecords = new List<SaleRecord>
                 {
-                    new SaleRecord { DishName = "Pizza", QuantitySold = 10 },
-                    new SaleRecord { DishName = "Burger", QuantitySold = 10 }, // Tied with Pizza
-                    new SaleRecord { DishName = "Pasta", QuantitySold = 8 }
+                    new SaleRecord { DishId = 1, QuantitySold = 10 },
+                    new SaleRecord { DishId = 2, QuantitySold = 10 }, // Tied with Pizza
+                    new SaleRecord { DishId = 3, QuantitySold = 8 }
                 }
             };
             // Act: Act defines the action to be tested. Desire to call the Recommend method.
