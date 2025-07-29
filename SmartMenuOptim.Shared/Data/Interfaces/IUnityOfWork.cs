@@ -9,12 +9,12 @@ namespace SmartMenuOptim.Shared.Data.Interfaces
 {
     public interface IUnityOfWork
     {
-        IRepository<SaleRecord> SaleRecords { get; }
-        IRepository<Review> Reviews { get; }
-        IRepository<Dish> Dishes { get; } // Add Dishes repository for lookup
-        IRepository<Category> Categories { get; } // Add Categories repository for lookup
-        IRepository<Customer> Customers { get; } // Add Customers repository for authentication/profile
-        IRepository<AdminUser> AdminUsers { get; } // Add AdminUsers repository for admin logic
+        IRepositoryWithIncludes<SaleRecord> SaleRecords { get; }
+        IRepositoryWithIncludes<Review> Reviews { get; }
+        IRepositoryWithIncludes<Dish> Dishes { get; } // Add Dishes repository for lookup
+        IRepositoryWithIncludes<Category> Categories { get; } // Add Categories repository for lookup
+        IRepositoryWithIncludes<Customer> Customers { get; } // Add Customers repository for authentication/profile
+        IRepositoryWithIncludes<AdminUser> AdminUsers { get; } // Add AdminUsers repository for admin logic
         Task<int> SaveChangesAsync();
     }
 }
