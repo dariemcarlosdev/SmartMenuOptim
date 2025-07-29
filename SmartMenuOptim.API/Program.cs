@@ -1,16 +1,15 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Builder; // Add this using directive  
+﻿using Microsoft.AspNetCore.Builder; // Add this using directive  
 using Microsoft.AspNetCore.Hosting; // Add this using directive  
-using Microsoft.Extensions.Hosting;
-using SmartMenuOptim.Shared.Data.Repositories;
-using SmartMenuOptim.Shared.Data.Interfaces;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using SmartMenuOptim.API.Data; // Add this using directive  
 using SmartMenuOptim.API.Services;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data.Context;
-using SmartMenuOptim.API.Data; // Add this using directive  
+using SmartMenuOptim.Shared.Data.Interfaces;
+using SmartMenuOptim.Shared.Data.Repositories;
+using System.Threading.RateLimiting;
 
 namespace SmartMenuOptim.API;
 
@@ -78,8 +77,12 @@ public class Program
 
         // Registering the UnityOfWork service
         builder.Services.AddScoped<IUnityOfWork, UnityOfWork>();
-        // Registering the Repository service
+        // Registering both IRepository and IRepositoryWithIncludes using the same Repository implementation
+        // •    This allows you to inject either IRepository<T> or IRepositoryWithIncludes<T> anywhere in your application.
+        // •    IRepositoryWithIncludes<T> extends IRepository<T>, but some consumers may only require the basic interface, while others need the advanced includes functionality.
+        // •	Registering both ensures maximum flexibility and compatibility for all parts of your codebase, including legacy or third-party code that expects the base interface.
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        builder.Services.AddScoped(typeof(IRepositoryWithIncludes<>), typeof(Repository<>));
         // Registering the SentimentService
         builder.Services.AddScoped<ISentimentService, SentimentService>();
         // Registering the AiImprovementService
