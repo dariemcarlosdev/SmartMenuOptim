@@ -21,7 +21,7 @@
         /// <summary>
         /// Navigation property to the Dish this sales record is for.
         /// </summary>
-        public Dish Dish { get; set; } = new();
+        public Dish? Dish { get; set; }
 
         /// <summary>
         /// Quantity of the dish sold in this record.

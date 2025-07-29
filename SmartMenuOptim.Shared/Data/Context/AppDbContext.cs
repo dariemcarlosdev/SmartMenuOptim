@@ -12,28 +12,28 @@ namespace SmartMenuOptim.Shared.Data.Context
         {
             // Configure entity relationships and properties here if needed
 
-            // Category-Dish relationship: required
+            // Category-Dish relationship: required (One-to-Many, Required)
             modelBuilder.Entity<Category>()
                 .HasMany(c => c.Dishes)
                 .WithOne(d => d.Category)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Dish-Category relationship: required
+            // Dish-Review relationship: required (One-to-Many, Required)
             modelBuilder.Entity<Dish>()
                 .HasMany(d => d.Reviews)
                 .WithOne(r => r.Dish)
                 .HasForeignKey(r => r.DishId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Dish-SaleRecord relationship: required
+            // Dish-SaleRecord relationship: required (One-to-Many, Required)
             modelBuilder.Entity<Dish>()
                 .HasMany(d => d.SaleRecords)
                 .WithOne(s => s.Dish)
                 .HasForeignKey(s => s.DishId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Customer-Review relationship: optional
+            // Customer-Review relationship: (One-to-Many, Optional)
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.Customer)
                 .WithMany(c => c.Reviews)
