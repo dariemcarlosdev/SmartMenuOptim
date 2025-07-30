@@ -36,7 +36,22 @@ namespace SmartMenuOptim.API.Controllers
         {
             try
             {
-                var reviews = await _unityOfWork.Reviews.GetAllAsync();
+
+
+                // Example: Including a related entity called "Customer"
+                //var reviewsWithCustomer = await _unityOfWork.Reviews.GetAllAsync(r => r.Customer);
+
+                // Example: Including multiple related entities
+                var reviews = await _unityOfWork.Reviews.GetAllAsync(r => r.Customer, r => r.Dish);
+
+                // return the reviews with no related entities included
+                //var reviewsWithoutIncludes = await _unityOfWork.Reviews.GetAllAsync();
+
+                if (reviews == null || !reviews.Any())
+                {
+                    return NotFound("No reviews found.");
+                }
+
                 return Ok(reviews);
             }
             catch (Exception ex)
