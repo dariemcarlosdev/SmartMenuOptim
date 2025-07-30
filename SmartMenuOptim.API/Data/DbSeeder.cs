@@ -11,7 +11,8 @@ namespace SmartMenuOptim.API.Data
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            // WARNING: This will delete ALL data in these tables!
+
+            // WARNING: This will delete ALL data in these tables!. Just call it when you want to reset the database.
             ClearTables(dbContext);
 
             Console.WriteLine("🌱 Seeding database...");
@@ -171,10 +172,10 @@ namespace SmartMenuOptim.API.Data
                     throw new Exception("❌ Required customers could not be loaded for reviews.");
 
                 dbContext.Reviews.AddRange(
-                    // Linked reviews
-                    new Review { CustomerId = alice.Id, Customer = alice, Comment = "Great food!", SentimentScore = 0.9, DishId = pizza.Id, DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 5 },
-                    new Review { CustomerId = bob.Id, Customer = bob, Comment = "Average service.", SentimentScore = 0.5, DishId = spaghetti.Id, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 3 },
-                    new Review { CustomerId = charlie.Id, Customer = charlie, Comment = "Will come back again!", SentimentScore = 0.8, DishId = caesar.Id, DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 4 },
+                    // Linked reviews (CustomerName is set to the customer's name)
+                    new Review { CustomerId = alice.Id, Customer = alice, CustomerName = alice.Name, Comment = "Great food!", SentimentScore = 0.9, DishId = pizza.Id, DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 5 },
+                    new Review { CustomerId = bob.Id, Customer = bob, CustomerName = bob.Name, Comment = "Average service.", SentimentScore = 0.5, DishId = spaghetti.Id, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 3 },
+                    new Review { CustomerId = charlie.Id, Customer = charlie, CustomerName = charlie.Name, Comment = "Will come back again!", SentimentScore = 0.8, DishId = caesar.Id, DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 4 },
                     // Anonymous reviews
                     new Review { CustomerName = "Anonymous", Comment = "Not my taste.", SentimentScore = 0.3, DishId = pizza.Id, CustomerId = null, DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 2 },
                     new Review { CustomerName = "Guest", Comment = "Loved the ambiance!", SentimentScore = 0.85, DishId = caesar.Id, CustomerId = null, DateCreated = DateTime.UtcNow, Rating = 5 }
@@ -266,7 +267,7 @@ namespace SmartMenuOptim.API.Data
             //    var tomato = new Ingredient { Name = "Tomato" };
             //    dbContext.Ingredients.AddRange(cheese, tomato);
             //    dbContext.SaveChanges();
-
+            //
             //    var pizza = dbContext.Dishes.FirstOrDefault(d => d.Name == "Pizza Margherita");
             //    if (pizza != null)
             //    {
@@ -286,10 +287,10 @@ namespace SmartMenuOptim.API.Data
             // Remove child tables first to respect FK constraints
             dbContext.Reviews.RemoveRange(dbContext.Reviews);
             dbContext.SaleRecords.RemoveRange(dbContext.SaleRecords);
-            //dbContext.Dishes.RemoveRange(dbContext.Dishes);
+            dbContext.Dishes.RemoveRange(dbContext.Dishes);
             dbContext.Customers.RemoveRange(dbContext.Customers);
             dbContext.AdminUsers.RemoveRange(dbContext.AdminUsers);
-            //dbContext.Categories.RemoveRange(dbContext.Categories);
+            dbContext.Categories.RemoveRange(dbContext.Categories);
             dbContext.SaveChanges();
         }
     }
