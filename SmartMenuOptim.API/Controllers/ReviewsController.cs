@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data;
+using SmartMenuOptim.Shared.Data.DTOs;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
 
@@ -32,17 +33,26 @@ namespace SmartMenuOptim.API.Controllers
 
         // GET: api/<ReviewsController>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Review>>> GetAllReviews()
+        public async Task<ActionResult<IEnumerable<ReviewDTO>>> GetAllReviews([FromQuery] string? dishname = null)
         {
             try
             {
-
-
-                // Example: Including a related entity called "Customer"
-                //var reviewsWithCustomer = await _unityOfWork.Reviews.GetAllAsync(r => r.Customer);
-
-                // Example: Including multiple related entities
                 var reviews = await _unityOfWork.Reviews.GetAllAsync(r => r.Customer, r => r.Dish);
+                if (!string.IsNullOrWhiteSpace(dishname))
+                {
+                    reviews = reviews.Where(r => r.Dish != null && r.Dish.Name != null && r.Dish.Name.Equals(dishname, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+                var reviewsDtos = reviews.Select(r => new ReviewDTO
+                {
+                    Id = r.Id,
+                    CustomerName = r.CustomerName,
+                    Comment = r.Comment,
+                    SentimentScore = r.SentimentScore,
+                    DishId = r.DishId,
+                    DishName = r.Dish?.Name, // Assuming Dish has a Name property
+                    DateCreated = r.DateCreated,
+                    Rating = r.Rating,
+                }).ToList();
 
                 // return the reviews with no related entities included
                 //var reviewsWithoutIncludes = await _unityOfWork.Reviews.GetAllAsync();
@@ -52,7 +62,7 @@ namespace SmartMenuOptim.API.Controllers
                     return NotFound("No reviews found.");
                 }
 
-                return Ok(reviews);
+                return Ok(reviewsDtos);
             }
             catch (Exception ex)
             {
@@ -67,7 +77,7 @@ namespace SmartMenuOptim.API.Controllers
         {
             try
             {
-                var review = await _unityOfWork.Reviews.GetByIdAsync(id);
+                var review = await _unityOfWork.Reviews.GetByIdAsync(id, r => r.Customer, r => r.Dish);
                 if (review == null)
                 {
                     return NotFound();

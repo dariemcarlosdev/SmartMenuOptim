@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Shared.Data;
+using SmartMenuOptim.Shared.Data.DTOs;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
 
@@ -20,6 +21,11 @@ namespace SmartMenuOptim.API.Controllers
         {
             _logger = logger;
             _unityOfWork = unityOfWork;
+            if (_unityOfWork == null)
+            {
+                _logger.LogError("UnityOfWork is not initialized properly.");
+                throw new InvalidOperationException("UnityOfWork is not initialized properly.");
+            }
         }
 
         // Fallowing REST API conventions, the GET method is used to retrieve a collection of resources.
@@ -27,12 +33,25 @@ namespace SmartMenuOptim.API.Controllers
 
         // GET: api/<SaleRecordsController>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SaleRecord>>> GetAllSaleRecords ()
+        public async Task<ActionResult<IEnumerable<SaleRecordDTO>>> GetAllSaleRecords()
         {
             try
             {
-                var saleRecords = await _unityOfWork.SaleRecords.GetAllAsync();
-                return Ok(saleRecords);
+                var saleRecords = await _unityOfWork.SaleRecords.GetAllAsync(s => s.Dish, s => s.Dish.Category, s => s.Dish.Reviews, s => s.Dish.Restaurant);
+                var saleRecordsDtos = saleRecords.Select(s =>   new SaleRecordDTO
+                                {
+                    Id = s.Id,
+                    SaleDate = s.SaleDate,
+                    QuantitySold = s.QuantitySold,
+                    DishId = s.DishId,
+                    DishName = s.Dish?.Name, // Assuming Dish has a Name property
+                    Category = s.Dish?.Category?.Name ?? "Unknown",
+                    Rating = s.Dish?.Reviews.Any() == true ? (int)s.Dish.Reviews.Average(r => r.Rating) : 0, // Assuming Dish has a Reviews collection with Rating property
+                    RestaurantName = s.Dish?.Restaurant?.Name ?? "Unknown", // Assuming Dish has a Restaurant property with Name
+                    DishPrice = s.Dish?.DishPrice ?? 0 // Assuming Dish has a DishPrice property
+
+                }).ToList();
+                return Ok(saleRecordsDtos);
             }
             catch (Exception ex)
             {
