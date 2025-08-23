@@ -1,74 +1,120 @@
-## Project Foundation: Smart Menu Optimizer for Restaurants
+# Smart Menu Optimizer
 
-🎯 **Goal:**  
-Create a Blazor Web App that uses AI to analyze sales trends and suggest top-performing dishes and menu adjustments. The demo will showcase proficiency in:
+## Project Fundation
 
-- **ASP.NET Core Web API**  
-  Build robust, scalable backend services for menu, order, and analytics management, exposing RESTful endpoints for data access and business logic.
+**Smart Menu Optimizer** is an Azure-native, AI-powered SaaS platform designed to help restaurant managers and staff make data-driven decisions about their menus. This project demonstrates expertise in building secure, scalable, and maintainable cloud solutions with a modern .NET stack, advanced analytics, and a seamless user experience.
 
-- **Blazor Server**  
-  Deliver a responsive, real-time web UI for restaurant managers and staff, enabling interactive dashboards, visual analytics, and seamless user experiences.
-
-- **Integration with AI**  
-  Leverage Azure Cognitive Services (Text Analytics, OpenAI, Language) and/or custom ML models (via Azure Machine Learning) to power natural language insights, predictive analytics, and automated recommendations.
-
-- **Clean Architecture & Multitenancy-Ready Design**  
-  Architect the system with separation of concerns, modular service layers, and tenant-aware data isolation to support multiple restaurants or brands within the same SaaS platform.
-
-- **Charting and Interactive UI**  
-  Incorporate rich data visualizations using charting libraries (e.g., ChartJS, Syncfusion, or Telerik for Blazor) to display trends, forecasts, and actionable metrics for end-users.
-
-- **Azure-Native SaaS Best Practices**  
-  Demonstrate secure authentication (Azure AD), centralized API management, scalable hosting (App Service/AKS), and observability (Application Insights, Monitor).
-
-- **Event-Driven & Asynchronous Processing**  
-  Showcase event-driven patterns using Azure Service Bus/Event Grid for decoupled, scalable AI analytics and notification workflows.
-
-- **Developer Experience**  
-  Provide clear API documentation, support for third-party integrations, and maintainable codebase structure for extensibility.
+The platform delivers actionable insights by analyzing sales trends and customer feedback, automatically recommending top-performing dishes and menu adjustments using state-of-the-art AI. It is architected for multitenancy, supporting multiple restaurants or brands within a single solution, and is built for extensibility and real-world SaaS best practices.
 
 ---
 
-## Tech Stack
+## 🎯 Project Goals
 
-<img width="594" height="207" alt="image" src="https://github.com/user-attachments/assets/691e447c-b371-4a86-993d-b8bed574a7e3" />
+- **AI-Driven Menu Optimization**  
+  Empower restaurants to maximize revenue and guest satisfaction by leveraging AI/ML to analyze historical sales data and customer reviews. Automatically surface recommendations to promote best sellers, retire under-performers, and adjust menus in real time.
 
-**Key Technologies & Azure Integration:**
+- **Robust, Scalable Backend (ASP.NET Core Web API)**  
+  Provide a reliable, multi-tenant API for menu, order, and analytics management, with secure RESTful endpoints and modular business logic.
 
-- **Frontend:**  
-  - Blazor Server (C#) – Rich, real-time web UI.
-  - [Optionally] Blazor WebAssembly.
+- **Responsive, Real-Time Web UI (Blazor Server)**  
+  Deliver an interactive dashboard for managers and staff, featuring real-time updates, visual analytics, and seamless user workflows.
 
-- **Backend:**  
-  - ASP.NET Core Web API – RESTful endpoints for business logic, analytics, and data access.
-  - C#/.NET 8 and above.
+- **Deep AI Integration**  
+  Seamlessly integrate Azure Cognitive Services (Text Analytics, OpenAI, Language) and/or custom ML models (via Azure Machine Learning) to deliver natural language understanding, predictive analytics, and automated menu recommendations.
 
-- **AI & Analytics:**  
-  - Azure Cognitive Services (Text Analytics, OpenAI, Language, etc.) – For NLP, sentiment analysis, recommendations.
-  - Azure Machine Learning – Custom ML model training, deployment, and inferencing.
+- **Clean, Modular Architecture**  
+  Follow clean architecture principles and separation of concerns to ensure maintainability, testability, and extensibility. Built-in support for tenant-aware data isolation enables SaaS scalability across brands and restaurants.
 
-- **Messaging & Integration:**  
-  - Azure Service Bus, Event Grid, Event Hubs – For scalable, event-driven communication and data ingestion.
+- **Rich Data Visualization**  
+  Use advanced charting libraries (e.g., ChartJS, Syncfusion, Telerik) within Blazor to present trends, forecasts, and KPIs in visually compelling formats.
 
-- **API Gateway:**  
-  - Azure API Management – Centralized API security, versioning, throttling.
+- **Azure-Native SaaS Best Practices**  
+  Employ secure authentication, scalable hosting (Azure App Service), centralized secrets management (Key Vault), and full-stack observability (Application Insights, Azure Monitor).
 
-- **Hosting:**  
-  - Azure App Service / Container Apps / AKS – Flexible deployment of web and API components.
-  - Azure Front Door – Global routing, load balancing, SSL offloading, WAF.
+- **Identity & Security**  
+  Ensure robust authentication, authorization, and secure access control for all users and integrations. Apply multi-layered security best practices for SaaS and enterprise environments.
 
-- **Data Storage:**  
-  - **Azure Database for PostgreSQL** – Relational, multi-tenant data storage (primary database).
-  - **Azure Blob Storage** – Object storage for unstructured data, files, and backups (replaces Cosmos DB).
-  - Azure Cache for Redis – High-speed caching.
+- **Asynchronous, Event-Driven Processing**  
+  Showcase event-driven and asynchronous workflows for scalable AI analytics and notifications, leveraging Azure Functions and background job processing.
+
+- **Top-Tier Developer Experience**  
+  Provide clear, well-documented APIs (OpenAPI/Swagger), support for third-party integrations, and a maintainable, extensible codebase.
+
+---
+
+## 🚀 The demo will showcase proficiency with:
+
+- **ASP.NET Core Web API:**  
+  Building robust, scalable backend services for menu, order, and analytics management, exposing RESTful endpoints for data access and business logic.
+
+- **Blazor Server:**  
+  Delivering a responsive, real-time web UI for restaurant managers and staff, enabling interactive dashboards, visual analytics, and seamless user experiences.
+
+- **Integration with AI:**  
+  Leveraging Azure Cognitive Services (Text Analytics, OpenAI, Language) and/or custom ML models (via Azure Machine Learning) to power natural language insights, predictive analytics, and automated recommendations.
+
+- **Clean Architecture & Multitenancy-Ready Design:**  
+  Architecting the system with separation of concerns, modular service layers, and tenant-aware data isolation to support multiple restaurants or brands within the same SaaS platform.
+
+- **Charting and Interactive UI:**  
+  Incorporating rich data visualizations using charting libraries (e.g., ChartJS, Syncfusion, or Telerik for Blazor) to display trends, forecasts, and actionable metrics for end-users.
+
+- **Azure-Native SaaS Best Practices:**  
+  Demonstrating secure authentication, scalable hosting (App Service), and observability (Application Insights, Monitor).
 
 - **Identity & Security:**  
-  - Azure Active Directory (AAD) – User authentication and SSO.
-  - Azure Key Vault – Secure storage of secrets and credentials.
-  - Managed Identity – Secure resource access.
+  Implementing industry-standard authentication and authorization for users and APIs, including multi-factor authentication, RBAC, secrets management, and secure data access.
 
-- **Monitoring & Observability:**  
-  - Azure Monitor, Application Insights, Log Analytics – End-to-end monitoring, troubleshooting, and alerting.
+- **Event-Driven & Asynchronous Processing:**  
+  Showcasing event-driven patterns using Azure Functions/Logic Apps for decoupled, scalable AI analytics and notification workflows.
+
+- **Developer Experience:**  
+  Providing clear API documentation, support for third-party integrations, and maintainable codebase structure for extensibility.
+
+---
+
+## Demo Highlights
+
+- **Multi-Restaurant Demo**: Easily switch between tenants to view isolated data and recommendations.
+- **Interactive Dashboards**: Real-time analytics and actionable insights, powered by AI.
+- **Natural Language Insights**: Summarize trends and receive recommendations as plain-language suggestions.
+- **Seamless Operations**: Fast, secure, and reliable—even as the platform scales.
+
+---
+
+## Technology Stack
+
+- **Backend:** ASP.NET Core Web API  
+- **Frontend:** Blazor Server  
+- **AI & Analytics:** Azure Cognitive Services, Azure Machine Learning (optional)  
+- **Database:** Azure PostgreSQL, Azure Redis, Azure Blob Storage  
+
+- **Identity & Security:**  
+  Choose the best fit for authentication and authorization requirements:
+  - **Azure Active Directory (Entra ID):**  
+    Enterprise-grade authentication and RBAC for users and admins, seamless Azure and Microsoft 365 integration.
+  - **OAuth2/OpenID Connect Providers:**  
+    Support for Auth0, Okta, Google Identity, or custom OIDC servers for broader SaaS or B2C scenarios.
+  - **IdentityServer (Duende):**  
+    Self-hosted, customizable Identity and Authorization server; ideal for advanced multi-tenancy, federation, or hybrid deployments.
+  - **ASP.NET Core Identity:**  
+    Out-of-the-box membership system for custom user stores, local accounts, roles, and claims-based authorization.
+  - **JWT Bearer Authentication:**  
+    Stateless, token-based authentication for APIs, suitable for SPAs and mobile integrations.
+  - **Role-Based Access Control (RBAC):**  
+    Enforce permissions by user role, claims, or policies at the API and data layers.
+  - **Claims-Based & Policy-Based Authorization:**  
+    Enable fine-grained, context-aware access control, supporting multi-tenancy and complex business rules.
+  - **Azure Key Vault:**  
+    Secure cloud-based storage for secrets, keys, and certificates, integrated with managed identities.
+
+- **Observability:** Azure Application Insights, Azure Monitor
+
+---
+
+## Why This Project?
+
+This project is a comprehensive demonstration of modern Azure SaaS development, blending real-world business value (menu optimization and sales uplift) with platform engineering best practices. It highlights not only technical proficiency, but also architectural clarity, operational excellence, and a focus on delivering measurable outcomes for end-users.
 
 ## AI Features
 
@@ -155,7 +201,431 @@ Create a Blazor Web App that uses AI to analyze sales trends and suggest top-per
 - Cloud-native integrations enable easy deployment and scaling on Azure.
 
 ---
+# Low-Level System Design (LLD): Smart Menu Optimizer  
+**With Developer Collaboration & CI/CD Automation**
 
+---
+
+## 1. Component Overview
+
+- **Web Client** (`/WebClient`): Blazor Server UI
+- **API Layer** (`/Api`): ASP.NET Core Web API
+- **AI/Analytics Services** (`/AI`, `/Analytics`)
+- **Event Bus/Messaging** (`/Messaging`, `/EventBus`): Azure Service Bus
+- **Data Storage** (`/Infrastructure`, `/Persistence`): Azure PostgreSQL, Redis
+- **Security & Identity** (`/Security`, `/Identity`)
+- **Monitoring & Observability** (cross-cutting): Application Insights, Azure Monitor
+- **CI/CD & DevOps** (`/.github`, `/DevOps`): GitHub Actions, IaC scripts
+
+---
+
+## 2. Developer Roles & Responsibilities
+
+| Role                  | Responsibilities                                                                                  |
+|-----------------------|--------------------------------------------------------------------------------------------------|
+| **Full Stack Dev**    | Web UI, API endpoints, integration, code review, unit/integration tests                          |
+| **AI/ML Engineer**    | AI/ML job creation, model deployment, analytics pipeline, API integration                        |
+| **DevOps Engineer**   | CI/CD pipelines, IaC (Infrastructure as Code), cloud deployment, monitoring, secrets management  |
+| **QA Engineer**       | Automated testing, test coverage, quality gates, regression/acceptance criteria                  |
+| **Tech Lead/Architect** | Design review, architecture, code review, enforce standards, release management                |
+
+---
+
+## 3. Collaboration Practices
+
+- **Source Control:**  
+  - Hosted on GitHub.  
+  - Branching:  
+    - `main`: production  
+    - `develop`: staging  
+    - `feature/*`: new features  
+    - `bugfix/*`, `hotfix/*`: fixes
+- **Pull Requests:**  
+  - All changes via PRs; require code reviews and passing status checks.
+  - PR templates enforce checklists (tests, docs, code style).
+- **Code Quality:**  
+  - Static analysis (SonarCloud or dotnet analyzers) in CI.
+  - Code style enforced (e.g., dotnet-format, EditorConfig).
+- **Documentation:**  
+  - Markdown docs in `/docs` and code comments.
+  - Architecture/decision records (ADR) in `/docs/adr`.
+- **Testing:**  
+  - Unit/integration tests required for all features.
+  - Code coverage thresholds enforced in CI.
+
+---
+
+## 4. CI/CD Pipeline (GitHub Actions)
+
+### Pipeline Overview
+
+- **Triggers:**  
+  - On PRs to `develop` and `main`
+  - On push to branches
+- **Stages/Jobs:**
+    1. **Build**  
+        - Restore NuGet packages  
+        - Build all projects  
+        - Linting/static analysis  
+    2. **Test**  
+        - Run all unit & integration tests  
+        - Publish code coverage report  
+        - Fail on test/code quality issues  
+    3. **Package**  
+        - Build Docker images for API, WebClient, AI/Analytics  
+        - Tag with commit SHA/version  
+        - Push to Azure Container Registry  
+    4. **Deploy**  
+        - **Staging:**  
+            - On `develop`, auto-deploy to Azure staging slots using IaC (Bicep/Terraform/ARM)  
+        - **Production:**  
+            - On `main`, require manual approval for prod deployment  
+        - Run DB migrations with rollback support  
+    5. **Notification & Observability**  
+        - Notify via Slack/Teams  
+        - Push logs/telemetry to Azure Monitor
+
+---
+
+### Example: GitHub Actions Workflow
+
+```yaml
+# .github/workflows/ci-cd.yaml
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build solution
+        run: dotnet build --configuration Release
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: dotnet test --configuration Release --collect:"XPlat Code Coverage"
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Build and push images
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/api:${{ github.sha }} ./Api
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/api:${{ github.sha }}
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Azure Staging
+        run: |
+          az deployment group create --resource-group my-rg --template-file ./DevOps/main.bicep
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: ${{ steps.deploy-prod.outputs.webapp-url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manual Approval
+        uses: fjogeleit/yaml-update-action@v0.11.0
+      - name: Deploy to Azure Production
+        run: |
+          az deployment group create --resource-group my-rg-prod --template-file ./DevOps/main.bicep
+```
+
+---
+
+## 5. Deployment & Infrastructure (IaC)
+
+- **Managed via Bicep/Terraform/ARM** in `/DevOps`
+- **Azure Resources:**
+  - App Service (Web/API/AI)
+  - Azure Container Registry
+  - Azure PostgreSQL
+  - Azure Redis
+  - Service Bus (Eventing)
+  - Key Vault (secrets)
+  - Application Insights (monitoring)
+- **Multi-Environment:**  
+  - Separate resources for dev, staging, prod  
+  - Configurations and secrets managed per environment
+- **Blue/Green Deployments:**  
+  - Slot-based for zero-downtime releases
+  - Rollback via slot swap
+
+---
+
+## 6. Monitoring & Observability
+
+- **Application Insights:**  
+  - Request logs, traces, exceptions, custom metrics  
+- **Health Checks:**  
+  - `/health` endpoints polled by Azure
+- **Alerting:**  
+  - Error rates, failed deployments, resource exhaustion
+
+---
+
+## 7. Directory Structure (including DevOps)
+
+```plaintext
+/WebClient
+/Api
+/AI
+/EventBus
+/Contracts
+/Infrastructure
+/Security
+/Monitoring
+/.github/workflows     # CI/CD YAMLs
+/DevOps                # IaC scripts (Bicep/Terraform/ARM)
+/docs
+```
+
+---
+
+## 8. System & Developer Workflow Diagrams
+
+### 8.1. CI/CD Pipeline Flow (Mermaid)
+
+<img width="3355" height="3840" alt="Untitled diagram _ Mermaid Chart-2025-08-23-181706" src="https://github.com/user-attachments/assets/f9562879-af24-4be2-b1c4-4b0c7dc73cc3" />
+
+---
+
+## 9. Key LLD Principles (How They Are Met)
+
+1. **Scalability:** Modular, stateless services, auto-scaling cloud infra
+2. **Reliability:** Health checks, monitoring, automated rollback
+3. **Security:** Azure AD/JWT, Key Vault, RBAC, branch protections
+4. **Performance:** Caching, async/event-driven jobs, optimized CI
+5. **Maintainability:** Code reviews, automated testing, IaC, docs
+6. **Extensibility:** Modular projects, easy feature branch flows
+7. **Observability:** Logs, metrics, alerting
+8. **Data Isolation:** Tenant-aware DB, separate envs
+9. **Cost Efficiency:** Deployment slots, auto-scaling, teardown on cleanup
+10. **UX/Responsiveness:** SignalR, pre-cached data, preview envs
+
+---
+
+**This LLD now fully integrates developer collaboration and DevOps automation as first-class citizens of the Smart Menu Optimizer platform.**
+
+---
+
+# Smart Menu Optimizer – Low-Level System Design
+
+---
+
+## 1. Component Overview
+
+**Main Subsystems**
+- **Web Client** (Blazor Server, `/WebClient`)
+- **API Layer** (ASP.NET Core Web API, `/Api`)
+- **AI/Analytics Services** (`/AI`, `/Analytics`)
+- **Data Storage** (`/Infrastructure`, `/Persistence`)
+- **Security & Identity** (`/Security`, `/Identity`)
+- **Monitoring & Observability** (cross-cutting)
+
+---
+
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/e7b6c363-541c-4fb9-bb08-b3eadea4d33e" />
+
+---
+
+## 2. Detailed Component Design (with Azure Services)
+
+### 2.1 Web Client Layer
+- **Description:**  
+  User interface built with Blazor Server for menu management, analytics, AI insights, and notifications.
+- **Purpose:**  
+  Deliver a secure, interactive UX for restaurant managers and staff.
+- **Responsibilities:**  
+  - Authenticate users (Azure AD)
+  - Carry tenant context from JWTs in API requests
+  - Render UI modules: Menu Management, Analytics, AI Insights, Notifications
+  - Handle real-time updates with SignalR
+
+- **Azure Services:**
+  - **Azure App Service (Web Apps):** Host the Blazor Server app. Managed, scalable, and secure hosting with zero-downtime deployment.
+  - **Azure SignalR Service:** Managed real-time communication for notifications and live updates.
+
+### 2.2 API Layer
+- **Description:**  
+  ASP.NET Core Web API backend for business logic, data access, and orchestration.
+- **Purpose:**  
+  Expose secure RESTful endpoints and enforce business rules.
+- **Responsibilities:**  
+  - REST endpoints with controllers (OpenAPI docs)
+  - Business logic in services (menus, orders, analytics, reviews, AI)
+  - Data access via repositories (EF Core, multi-tenant)
+  - CQRS (MediatR) for command/query separation
+
+- **Azure Services:**
+  - **Azure App Service (Web Apps):** Host the API backend with autoscaling, slot-based deployments, and integrated CI/CD.
+  - **Azure Key Vault:** Secure storage of API keys, connection strings, and secrets.
+  - **Azure Managed Identity:** Secure, passwordless authentication for services to Azure resources.
+
+### 2.3 AI/Analytics Services
+- **Description:**  
+  Modular AI services for ML-driven forecasts, review analysis, and KPI aggregation.
+- **Purpose:**  
+  Automate data analysis, generate insights, and support menu optimization.
+- **Responsibilities:**  
+  - Orchestrate AI workflows and integrate with Azure Cognitive Services or custom ML models
+  - Run jobs (ForecastJob, SentimentJob, ScoreDishJob)
+  - Async processing (triggered by DB triggers or polling or REST calls)
+  - Store analytics results in tenant-specific tables
+
+- **Azure Services:**
+  - **Azure Functions / Azure Container Apps:** Serverless or containerized execution for background AI jobs, scalable on-demand.
+  - **Azure Machine Learning:** Build, deploy, and manage custom ML models.
+  - **Azure Cognitive Services (Text Analytics, Language, etc.):** For sentiment analysis of reviews and other AI tasks.
+  - **Azure Logic Apps (optional):** For orchestrating complex workflows or integrating with external systems.
+
+### 2.4 Data Storage
+- **Description:**  
+  Multi-model persistence for structured and unstructured data.
+- **Purpose:**  
+  Store, isolate, and serve high-performance data for analytics and operations.
+- **Responsibilities:**  
+  - Tenant-isolated data in relational DB
+  - Fast caching for KPIs and configs
+  - File/object storage for exports, backups
+  - Partitioning and indexing for analytics
+
+- **Azure Services:**
+  - **Azure Database for PostgreSQL:** Managed relational database, schema-per-tenant, built-in backup, scaling, and geo-replication.
+  - **Azure Redis Cache:** Low-latency caching for frequently accessed data and session state.
+  - **Azure Blob Storage:** Durable, scalable storage for files, exports, and backups.
+  - **Azure Cosmos DB (optional):** For future polyglot persistence or unstructured analytics.
+
+### 2.5 Security & Identity
+- **Description:**  
+  Authentication, authorization, and secret management.
+- **Purpose:**  
+  Ensure secure, compliant access control and data protection.
+- **Responsibilities:**  
+  - Azure AD/OIDC user login, OAuth2 for integrations
+  - Enforce RBAC via claims-based policies
+  - Store/manage secrets in Key Vault
+
+- **Azure Services:**
+  - **Azure Active Directory (Entra ID):** Central, cloud-native identity provider for users and admins.
+  - **Azure Key Vault:** Secure, auditable storage for keys, secrets, and certificates.
+  - **Azure Managed Identity:** For service-to-service authentication without secrets.
+
+### 2.6 Monitoring & Observability
+- **Description:**  
+  End-to-end monitoring, logging, and distributed tracing.
+- **Purpose:**  
+  Ensure system health, facilitate rapid troubleshooting, and drive business insights.
+- **Responsibilities:**  
+  - Collect logs and telemetry from all components
+  - Track business and technical metrics
+  - Correlate requests via distributed tracing
+  - Alerting for failures, anomalies, and business KPIs
+
+- **Azure Services:**
+  - **Azure Application Insights:** Deep application performance monitoring, distributed tracing, and log analytics.
+  - **Azure Monitor:** Centralized dashboard for metrics, logs, and alert management.
+  - **Azure Log Analytics:** Query and analyze logs and telemetry across all resources.
+
+---
+
+## 3. Data Flows & Sequence Diagrams
+
+### 3.1 Sales Forecast Request
+1. User requests forecast via dashboard (Blazor).
+2. API Layer authenticates, validates context, and triggers a ForecastJob.
+3. AI/Analytics Service retrieves historical sales, calls ML model, stores result in Data Storage.
+4. API Layer/SignalR updates dashboard with latest forecast.
+
+### 3.2 Review Sentiment Analysis
+1. Review submitted via UI.
+2. API stores review and triggers SentimentJob in AI/Analytics.
+3. Analytics Service calls Cognitive Services, updates KPIs in Data Storage.
+4. API Layer/SignalR updates dashboard if negative trend detected.
+
+---
+
+## 4. Low-Level System Design Principles—How They’re Met
+
+- **Scalability:** Stateless API, modular services, Azure scaling, event-driven jobs.
+- **Reliability:** Managed services, retries, health checks, managed backups.
+- **Security:** Azure AD, JWT, Key Vault, tenant context.
+- **Performance:** Redis cache, async events, DB indexing, autoscaling.
+- **Maintainability:** Clean architecture, DI, modular projects, OpenAPI docs, code comments.
+- **Extensibility:** Pluggable jobs, extensible endpoints.
+- **Observability:** App Insights, logging, alerts, distributed tracing.
+- **Data Isolation:** Tenant schema separation, RBAC, context-aware queries.
+- **Cost Efficiency:** Serverless/container-based jobs, shared infra, consumption-tier.
+- **UX/Responsiveness:** SignalR for real-time, pre-cached dashboards, fast APIs.
+
+---
+
+## 5. Example Directory Structure
+
+```plaintext
+/WebClient
+  /Pages
+  /Components
+/Api
+  /Controllers
+  /Services
+  /Repositories
+/AI
+  /Jobs
+  /Orchestrator
+/Contracts
+/Infrastructure
+  /Persistence
+  /Migrations
+/Security
+/Monitoring
+```
+
+---
+
+## 6. Key Sequence Diagrams
+
+- **Forecasting:** User → API → ForecastJob → AI/Analytics Service → DB → API/UI (via SignalR).
+- **Review Analysis:** User → API → SentimentJob → Analytics → DB → API/UI (via SignalR).
+
+---
+
+## 7. Extensibility Points
+
+- Add new AI features by creating a new Job Handler under `/AI/Jobs`.
+- Add new endpoints by extending Controllers and Services under `/Api`.
+
+--------
 
 # High-Level Smart Menu Optimizer System Design
 
