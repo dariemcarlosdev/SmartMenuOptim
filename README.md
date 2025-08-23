@@ -33,6 +33,9 @@ Create a Blazor Web App that uses AI to analyze sales trends and suggest top-per
 
 # High level Smart Menu Optimizer System Design
 
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/56ee500f-0cb4-4640-b465-221a28c68a60" />
+
+
 ## 1. Web Client Layer
 
 **Who uses it:** Restaurant managers, admins, or other tenant users.
