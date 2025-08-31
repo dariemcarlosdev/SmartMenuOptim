@@ -23,6 +23,18 @@ on:
         - env-dev/*
         - env-staging/*
 
+# Jobs List
+# Each job runs in its own virtual environment
+# Jobs can run sequentially or in parallel
+# Jobs can share data using artifacts
+# Build-Test job runs first, followed by CodeQL analysis, then deployments, and finally notifications
+# Build-Test job: Builds the solution, runs tests, applies EF Core migrations to a local PostgreSQL instance, and uploads build artifacts
+# CodeQL Analysis job: Performs static code analysis for security vulnerabilities
+# Deploy-Azure-Server job: Deploys the Blazor Server app to Azure Web App and applies EF Core migrations to the Azure PostgreSQL database
+# Deploy-Azure-API job: Deploys the API app to Azure Web App and applies EF Core migrations to the Azure PostgreSQL database
+# Notify-On-Failure job: Sends email notification if any previous job fails
+# Notify-On-Success job: Sends email notification if all previous jobs succeed
+# Optional jobs for AWS and Docker deployments are commented out and can be enabled if needed
 jobs:
   build-test:
     runs-on: ubuntu-latest
