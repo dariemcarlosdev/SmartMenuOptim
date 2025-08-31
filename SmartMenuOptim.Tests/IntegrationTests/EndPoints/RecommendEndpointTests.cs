@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 //using SmartMenuOptim.Server; // <-- Add this using statement
 using SmartMenuOptim.API;
 using SmartMenuOptim.Shared.Data.Entities;
+using SmartMenuOptim.Shared.Data.Dtos;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {
@@ -30,18 +31,18 @@ namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
         public async Task PostRecommend_WithValidRequest_Returns200Ok()
         {
             // Arrange: Define a valid request with sale records. Arrange is used to set up the test environment, including any necessary data or configurations.
-            var request = new AiRecomendationRequest
+            var request = new AiRecomendationRequestDTO
             {
-                SaleRecords = new List<SaleRecord>
+                SaleRecords = new List<SaleRecordDTO>
                 {
-                    new SaleRecord { DishId = 1, QuantitySold = 10, SaleDate = DateTime.UtcNow },
-                    new SaleRecord { DishId = 2, QuantitySold = 5, SaleDate = DateTime.UtcNow },
-                    new SaleRecord { DishId = 3, QuantitySold = 2, SaleDate = DateTime.UtcNow },
-                    new SaleRecord { DishId = 1, QuantitySold = 15, SaleDate = DateTime.UtcNow }
+                    new SaleRecordDTO { DishId = 1, QuantitySold = 10, SaleDate = DateTime.UtcNow },
+                    new SaleRecordDTO { DishId = 2, QuantitySold = 5, SaleDate = DateTime.UtcNow },
+                    new SaleRecordDTO { DishId = 3, QuantitySold = 2, SaleDate = DateTime.UtcNow },
+                    new SaleRecordDTO { DishId = 1, QuantitySold = 15, SaleDate = DateTime.UtcNow }
                 },
-                Reviews = new List<Review>
+                Reviews = new List<ReviewDTO>
                 {
-                    new Review { CustomerName="John", Comment = "Delicious pizza!", SentimentScore =  0.95}
+                    new ReviewDTO    { CustomerName="John", Comment = "Delicious pizza!", SentimentScore =  0.95}
                 }
             };
 

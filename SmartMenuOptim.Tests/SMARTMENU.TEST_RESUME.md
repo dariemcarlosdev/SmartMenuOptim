@@ -1,4 +1,4 @@
-# SmartMenuOptim.Tests Project Resume
+# SmartMenuOptim.Tests Project
 
 ## Overview
 This project provides automated tests for the SmartMenuOptim solution, ensuring the reliability and correctness of both the API and Server components. It targets .NET 9 and leverages modern testing frameworks and tools.
