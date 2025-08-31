@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SmartMenuOptim.Shared.Data.DTOs
+namespace SmartMenuOptim.Shared.Data.Dtos
 {
     /// <summary>
     /// DTO for transferring AI recommendation request data between layers and for CRUD operations in Blazor user interfaces.

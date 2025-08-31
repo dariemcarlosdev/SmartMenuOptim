@@ -1,50 +1,57 @@
-using System.Collections.Generic;
+
 
 namespace SmartMenuOptim.Shared.Data.Entities
 {
     /// <summary>
     /// Represents an admin user for business/admin logic and sensitive features.
-    /// Business rules are now defined as properties on this entity.
     /// </summary>
+    /// <remarks>
+    /// Note: AdminUser is not tenant-specific. It acts as the owner or manager of one or more tenants (restaurants).
+    /// Each AdminUser can own/manage multiple restaurants (tenants), and each Restaurant references a single AdminUser as its owner.
+    /// AdminUser is a global entity and enables multi-tenancy by linking to tenant entities, but is not itself scoped to a single tenant.
+    /// </remarks>
     public class AdminUser : UserBase
     {
-        public string Role { get; set; } = "Admin"; // e.g., "Admin", "Manager"
-        /// <summary>
-        /// business rule: Minimum number of sales for a dish to be considered popular.If a dish has fewer sales than this threshold, it may be considered for removal or adjustment since is underperforming.
-        /// </summary>
-        public int SalesThreshold { get; set; } = 35;
+        // === Standalone Properties ===
 
         /// <summary>
-        /// business rule: Minimum sentiment score for a review to be considered positive. If a review has a sentiment score below this threshold, it may be flagged for review or considered negative.
+        /// Role of the admin user (e.g., "Admin", "Manager").
+        /// </summary>
+        public string Role { get; set; } = "Admin";
+
+        /// <summary>
+        /// Minimum number of sales for a dish to be considered popular.
+        /// </summary>
+        public int SalesThreshold { get; set; } = 30;
+
+        /// <summary>
+        /// Minimum sentiment score for a review to be considered positive.
         /// </summary>
         public double SentimentThreshold { get; set; } = 0.6;
 
         /// <summary>
-        /// business rule: Minimum number of reviews required for a dish to be considered well-reviewed. If a dish has fewer reviews than this threshold, it may be considered for removal or adjustment since is underperforming.
+        /// Minimum number of reviews required for a dish to be considered well-reviewed.
         /// </summary>        
         public int ReviewCountThreshold { get; set; } = 5;
 
         /// <summary>
-        /// business rule: Minimum number of sales required for a dish to be considered well-sold. If a dish has fewer sales than this threshold, it may be considered for removal or adjustment since is underperforming.
+        /// Minimum number of sales required for a dish to be considered well-sold.
         /// </summary>        
         public int WellSoldThreshold { get; set; } = 20;
 
         /// <summary>
-        /// business rule: Minimum number of reviews left by a customer for them to be considered a regular customer. If a customer has fewer reviews than this threshold, they may be considered a new or occasional customer.
-        /// <summary>        
+        /// Minimum number of reviews left by a customer for them to be considered a regular customer.
+        /// </summary>        
         public int RegularCustomerReviewCountThreshold { get; set; } = 3;
 
         /// <summary>
-        /// business rule: Minimum number of reviews left by a customer for them to be considered as a premium customer. If a customer has fewer reviews than this threshold, they may be considered a regular or new customer.
-        /// <summary> 
-        
+        /// Minimum number of reviews left by a customer for them to be considered as a premium customer.
+        /// </summary> 
         public int PremiumCustomerReviewCountThreshold { get; set; } = 10;
 
-        // <summary>
-        /// List of permissions or roles assigned to this admin user.This can be used to control access to different features or areas of the application.
-
-        public List<string> Permissions { get; set; } = new List<string>();
-
         /// <summary>
+        /// List of permissions or roles assigned to this admin user. Used to control access to different features or areas of the application.
+        /// </summary>
+        public List<string> Permissions { get; set; } = new List<string>();
     }
 }

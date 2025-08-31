@@ -1,6 +1,6 @@
 using System;
 
-namespace SmartMenuOptim.Shared.Data.DTOs
+namespace SmartMenuOptim.Shared.Data.Dtos
 {
     /// <summary>
     /// DTO for transferring sale record data between layers and for CRUD operations in Blazor user interfaces.
@@ -16,7 +16,16 @@ namespace SmartMenuOptim.Shared.Data.DTOs
         public int Id { get; set; }
         public int DishId { get; set; }
         public string? DishName { get; set; } // For UI display
+        // Add dish price if needed
+         public decimal DishPrice { get; set; } // Optional: Price of the dish, if applicable
         public int QuantitySold { get; set; }
         public DateTime SaleDate { get; set; } = DateTime.UtcNow;
+        public string Category { get; set; } = string.Empty; // Optional: Category of the dish, if applicable
+        public int Rating { get; set; } = 0; // Optional: Rating of the dish based on reviews, if applicable
+
+        public string RestaurantName { get; set; } = string.Empty; // Optional: Name of the restaurant, if applicable.
+
+        // This property is used to link the sale record to a specific restaurant, if applicable.
+        //public int RstaurantId { get; set; } = 0; // Optional: Restaurant ID of the dish, if applicable.
     }
 }

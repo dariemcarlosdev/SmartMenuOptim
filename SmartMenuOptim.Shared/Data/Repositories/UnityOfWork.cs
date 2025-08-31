@@ -35,6 +35,7 @@ namespace SmartMenuOptim.Shared.Data.Repositories
             Categories = new Repository<Category>(_context); // Add Categories repository
             Customers = new Repository<Customer>(_context); // Add Customers repository
             AdminUsers = new Repository<AdminUser>(_context); // Add AdminUsers repository
+            Restaurants = new Repository<Restaurant>(_context); // Add Restaurants repository
         }
 
         /// <summary>
@@ -84,6 +85,14 @@ namespace SmartMenuOptim.Shared.Data.Repositories
         /// Use this repository for all admin user data access and queries.
         /// </remarks>
         public IRepositoryWithIncludes<AdminUser> AdminUsers { get; }
+
+        /// <summary>
+        /// Repository for <see cref="Restaurant"/> entities, supporting advanced querying and includes.
+        /// </summary>
+        /// <remarks>
+        /// Use this repository for all restaurant data access and queries.
+        /// </remarks>
+        public IRepositoryWithIncludes<Restaurant> Restaurants { get; }
 
         /// <summary>
         /// Commits all changes made in the context to the database as a single transaction.

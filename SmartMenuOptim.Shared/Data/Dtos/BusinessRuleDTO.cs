@@ -1,4 +1,4 @@
-namespace SmartMenuOptim.Shared.Data.DTOs
+namespace SmartMenuOptim.Shared.Data.Dtos
 {
     /// <summary>
     /// DTO for transferring business rule data between layers and for CRUD operations in Blazor user interfaces.

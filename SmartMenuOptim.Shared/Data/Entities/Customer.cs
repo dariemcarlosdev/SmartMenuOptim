@@ -7,25 +7,32 @@ namespace SmartMenuOptim.Shared.Data.Entities
     /// Represents a customer in the system. Can be linked to reviews, but reviews can also be anonymous.
     /// Extended for use as a User in the Customer Portal (authentication/profile).
     /// </summary>
+    /// <remarks>
+    /// Shared Tenancy Model: This entity is global (not tenant-specific). Customers are shared across all restaurants (tenants) and can interact with multiple restaurants using the same account. Relationships such as reviews, orders, or reservations link the customer to a specific restaurant, ensuring proper data association in a multi-tenant environment.
+    /// </remarks>
     public class Customer : UserBase
     {
+        // === Standalone Properties ===
+        /// <summary>
+        /// Name of the customer.
+        /// </summary>
         public string Name { get; set; } = string.Empty;
+        /// <summary>
+        /// Email address of the customer (optional).
+        /// </summary>
         public string? Email { get; set; }
         /// <summary>
-        /// Date the customer registered.
+        /// Date the customer registered (UTC).
         /// </summary>
         public DateTime DateRegistered { get; set; } = DateTime.UtcNow;
-        
         /// <summary>
         /// Optional role for access control (e.g., "User", "Admin").
-        /// The Customer entity can handle roles related to customer-facing functionality, such as:
-        /// • User: Regular customer, can browse menu, place orders, leave reviews.
-        /// • PremiumUser: Customer with special privileges (e.g., discounts, loyalty rewards).
-        /// • Guest: Temporary or limited-access user, may not require registration.
-        /// • Blocked: Customer account is disabled or restricted due to violations.
-        /// • Moderator: Can report or flag reviews, limited moderation capabilities (if you want some customers to help moderate content).
         /// </summary>
         public string? Role { get; set; }
+        // === Navigation Properties ===
+        /// <summary>
+        /// Navigation property for all reviews written by this customer.
+        /// </summary>
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }

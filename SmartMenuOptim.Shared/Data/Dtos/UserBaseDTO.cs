@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SmartMenuOptim.Shared.Data.DTOs
+namespace SmartMenuOptim.Shared.Data.Dtos
 {
     /// <summary>
     /// Abstract base DTO for user-related data transfer and CRUD operations in Blazor user interfaces.
