@@ -3,6 +3,17 @@
 ## Overview
 This project provides the API layer for the SmartMenuOptim solution. Targeting .NET 9, it exposes RESTful endpoints, integrates with AI and data services, and is designed for scalable, containerized deployment.
 
+## Clean Architecture Guidance
+- **API/Application Layer:**
+  - **API Controllers:** Define HTTP endpoints and handle HTTP requests/responses. Example: `OrdersController` exposes endpoints for order management.
+  - **Application Services:** Coordinate application logic, orchestrate domain and infrastructure operations. Example: `OrderService` processes an order by validating, saving, and sending notifications.
+  - **Request/Response Models:** DTOs for input/output of API endpoints. Example: `CreateOrderRequest`, `OrderResponse`.
+  - **No business/domain logic:** Should delegate business rules to the domain layer.
+  - **Implements interfaces from shared/domain:** Concrete implementations for abstractions defined elsewhere.
+  - **Infrastructure Integrations:** Set up dependency injection, logging, and external service clients.
+
+Each component should focus on its responsibility, keeping the API layer thin and delegating business logic to the domain/application layers.
+
 ## Technologies & Frameworks
 - .NET 9
 - ASP.NET Core (Web API)
@@ -90,8 +101,6 @@ The application loads configuration in the following order, depending on the env
 > Use [User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) for local development, and environment variables or a secure secrets store for production.
 
 ### Example `secrets.json` Format
-
-```json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=localhost;Port=5432;Database=SmartMenuDb;User Id=postgres;Password=admin123;TrustServerCertificate=True;"
@@ -103,17 +112,11 @@ The application loads configuration in the following order, depending on the env
     }
   }
 }
-```
-
 ### Database Context Configuration
 
 The application configures the database context using the `DefaultConnection` connection string:
-
-```csharp
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-```
-
 ### Best Practices
 
 - **Local development:** Use User Secrets or a local `secrets.json` (not committed).
@@ -131,3 +134,4 @@ If the application cannot find the necessary configuration or secrets, ensure th
 ---
 
 For more information, see [Microsoft Docs: Safe storage of app secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets).
+

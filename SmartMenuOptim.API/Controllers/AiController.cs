@@ -19,10 +19,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.DTOs;
-using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
-using System.Security.Principal;
+using System.Runtime.Intrinsics.X86;
+using System.Text.RegularExpressions;
 
 namespace SmartMenuOptim.API.Controllers
 {
@@ -40,7 +39,13 @@ namespace SmartMenuOptim.API.Controllers
     Returns DTOs for API responses, focusing on recent and relevant data for recommendations and analysis.
     This controller is central to the AI-driven analytics and recommendation features of your application. 
      */
-     
+
+    //For versioning, add [ApiVersion("1.0")] above [Route("api/[controller]")]
+    //[ApiVersion(1)]
+    //[ApiVersion(2)]
+    //[ApiController]
+    //[Route("api/v{v:apiVersion}/[controller]")]
+
     [ApiController]
     [Route("api/ai")]
     public class AiController : ControllerBase
@@ -72,17 +77,41 @@ namespace SmartMenuOptim.API.Controllers
         /// Endpoint to get underperforming dishes based on reviews and sales records.
         /// </summary>
         /// <returns></returns>
+        /// [MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpGet("underperforming")]
         public async Task<ActionResult<IEnumerable<UnderperformingDishDTO>>> GetUnderperformingDishes()
         {
             // Get thresholds from the first admin user (or use defaults)
             var admin = await _unityOfWork.AdminUsers.Query().OrderBy(a => a.Id).FirstOrDefaultAsync();
-            double salesThreshold = admin?.SalesThreshold ?? 35;
+            double salesThreshold = admin?.SalesThreshold ?? 30;
             double sentimentThreshold = admin?.SentimentThreshold ?? 0.6;
 
             var oneYearAgo = DateTime.UtcNow.AddDays(-360);
 
+
             // Group sales by DishId and DishName
+            /*
+            -- Corrected Query for PostgreSQL (to avoid sales multiplication due to join with reviews)
+            SELECT
+                d."Id" AS "DishId",
+                d."Name" AS "DishName",
+                sr_summary."TotalSales",
+                CASE
+                    WHEN COUNT(r."Id") > 0 THEN ROUND(AVG(r."Rating"))::int
+                    ELSE 0
+                END AS "DishRating"
+            /* Aggregate SaleRecords before joining to Reviews, or use a subquery/CTE to get the correct total sales per dish.
+            FROM
+                (
+                    SELECT "DishId", SUM("QuantitySold") AS "TotalSales"
+                    FROM "SaleRecords"
+                    WHERE "SaleDate" >= (CURRENT_DATE - INTERVAL '360 days')
+                    GROUP BY "DishId"
+                ) sr_summary
+            JOIN "Dishes" d ON sr_summary."DishId" = d."Id"
+            LEFT JOIN "Reviews" r ON r."DishId" = d."Id"
+            GROUP BY d."Id", d."Name", sr_summary."TotalSales"
+            */
             var saleRecords = await _unityOfWork.SaleRecords.Query()
                 .Where(sr => sr.SaleDate >= oneYearAgo)
                 .AsQueryable()
@@ -96,13 +125,26 @@ namespace SmartMenuOptim.API.Controllers
                     TotalSales = g.Sum(sr => sr.QuantitySold),
                     // Calculate average rating only if there are reviews per dish
                     DishRating = g.Any(sr => sr.Dish.Reviews.Any()) ? (int)g.Average(sr => sr.Dish.Reviews.Average(r => r.Rating)) : 0
-                }).ToListAsync();
+                }).Where(ts => ts.TotalSales <= salesThreshold).ToListAsync();
 
-            // Get all reviews with DishId
+
+            // Get all reviews with DishId and SentimentScore below threshold
+            /*
+            -- Equivalent PostgreSQL query for the LINQ below:
+            SELECT
+                "DishId",
+                "Comment",
+                "SentimentScore"
+            FROM
+                "Reviews"
+            WHERE
+                "Comment" IS NOT NULL
+                AND "SentimentScore" < :sentimentThreshold;
+            */
             var allReviews = await _unityOfWork.Reviews.Query()
                 .Where(r => r.Comment != null)
                 .Select(r => new { r.DishId, r.Comment, r.SentimentScore })
-                .AsNoTracking()
+                .AsNoTracking().Where(ss => ss.SentimentScore < sentimentThreshold)
                 .ToListAsync();
 
             // Group reviews by DishId for only dishes in saleRecords
@@ -130,11 +172,11 @@ namespace SmartMenuOptim.API.Controllers
                 })
                 .ToList();
 
-            // Compose underperforming dishes
+            // Compose underperforming dishes.
+            // Combine sales and sentiment results using Linq join with in-memory collections through DishId. Combine traditional LINQ with query syntax for clarity.
             var underperformingDishes = (from s in saleRecords
                                          join rev in sentimentResults
                                            on s.DishId equals rev.DishId
-                                         where s.TotalSales <= salesThreshold && rev.AverageSentiment < sentimentThreshold
                                          select new UnderperformingDishDTO
                                          {
                                              DishId = s.DishId,
@@ -160,6 +202,7 @@ namespace SmartMenuOptim.API.Controllers
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
+        /// [MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost("v1/recommend")]
         public ActionResult<List<AiRecomendationResponseDTO>> Recommend_v1([FromBody] AiRecomendationRequestDTO request)
         {
@@ -233,6 +276,8 @@ namespace SmartMenuOptim.API.Controllers
         /// These values are calculated from the relevant sale records and reviews for each dish.
         /// The response type remains List&lt;AiRecomendationResponseDTO&gt;, and all required properties are populated for each item.
         /// </remarks>
+        
+        /// [MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost("recommend")]
         public ActionResult<List<AiRecomendationResponseDTO>> Recommend([FromBody] AiRecomendationRequestDTO request)
         {
@@ -302,6 +347,8 @@ namespace SmartMenuOptim.API.Controllers
         /// </summary>
         /// <param name="underperformingDish"></param>
         /// <returns></returns>
+        
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost("underperforming/improve-strategy")]
         public async Task<ActionResult<string>> GetImprovementStrategy([FromQuery] string name, [FromQuery] int sales, [FromQuery] double sentiment)
         {

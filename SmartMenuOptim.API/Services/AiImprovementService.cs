@@ -1,12 +1,12 @@
 ﻿using Azure.AI.OpenAI;
 using Azure;
-using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Shared.Data.Dtos;
 using System.Text;
 using OpenAI.Chat;
 using OpenAI;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Shared.Data.Interfaces;
+using SmartMenuOptim.Shared.Data.Dtos;
+using SmartMenuOptim.API.Services.Interfaces;
 
 namespace SmartMenuOptim.API.Services
 {
@@ -21,9 +21,9 @@ namespace SmartMenuOptim.API.Services
             IUnityOfWork unityOfWork
             )
         {
-            this._gpt = openIAGptService ?? throw new ArgumentNullException(nameof(openIAGptService));
-            this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this._unityOfWork = unityOfWork; // Assuming unityOfWork is injected or set later
+            _gpt = openIAGptService ?? throw new ArgumentNullException(nameof(openIAGptService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _unityOfWork = unityOfWork; // Assuming unityOfWork is injected or set later
         }
 
         /// <summary>

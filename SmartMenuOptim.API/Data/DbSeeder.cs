@@ -47,8 +47,8 @@ namespace SmartMenuOptim.API.Data
                     PasswordHash = "adminhash1",
                     IsActive = true,
                     Role = "Admin",
-                    SalesThreshold = 40,
-                    SentimentThreshold = 0.7
+                    SalesThreshold = 30,
+                    SentimentThreshold = 0.6
                 };
                 var manager = new AdminUser
                 {

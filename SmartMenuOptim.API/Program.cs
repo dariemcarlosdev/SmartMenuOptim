@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Builder; // Add this using directive  
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Builder; // Add this using directive  
 using Microsoft.AspNetCore.Hosting; // Add this using directive  
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
-using SmartMenuOptim.API.Data; // Add this using directive  
+using SmartMenuOptim.API.Data;
 using SmartMenuOptim.API.Services;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data.Context;
@@ -19,9 +20,9 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Set the application to listen on the port defined in the PORT environment variable (for Azure App Service compatibility)
         var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
         builder.WebHost.UseUrls($"http://*:{port}");
-
 
         // Clear default config sources
         builder.Configuration.Sources.Clear();
@@ -57,6 +58,9 @@ public class Program
         }
 
         //Implement rate limiting and throttling
+        // The benefit of rate limiting is to protect the API from being overwhelmed by too many requests in a short period of time.
+        // In the context of Azure App Service, rate limiting can help manage traffic spikes and ensure fair usage among clients.
+        // Scopped to SmartMenuOptim.API the benefit is to protect backend resources and maintain performance.
         builder.Services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("FixedPolicy", policy =>
@@ -69,6 +73,34 @@ public class Program
         });
 
         // Add services to the container.
+
+        // Versioning Rest API with URL segment Swagger support
+
+        builder.Services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new QueryStringApiVersionReader("X-Api-Version"),
+                new UrlSegmentApiVersionReader());
+        })
+            .AddMvc() // this is required for ApiExplorer and controllers
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV"; // e.g., v1, v1.1
+                options.SubstituteApiVersionInUrl = true;
+            });
+
+
+        // Health check endpoint
+        builder.Services.AddHealthChecks();
+
+        // For improvement use LazyLoadingProxies if needed in the future, this ensure that related entities are loaded automatically when accessed.
+        // improves performance by loading only the necessary data.
+        //builder.Services.AddDbContext<AppDbContext>(options =>
+        //    options.UseLazyLoadingProxies().UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection string is missing!")));
+
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -91,6 +123,8 @@ public class Program
         builder.Services.AddScoped<IOpenIAGptService, OpenIaGptService>();
 
         // Add CORS policy to allow cross-origin requests from the frontend
+        // CORS policy is scoped to SmartMenuOptim.API to allow requests from the frontend application.
+        // CORS policies are essential for web applications that interact with APIs hosted on different domains or ports.
         var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
         builder.Services.AddCors(options =>
@@ -109,6 +143,12 @@ public class Program
 
         var app = builder.Build();
 
+        // Use the rate limiting middleware
+        app.UseRateLimiter();
+
+        // Health check endpoint at /health
+        app.MapHealthChecks("/health").AllowAnonymous();
+
         // Seeding the database with initial data
         DbSeeder.Seed(app);
 
@@ -122,6 +162,11 @@ public class Program
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();
+
+        // In Program.cs, register the middleware:
+        // app.UseMiddleware<TenantResolverMiddleware>();
+        // app.UseMiddleware<RateLimittitngMiddleware>();
+
         app.Run();
     }
 }
