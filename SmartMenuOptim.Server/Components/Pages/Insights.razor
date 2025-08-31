@@ -1,6 +1,7 @@
 ﻿@page "/insights"
 @using SmartMenuOptim.Server.Services
 @using SmartMenuOptim.Server.Services.Interfaces
+@using SmartMenuOptim.Shared.Data.Dtos
 @using SmartMenuOptim.Shared.Data.Entities
 @inject IAIService AIService
 @inject IReviewService ReviewService
@@ -12,6 +13,32 @@
         <p class="text-muted">Get data-driven suggestions to maximize flavor and profits.</p>
     </div>
 
+    <div class="alert alert-info mb-4" role="alert">
+        <strong>What do <span style="font-size:1.2em;">💬</span> Average Sentiment Score and <span class="text-warning" style="font-size:1.2em;">★</span> Average Rating mean?</strong><br />
+        <b>Average Sentiment Score</b> reflects how positively or negatively customers feel about a dish, based on their reviews.
+        <ul class="mb-1 mt-2">
+            <li><b>Range:</b> 0 (very negative) to 1 (very positive)</li>
+            <li><b>0.0 – 0.4:</b> Mostly negative feedback <span style="font-size:1.1em;">😠</span></li>
+            <li><b>0.4 – 0.75:</b> Mixed or neutral feedback <span style="font-size:1.1em;">😐</span></li>
+            <li><b>0.75 – 1.0:</b> Mostly positive feedback <span style="font-size:1.1em;">😊</span></li>
+        </ul>
+        <b>Average Rating</b> (<span class="text-warning" style="font-size:1.2em;">★</span>) is the direct score given by customers (1–5 stars).
+        <hr class="my-2" />
+        <b>How to use these together:</b>
+        <ul class="mb-1">
+            <li>
+                <b>High Sentiment & High Rating:</b> These dishes are loved by customers. Promote them to boost sales and profits.
+            </li>
+            <li>
+                <b>High Rating but Low Sentiment:</b> Customers rate the dish well but may have concerns in their comments. Review feedback to improve customer experience and satisfaction.
+            </li>
+            <li>
+                <b>Low Rating & Low Sentiment:</b> These dishes need attention. Consider recipe changes, presentation, or service improvements to increase satisfaction and profitability.
+            </li>
+        </ul>
+        <span class="text-primary">Combining both metrics helps you identify not just what sells, but what truly delights your customers—leading to better experiences and higher profits.</span>
+    </div>
+
     @if (isloading)
     {
         <div class="d-flex justify-content-center my-5">
@@ -21,10 +48,6 @@
     }
     else if (recommendations == null)
     {
-        <div class="alert alert-info text-center">🔄 Loading sales data...</div>
-    }
-    else if (rcomendeddishes == null)
-    {
        <div class="alert alert-warning text-center">
         🎉 No recommendations available at this time. Please try again later. 🔁
         </div>
@@ -33,26 +56,50 @@
     {
         <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <h4 class="card-title">🍽️ Top Dish Recommendations</h4>
+                <h4 class="card-title">🏆 Top Dish Recommendations</h4>
                 <p class="card-text">These selections are curated from recent sales trends and review sentiments:</p>
                 <ul class="list-group list-group-flush">
-                    @foreach (var dish in recommendations.RecomendedDishes)
+                    @foreach (var dish in recommendations)
                     {
-                        <li class="list-group-item">⭐ @dish</li>
+                        <li class="list-group-item">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                                <div>
+                                    <span class="fw-bold">🍽️ @dish.RecomendedDish</span>
+                                    <div class="mb-1 text-muted small">
+                                        Average Rating:
+                                        <span class="text-warning" title="Average Rating">
+                                            @for (int i = 0; i < Math.Round(dish.AverageRating); i++)
+                                            {
+                                                <span>★</span>
+                                            }
+                                            @for (int i = (int)Math.Round(dish.AverageRating); i < 5; i++)
+                                            {
+                                                <span class="text-secondary">☆</span>
+                                            }
+                                        </span>
+                                            <span class="ms-1">(@dish.AverageRating.ToString("0.0")/5)</span>
+
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-3 mt-2 mt-md-0">
+                                    <span title="Average Sentiment Score" class="text-success">
+                                        <span style="font-size:1.2em;">💬</span><strong> @dish.AverageSentimentScore.ToString("F2")</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        </li>
+                        <div class="card-footer text-muted">
+                            <strong>📌 Strategy Note:</strong> @dish.StrategyNote
+                        </div>
                     }
                 </ul>
             </div>
-            <div class="card-footer text-muted">
-                <strong>📌 Strategy Note:</strong> @recommendations.StrategyNote
-            </div>
         </div>
     }
-
 </div>
 
 @code {
-    private AiRecomendationResponse? recommendations;
-    private List<string> rcomendeddishes;
+    private List<AiRecomendationResponseDTO?> recommendations;
     private bool isloading = true;
 
     protected override async Task OnInitializedAsync()
@@ -61,7 +108,6 @@
         var reviews = await ReviewService.GetReviewsAsync();
 
         recommendations = await AIService.GetRecommendationsAsync(sales, reviews);
-        rcomendeddishes = recommendations?.RecomendedDishes ?? new List<string>();
         isloading = false;
     }
 }

@@ -3,6 +3,10 @@ using MudBlazor.Services;
 using SmartMenuOptim.Server.Components;
 using SmartMenuOptim.Server.Services;
 using SmartMenuOptim.Server.Services.Interfaces;
+using Polly;
+using Polly.Extensions.Http;
+using Microsoft.Extensions.Azure;
+
 
 namespace SmartMenuOptim.Server;
 public class Program
@@ -25,6 +29,7 @@ public class Program
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
+
         builder.Services.AddScoped<IAIService, AIService>();
         builder.Services.AddScoped<ISaleRecordService, SaleRecordService>();
         builder.Services.AddScoped<IReviewService, ReviewService>();
@@ -39,14 +44,23 @@ public class Program
             client.BaseAddress = new Uri(baseUrl);
         });
 
-        // Add httpClient for external API calls
-        //builder.Services.AddHttpClient("BackendAPI", (serviceProvider, client) =>
-        //{
-        //    var config = serviceProvider.GetRequiredService<IConfiguration>();
-        //    var baseUrl = config["BackendApi:BaseUrl"];
-        //    //client.BaseAddress = new Uri("https://localhost:7119/");
-        //    client.BaseAddress = new Uri(baseUrl);
-        //});
+
+        // Implement resiliency with Polly. This is to handle transient faults when calling the backend API.
+        // Resiliency policies can include retries, circuit breakers, timeouts, etc. The benefit is to improve the stability and reliability of the application when making HTTP calls.
+        // Allowing 5 exceptions before breaking the circuit.
+        // Retry 3 times with exponential backoff and circuit breaker policy.
+
+        // Replace the existing code block for adding HttpClient with the following:
+        // Note: I do have to commented out the code below because it was causing issues with the HttpClient registration.
+
+
+        //builder.Services.AddHttpClient<IAIService, AIService>("BackendAPI")
+        //    .AddTransientHttpErrorPolicy(policy =>
+        //    policy.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+        //    .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Set lifetime to 5 minutes
+
+
+
 
         builder.Logging.AddConsole();
         var app = builder.Build();

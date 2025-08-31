@@ -1,7 +1,5 @@
 ﻿using SmartMenuOptim.Server.Services.Interfaces;
 using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.Entities;
-using System.Net.Http;
 
 namespace SmartMenuOptim.Server.Services
 {
@@ -10,6 +8,7 @@ namespace SmartMenuOptim.Server.Services
         private readonly HttpClient _httpClient;
         private readonly ILogger<AIService> _logger;
 
+        // HttpClientFactory is preferred to avoid socket exhaustion and manage the lifecycle of HttpClient instances
         public AIService( IHttpClientFactory httpClientFactory, ILogger<AIService> logger)
         {
             _httpClient = httpClientFactory.CreateClient("BackendAPI");
@@ -57,9 +56,9 @@ namespace SmartMenuOptim.Server.Services
 
         }
 
-        public async Task<AiRecomendationResponse?> GetRecommendationsAsync(List<SaleRecord> sales, List<Review> reviews)
+        public async Task<List<AiRecomendationResponseDTO>?> GetRecommendationsAsync(List<SaleRecordDTO> sales, List<ReviewDTO> reviews)
         {
-            var request = new AiRecomendationRequest
+            var request = new AiRecomendationRequestDTO
             {
                 SaleRecords = sales,
                 Reviews = reviews
@@ -70,7 +69,7 @@ namespace SmartMenuOptim.Server.Services
                 var response = await _httpClient.PostAsJsonAsync("api/ai/recommend", request);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<AiRecomendationResponse>();
+                    return await response.Content.ReadFromJsonAsync<List<AiRecomendationResponseDTO>>();
                 }
                 else
                 {

@@ -64,3 +64,15 @@ body, main {
     letter-spacing: 0.2px;
     line-height: 1.4;
 }
+
+.dish-link {
+    color: #0074d9;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+.dish-link:hover, .dish-link:focus {
+    color: #ff8800; /* Highlight color on hover/focus */
+    outline: none;
+}

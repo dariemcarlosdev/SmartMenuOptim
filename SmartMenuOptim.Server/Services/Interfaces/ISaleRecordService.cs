@@ -1,4 +1,5 @@
-﻿using SmartMenuOptim.Shared.Data.Entities;
+﻿using SmartMenuOptim.Shared.Data.Dtos;
+using SmartMenuOptim.Shared.Data.Entities;
 
 internal interface ISaleRecordService
 {
@@ -7,11 +8,11 @@ internal interface ISaleRecordService
     /// </summary>
     /// <param name="productId">The ID of the product to retrieve sale records for.</param>
     /// <returns>A list of sale records for the specified product.</returns>
-    Task<List<SaleRecord>> GetSaleRecordsAsync();
+    Task<List<SaleRecordDTO>> GetSaleRecordsAsync();
     /// <summary>
     /// Adds a new sale record for a product.
     /// </summary>
     /// <param name="saleRecord">The sale record to add.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task AddSaleRecordAsync(SaleRecord saleRecord);
+    Task AddSaleRecordAsync(SaleRecordDTO saleRecord);
 }
