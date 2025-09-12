@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Shared.Data;
+using SmartMenuOptim.Shared.Data.Dtos;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
 
@@ -9,6 +11,12 @@ using SmartMenuOptim.Shared.Data.Interfaces;
 
 namespace SmartMenuOptim.API.Controllers
 {
+    //For versioning, add [ApiVersion("1.0")] above [Route("api/[controller]")]
+    //[ApiVersion(1)]
+    //[ApiVersion(2)]
+    //[ApiController]
+    //[Route("api/v{v:apiVersion}/[controller]")]
+
     [Route("api/[controller]")]
     [ApiController]
     public class SaleRecordsController : ControllerBase
@@ -20,19 +28,39 @@ namespace SmartMenuOptim.API.Controllers
         {
             _logger = logger;
             _unityOfWork = unityOfWork;
+            if (_unityOfWork == null)
+            {
+                _logger.LogError("UnityOfWork is not initialized properly.");
+                throw new InvalidOperationException("UnityOfWork is not initialized properly.");
+            }
         }
 
         // Fallowing REST API conventions, the GET method is used to retrieve a collection of resources.
         // The convention is to return a 200 OK status code with the collection in the response body.
 
         // GET: api/<SaleRecordsController>
+
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SaleRecord>>> GetAllSaleRecords ()
+        public async Task<ActionResult<IEnumerable<SaleRecordDTO>>> GetAllSaleRecords()
         {
             try
             {
-                var saleRecords = await _unityOfWork.SaleRecords.GetAllAsync();
-                return Ok(saleRecords);
+                var saleRecords = await _unityOfWork.SaleRecords.GetAllAsync(s => s.Dish, s => s.Dish.Category, s => s.Dish.Reviews, s => s.Dish.Restaurant);
+                var saleRecordsDtos = saleRecords.Select(s =>   new SaleRecordDTO
+                                {
+                    Id = s.Id,
+                    SaleDate = s.SaleDate,
+                    QuantitySold = s.QuantitySold,
+                    DishId = s.DishId,
+                    DishName = s.Dish?.Name, // Assuming Dish has a Name property
+                    Category = s.Dish?.Category?.Name ?? "Unknown",
+                    Rating = s.Dish?.Reviews.Any() == true ? (int)s.Dish.Reviews.Average(r => r.Rating) : 0, // Assuming Dish has a Reviews collection with Rating property
+                    RestaurantName = s.Dish?.Restaurant?.Name ?? "Unknown", // Assuming Dish has a Restaurant property with Name
+                    DishPrice = s.Dish?.DishPrice ?? 0 // Assuming Dish has a DishPrice property
+
+                }).ToList();
+                return Ok(saleRecordsDtos);
             }
             catch (Exception ex)
             {
@@ -45,6 +73,7 @@ namespace SmartMenuOptim.API.Controllers
         // The convention is to return a 200 OK status code with the resource if it exists, or a 404 Not Found if it does not exist.
 
         // GET api/<SaleRecordsController>/5
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpGet("{id}")]
         public async Task<ActionResult<SaleRecord>> GetSaleRecordById (int id)
         {
@@ -68,6 +97,7 @@ namespace SmartMenuOptim.API.Controllers
         // The convention is to return a 201 Created status code with the location of the newly created resource in the response headers.
 
         // POST api/<SaleRecordsController>
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost]
         public async Task<ActionResult<SaleRecord>> CreateSaleRecord([FromBody] SaleRecord saleRecord)
         {
@@ -91,6 +121,7 @@ namespace SmartMenuOptim.API.Controllers
         // The convention is to return a 200 OK status code with the updated resource if the update is successful, or a 404 Not Found if the resource does not exist.
 
         // PUT api/<SaleRecordsController>/5
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateSaleRecord(int id, [FromBody] SaleRecord SaleRecord)
         {
@@ -117,7 +148,7 @@ namespace SmartMenuOptim.API.Controllers
                 // Update the properties of the sale record
                 existingSaleRecord.SaleDate = SaleRecord.SaleDate;
                 existingSaleRecord.QuantitySold = SaleRecord.QuantitySold;
-                existingSaleRecord.DishName = SaleRecord.DishName;
+                existingSaleRecord.Dish.Name = SaleRecord.Dish.Name;
 
                 _unityOfWork.SaleRecords.Update(existingSaleRecord);
                 await _unityOfWork.SaveChangesAsync();
@@ -142,6 +173,7 @@ namespace SmartMenuOptim.API.Controllers
         // the convention is to return a 204 No Content status code if the deletion is successful, or a 404 Not Found if the resource does not exist.
 
         // DELETE api/<SaleRecordsController>/5
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSaleRecord(int id)
         {

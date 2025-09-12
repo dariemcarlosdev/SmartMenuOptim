@@ -1,0 +1,298 @@
+
+# This GitHub Actions workflow is designed to build, test, and deploy the SmartMenuOptim application.
+
+# Correct CI/CD Publishing Strategy:
+# I should only publish the entry projects (API and Server), each to a separate output directory. You do NOT need to publish SmartMenuOptim.Shared or SmartMenuOptim.Tests.
+
+# SmartMenuOptim.Shared will be included automatically as a dependency when publishing API or Server.
+# SmartMenuOptim.Tests should only be used for dotnet test, not for publish.name: CI/CD Pipeline for SmartMenuOptim
+
+on:
+  push:
+    branches:
+        - Staging
+        # - dev
+        - master
+        - env-dev/*       
+        - env-staging/*
+  pull_request:
+    branches:
+        - Staging
+        # - dev
+        - master
+        - env-dev/*
+        - env-staging/*
+
+# Jobs List
+# Each job runs in its own virtual environment
+# Jobs can run sequentially or in parallel
+# Jobs can share data using artifacts
+# Build-Test job runs first, followed by CodeQL analysis, then deployments, and finally notifications
+# Build-Test job: Builds the solution, runs tests, applies EF Core migrations to a local PostgreSQL instance, and uploads build artifacts
+# CodeQL Analysis job: Performs static code analysis for security vulnerabilities
+# Deploy-Azure-Server job: Deploys the Blazor Server app to Azure Web App and applies EF Core migrations to the Azure PostgreSQL database
+# Deploy-Azure-API job: Deploys the API app to Azure Web App and applies EF Core migrations to the Azure PostgreSQL database
+# Notify-On-Failure job: Sends email notification if any previous job fails
+# Notify-On-Success job: Sends email notification if all previous jobs succeed
+# Optional jobs for AWS and Docker deployments are commented out and can be enabled if needed
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
+          POSTGRES_DB: SmartMenuDb
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8.0 and 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+      # Install the EF Core CLI tool globally to manage migrations
+    - name: Install EF Core CLI
+      run: dotnet tool install --global dotnet-ef
+  
+      # Add this to ensure dotnet tools (like dotnet-ef) are on the PATH
+    - name: Add dotnet tools to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      # --- Ensure database migrations are applied before tests ---
+      # Only run dotnet ef database update for the project where your DbContext (and therefore your migrations) actually live.
+    - name: Apply EF Core Migrations
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=SmartMenuDb;Username=postgres;Password=admin123"
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
+
+
+      # --- List tables after migration to verify
+    - name: List tables after migration
+      run: |
+       sudo apt-get install -y postgresql-client
+       PGPASSWORD=admin123 psql -h localhost -U postgres -d SmartMenuDb -c '\dt'
+
+      
+    - name: Build solution
+      run: dotnet build SmartMenuOptim.sln
+      working-directory: ${{ github.workspace }}
+
+    - name: Upload code coverage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage
+        path: '**/TestResults/**/coverage.cobertura.xml'
+
+    - name: Security check - vulnerable packages
+      run: dotnet list package --vulnerable
+
+
+    - name: Publish API app
+      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --output ./publish/api
+
+    - name: Publish Server app
+      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --output ./publish/server
+    
+
+    - name: Publish build artifacts
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: publish
+        path:  ./publish
+
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore SmartMenuOptim.sln
+
+    - name: Build Solution
+      run: dotnet build SmartMenuOptim.sln --no-restore --configuration Release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  deploy-azure-server:
+    needs: [build-test, codeql-analysis]
+    env:
+      AZURE_WEBAPP_SERVER_NAME: ${{ secrets.AZURE_WEBAPP_SERVER_NAME }}
+      AZURE_WEBAPP_SERVER_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish
+        path: ./publish
+
+    - name: Deploy Blazor Server to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_SERVER_NAME }}
+        publish-profile: ${{ env.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
+        package: ./publish/server
+
+  deploy-azure-api:
+    needs: [build-test, codeql-analysis]
+    env:
+      AZURE_WEBAPP_API_NAME: ${{ secrets.AZURE_WEBAPP_API_NAME }}
+      AZURE_WEBAPP_API_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish
+        path: ./publish
+
+    - name: Deploy API to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_API_NAME }}
+        publish-profile: ${{ env.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
+        package: ./publish/api
+    
+        # --- Run EF Core migrations AFTER deployment ---
+        # Best practice to run EF Core migrations after the API is deployed, so your migrations match the deployed code.
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x' 
+       
+    - name: Install EF Core CLI
+      run: dotnet tool install --global dotnet-ef
+
+    - name: Add dotnet tools to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Apply EF Core Migrations to Azure PostgreSQL
+      if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/Staging'
+      env:
+        ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
+
+
+
+  # --- Optional: Deploy to AWS Elastic Beanstalk ---
+  # Uncomment and configure the following job if you want to deploy to AWS
+  # deploy-aws:
+  #   needs: build-test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Download build artifacts
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: publish
+  #       path: ./publish
+  #   - name: Deploy to AWS Elastic Beanstalk
+  #     uses: einaregilsson/beanstalk-deploy@v21
+  #     with:
+  #       aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #       application_name: ${{ secrets.AWS_EB_APP_NAME }}
+  #       environment_name: ${{ secrets.AWS_EB_ENV_NAME }}
+  #       version_label: ${{ github.sha }}
+  #       region: ${{ secrets.AWS_REGION }}
+  #       deployment_package: ./publish/SmartMenuOptim.API.zip
+
+  # --- Optional: Deploy to Docker Hub ---
+  # Uncomment and configure the following job if you want to push to Docker Hub
+  # deploy-docker:
+  #   needs: build-test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Login to Docker Hub
+  #     uses: docker/login-action@v3
+  #     with:
+  #       username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #       password: ${{ secrets.DOCKERHUB_TOKEN }}
+  #   - name: Build and push Docker image
+  #     run: |
+  #       docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/smartmenuoptim:latest .
+  #       docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartmenuoptim:latest
+
+  # --- Notification on Failure ---
+  notify-on-failure:
+    if: failure()
+    runs-on: ubuntu-latest
+    needs: [build-test,codeql-analysis,deploy-azure-server,deploy-azure-api]
+    env:
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+    steps:
+    - name: Send email on failure
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ env.SMTP_USERNAME }}
+        password: ${{ env.SMTP_PASSWORD }}
+        subject: "GitHub Actions CI/CD Pipeline Failed"
+        to: softevolutionsl@gmail.com
+        from: ${{ secrets.SMTP_USERNAME }}
+        body: |
+          The CI/CD pipeline for branch 'Staging' has failed.
+          Please check the Actions tab for details.
+
+  # --- Notification on Success ---
+  notify-on-success:
+    if: success()
+    runs-on: ubuntu-latest
+    needs: [build-test, codeql-analysis,deploy-azure-server,deploy-azure-api]
+    env:
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+    steps:
+    - name: Send email on success
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ env.SMTP_USERNAME }}
+        password: ${{ env.SMTP_PASSWORD }}
+        subject: "GitHub Actions CI/CD Pipeline Succeeded"
+        to: softevolutionsl@gmail.com
+        from: ${{ env.SMTP_USERNAME }}
+        body: |
+          The CI/CD pipeline for branch 'Staging' has completed successfully.
+          All checks for build-test and codeql-analysis passed!

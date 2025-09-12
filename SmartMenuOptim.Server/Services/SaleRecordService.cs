@@ -1,4 +1,5 @@
-﻿using SmartMenuOptim.Shared.Data.Entities;
+﻿using SmartMenuOptim.Shared.Data.Dtos;
+using SmartMenuOptim.Shared.Data.Entities;
 
 internal class SaleRecordService : ISaleRecordService
 {
@@ -9,14 +10,14 @@ internal class SaleRecordService : ISaleRecordService
         _httpClient = httpClientFactory.CreateClient("BackendAPI");
     }
 
-    public async Task AddSaleRecordAsync(SaleRecord saleRecord)
+    public async Task AddSaleRecordAsync(SaleRecordDTO saleRecord)
     {
         var response = await _httpClient.PostAsJsonAsync("api/salerecords", saleRecord);
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<List<SaleRecord>> GetSaleRecordsAsync()
+    public async Task<List<SaleRecordDTO>> GetSaleRecordsAsync()
         // Retrieves all sale records from the API
-       => await _httpClient.GetFromJsonAsync<List<SaleRecord>>("api/SaleRecords") ?? [];
+       => await _httpClient.GetFromJsonAsync<List<SaleRecordDTO>>("api/SaleRecords") ?? [];
 
 }

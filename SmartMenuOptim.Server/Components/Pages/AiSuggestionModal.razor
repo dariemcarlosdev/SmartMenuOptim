@@ -1,0 +1,63 @@
+@* AiSuggestionModal.razor: A reusable Bootstrap modal component *@
+@if (Show)
+{
+    <div class="modal fade show" style="display:block; background:rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered custom-modal-size ">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="OnClose"></button>
+                </div>
+                <div class="modal-body custom-modal-body">
+                    @if (Typing && !string.IsNullOrEmpty(TypingText))
+                    {
+                        <div class="typing-effect">
+                            @CurrentText<span class="caret">|</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @ChildContent
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnClose">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // State for the modal parameters
+    // Parameters are used to pass data to the modal component from the parent component
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; } // Content to be displayed inside the modal body
+    [Parameter] public EventCallback OnClose { get; set; } // Callback to close the modal
+    [Parameter] public string TypingText { get; set; } = string.Empty;
+    [Parameter] public bool Typing { get; set; } = false;
+    [Parameter] public int TypingDelay { get; set; } = 25;
+
+    private string CurrentText { get; set; } = string.Empty;
+
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        TypingText ??= string.Empty;
+        if (Typing && !string.IsNullOrEmpty(TypingText))
+        {
+            CurrentText = string.Empty;
+            for (int i = 0; i < TypingText.Length; i++)
+            {
+                CurrentText += TypingText[i];
+                StateHasChanged();
+                await Task.Delay(TypingDelay);
+            }
+        }
+        else
+        {
+            CurrentText = TypingText ?? string.Empty;
+        }
+    }
+}

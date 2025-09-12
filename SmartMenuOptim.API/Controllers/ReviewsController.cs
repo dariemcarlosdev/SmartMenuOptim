@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data;
+using SmartMenuOptim.Shared.Data.Dtos;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Interfaces;
 
@@ -10,6 +11,12 @@ using SmartMenuOptim.Shared.Data.Interfaces;
 
 namespace SmartMenuOptim.API.Controllers
 {
+    //For versioning, add [ApiVersion("1.0")] above [Route("api/[controller]")]
+    //[ApiVersion(1)]
+    //[ApiVersion(2)]
+    //[ApiController]
+    //[Route("api/v{v:apiVersion}/[controller]")]
+
     [Route("api/[controller]")]
     [ApiController]
     public class ReviewsController : ControllerBase
@@ -31,13 +38,51 @@ namespace SmartMenuOptim.API.Controllers
         }
 
         // GET: api/<ReviewsController>
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
+        /// <summary>
+        /// This endpoint retrieves all reviews, optionally filtering by dish name and average sentiment.
+        /// </summary>
+        /// <param name="dishname"></param>
+        /// <param name="sentiment"></param>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Review>>> GetAllReviews()
+        public async Task<ActionResult<IEnumerable<ReviewDTO>>> GetAllReviews([FromQuery] string? dishname = null, [FromQuery] double? sentiment = null)
         {
             try
             {
-                var reviews = await _unityOfWork.Reviews.GetAllAsync();
-                return Ok(reviews);
+                var reviews = await _unityOfWork.Reviews.GetAllAsync(r => r.Customer, r => r.Dish);
+                if (!string.IsNullOrWhiteSpace(dishname))
+                {
+                    reviews = reviews.Where(r => r.Dish != null && r.Dish.Name != null && r.Dish.Name.Equals(dishname, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+                if (sentiment.HasValue)
+                {
+                    // Use a tolerance value to account for floating-point precision issues and to include reviews
+                    // with sentiment scores that are close to the specified value, not just exact matches.
+                    // This makes filtering more user-friendly and robust.
+                    double tolerance = 0.03; 
+                    reviews = reviews.Where(r => Math.Abs(r.SentimentScore - sentiment.Value) <= tolerance).ToList();
+                }
+                // Order reviews by SentimentScore descending before projecting to DTOs
+                var orderedReviews = reviews.OrderByDescending(r => r.SentimentScore);
+                var reviewsDtos = orderedReviews.Select(r => new ReviewDTO
+                {
+                    Id = r.Id,
+                    CustomerName = r.CustomerName,
+                    Comment = r.Comment,
+                    SentimentScore = r.SentimentScore,
+                    DishId = r.DishId,
+                    DishName = r.Dish?.Name, // Assuming Dish has a Name property
+                    DateCreated = r.DateCreated,
+                    Rating = r.Rating,
+                }).ToList();
+
+                if (reviews == null || !reviews.Any())
+                {
+                    return NotFound("No reviews found.");
+                }
+
+                return Ok(reviewsDtos);
             }
             catch (Exception ex)
             {
@@ -47,12 +92,13 @@ namespace SmartMenuOptim.API.Controllers
         }
 
         // GET api/<ReviewsController>/5
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpGet("{id}")]
         public async Task<ActionResult<Review>> GetReviewById(int id)
         {
             try
             {
-                var review = await _unityOfWork.Reviews.GetByIdAsync(id);
+                var review = await _unityOfWork.Reviews.GetByIdAsync(id, r => r.Customer, r => r.Dish);
                 if (review == null)
                 {
                     return NotFound();
@@ -72,6 +118,8 @@ namespace SmartMenuOptim.API.Controllers
         /// </summary>
         /// <param name="review"></param>
         /// <returns></returns>
+
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost]
         public async Task<ActionResult<Review>> CreateReview([FromBody] Review review)
         {
@@ -80,15 +128,28 @@ namespace SmartMenuOptim.API.Controllers
             {
                 return BadRequest("Review cannot be null");
             }
+            // Set DateCreated to now if not set
+            if (review.DateCreated == default)
+            {
+                review.DateCreated = DateTime.UtcNow;
+            }
+            // Set Rating to default (e.g., 0) if not set or out of range
+            if (review.Rating < 1 || review.Rating > 5)
+            {
+                review.Rating = 0;
+            }
             else if (string.IsNullOrWhiteSpace(review.CustomerName) || string.IsNullOrWhiteSpace(review.Comment))
             {
                 return BadRequest("Customer name and comment cannot be empty");
             }
-            else if (review.SentimentScore < 0 || review.SentimentScore > 1)
+
+            //This check is commented out because the sentiment score is now being calculated by the sentiment analysis service.
+            //else if (review.SentimentScore < 0 || review.SentimentScore > 1)
+            //{
+            //    return BadRequest("Sentiment score must be between 0 and 1");
+            //}
+            else
             {
-                return BadRequest("Sentiment score must be between 0 and 1");
-            }
-            else {
                 // Validate the review object
                 if (!ModelState.IsValid)
                 {
@@ -118,6 +179,8 @@ namespace SmartMenuOptim.API.Controllers
         }
 
         // PUT api/<ReviewsController>/5
+
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPut("{id}")]
         public async Task<ActionResult<Review>> UpdateReview(int id, [FromBody] Review review)
         {
@@ -163,7 +226,13 @@ namespace SmartMenuOptim.API.Controllers
             }
         }
 
+
+        //lazy loading is used to load related entities only when they are accessed for the first time.
+        //eager loading is used to load related entities immediately with the main entity.
+
         // DELETE api/<ReviewsController>/5
+
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteReview(int id)
         {
