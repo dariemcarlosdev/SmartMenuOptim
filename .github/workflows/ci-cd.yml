@@ -25,6 +25,7 @@ on:
         - master
         - env-dev/*       
         - env-staging/*
+
   pull_request:
     branches:
         - Staging
@@ -44,16 +45,136 @@ on:
 # ==================================================================================================
 jobs:
   # --------------------------------------------------------------------------------------------------
-  # Job: build-test
-  # Purpose: To build the entire solution, run unit and integration tests, and publish the
-  #          deployable artifacts. It uses a PostgreSQL service container to run integration
-  #          tests that require a database.
+  # Job: build
+  # Purpose: To build the entire solution and ensure all projects compile successfully.
   # --------------------------------------------------------------------------------------------------
-  build-test:
+  build:
     runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    # Service Container: A temporary PostgreSQL database is created for this job.
-    # This allows EF Core migrations and integration tests to run against a clean, isolated database.
+    - name: Setup .NET 8.0 and 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build SmartMenuOptim.sln --no-restore
+      working-directory: ${{ github.workspace }}
+
+    - name: Upload build output
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-output
+        path: |
+          **/bin
+          **/obj
+
+  # --------------------------------------------------------------------------------------------------
+  # Job: test
+  # Purpose: Executes all tests and collects code coverage information using coverlet
+  # --------------------------------------------------------------------------------------------------
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Download build output
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output
+
+    # Install the coverlet tool for code coverage collection
+    - name: Install coverlet
+      run: dotnet tool install --global coverlet.console
+
+    # Run tests with coverage collection
+    - name: Run tests with coverage
+      run: |
+        dotnet test --no-build \
+          /p:CollectCoverage=true \
+          /p:CoverletOutputFormat=cobertura \
+          /p:CoverletOutput=./TestResults/Coverage/ \
+          /p:Exclude="[*]*.Migrations.*" \
+          /p:Threshold=80
+
+    # Generate HTML report from coverage data
+    - name: Generate coverage report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: '**/Coverage/*.cobertura.xml'
+        targetdir: 'coveragereport'
+        reporttypes: 'Html;Cobertura;Badges'
+
+    # Upload detailed HTML coverage report
+    - name: Upload detailed coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: coveragereport
+
+    # Upload coverage summary
+    - name: Upload coverage summary
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: code-coverage
+        path: '**/Coverage/*.cobertura.xml'
+
+    # Add coverage summary to job summary
+    - name: Coverage Summary Report
+      if: always()
+      run: |
+        echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        echo "Coverage report has been generated and is available as an artifact." >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "coveragereport/Summary.txt" ]; then
+          echo "### Coverage Metrics" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat coveragereport/Summary.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+  # --------------------------------------------------------------------------------------------------
+  # Job: security-scan
+  # Purpose: Performs security checks on NuGet packages
+  # --------------------------------------------------------------------------------------------------
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Security check - vulnerable packages
+      run: dotnet list package --vulnerable
+
+  # --------------------------------------------------------------------------------------------------
+  # Job: database-migrations
+  # Purpose: Applies database migrations and verifies schema
+  # --------------------------------------------------------------------------------------------------
+  database-migrations:
+    needs: build
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:17
@@ -70,81 +191,63 @@ jobs:
           --health-retries=5
 
     steps:
-    # Step 1: Check out the repository code so the workflow can access it.
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Step 2: Set up the required .NET SDK versions. Both 8.0 and 9.0 are installed to support all projects.
-    - name: Setup .NET 8.0 and 9.0
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: |
-          8.0.x
-          9.0.x
+        dotnet-version: '9.0.x'
 
-    # Step 3: Restore all NuGet packages for all projects in the solution.
-    - name: Restore dependencies
-      run: dotnet restore
-
-    # Step 4: Install the EF Core command-line tool, which is required to apply database migrations.
     - name: Install EF Core CLI
       run: dotnet tool install --global dotnet-ef
   
-    # Step 5: Add the .NET tools directory to the system's PATH to make `dotnet-ef` accessible.
     - name: Add dotnet tools to PATH
       run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-    # Step 6: Apply EF Core migrations to the PostgreSQL service container.
-    # This sets up the database schema required for integration tests.
     - name: Apply EF Core Migrations
       env:
         ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=SmartMenuDb;Username=postgres;Password=admin123"
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
-    # Step 7: Verify that the migrations were applied successfully by listing the tables in the database.
-    - name: List tables after migration
+    - name: Verify Database Schema
       run: |
-       sudo apt-get install -y postgresql-client
-       PGPASSWORD=admin123 psql -h localhost -U postgres -d SmartMenuDb -c '\dt'
-      
-    # Step 8: Build the entire solution to ensure all projects compile successfully.
-    - name: Build solution
-      run: dotnet build SmartMenuOptim.sln --no-restore
-      working-directory: ${{ github.workspace }}
+        sudo apt-get install -y postgresql-client
+        PGPASSWORD=admin123 psql -h localhost -U postgres -d SmartMenuDb -c '\dt'
 
-    # Step 9: Run tests and collect code coverage.
-    # This command executes all test projects in the solution and generates a coverage report.
-    - name: Run tests and collect code coverage
-      run: dotnet test --no-build --collect:"XPlat Code Coverage"
+  # --------------------------------------------------------------------------------------------------
+  # Job: publish
+  # Purpose: Creates deployment packages for both API and Server applications
+  # --------------------------------------------------------------------------------------------------
+  publish:
+    needs: [test, security-scan, database-migrations]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    # Step 10: Upload code coverage reports as an artifact for analysis.
-    - name: Upload code coverage
-      if: always()
-      uses: actions/upload-artifact@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
       with:
-        name: code-coverage
-        path: '**/TestResults/**/coverage.cobertura.xml'
+        dotnet-version: '9.0.x'
 
-    # Step 11: Scan for any NuGet packages with known vulnerabilities.
-    - name: Security check - vulnerable packages
-      run: dotnet list package --vulnerable
+    - name: Download build output
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output
 
-    # Step 11: Publish the API project into a deployable format and place it in the './publish/api' directory.
     - name: Publish API app
-      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --output ./publish/api
+      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --no-build --output ./publish/api
 
-    # Step 12: Publish the Server project into a deployable format and place it in the './publish/server' directory.
     - name: Publish Server app
-      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --output ./publish/server
-    
-    # Step 13: Upload the entire 'publish' directory as a build artifact.
-    # This artifact will be used by the deployment jobs.
-    - name: Publish build artifacts
+      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --no-build --output ./publish/server
+
+    - name: Upload deployment artifacts
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: publish
-        path:  ./publish
+        path: ./publish
 
   # --------------------------------------------------------------------------------------------------
   # Job: codeql-analysis
@@ -188,7 +291,7 @@ jobs:
   # Depends on: `build-test` and `codeql-analysis`.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-server:
-    needs: [build-test, codeql-analysis]
+    needs: [publish, codeql-analysis]
     env:
       AZURE_WEBAPP_SERVER_NAME: ${{ secrets.AZURE_WEBAPP_SERVER_NAME }}
       AZURE_WEBAPP_SERVER_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
@@ -216,7 +319,7 @@ jobs:
   # Depends on: `build-test` and `codeql-analysis`.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-api:
-    needs: [build-test, codeql-analysis]
+    needs: [publish, codeql-analysis]
     env:
       AZURE_WEBAPP_API_NAME: ${{ secrets.AZURE_WEBAPP_API_NAME }}
       AZURE_WEBAPP_API_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
@@ -267,7 +370,7 @@ jobs:
   notify-on-failure:
     if: failure()
     runs-on: ubuntu-latest
-    needs: [build-test,codeql-analysis,deploy-azure-server,deploy-azure-api]
+    needs: [build, test, security-scan, database-migrations, publish, codeql-analysis, deploy-azure-server, deploy-azure-api]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
@@ -293,7 +396,7 @@ jobs:
   notify-on-success:
     if: success()
     runs-on: ubuntu-latest
-    needs: [build-test, codeql-analysis,deploy-azure-server,deploy-azure-api]
+    needs: [build, test, security-scan, database-migrations, publish, codeql-analysis, deploy-azure-server, deploy-azure-api]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
