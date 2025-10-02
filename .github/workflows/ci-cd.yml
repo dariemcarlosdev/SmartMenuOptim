@@ -1,44 +1,59 @@
+# ==================================================================================================
+# GitHub Actions CI/CD Workflow for the SmartMenuOptim Application
+#
+# Purpose:
+# This workflow automates the build, test, security analysis, and deployment processes for the
+# SmartMenuOptim application. It ensures code quality and consistency by running a series of
+# automated checks and deployments whenever changes are pushed or pull requests are made to
+# key branches.
+#
+# Publishing Strategy:
+# - This pipeline correctly publishes only the entry-point projects: `SmartMenuOptim.API` and `SmartMenuOptim.Server`.
+# - Shared libraries (`SmartMenuOptim.Shared`) are automatically included as dependencies during the publish step.
+# - Test projects (`SmartMenuOptim.Tests`) are used only for running tests and are not published.
+# ==================================================================================================
+name: CI/CD Pipeline for SmartMenuOptim
 
-# This GitHub Actions workflow is designed to build, test, and deploy the SmartMenuOptim application.
-
-# Correct CI/CD Publishing Strategy:
-# I should only publish the entry projects (API and Server), each to a separate output directory. You do NOT need to publish SmartMenuOptim.Shared or SmartMenuOptim.Tests.
-
-# SmartMenuOptim.Shared will be included automatically as a dependency when publishing API or Server.
-# SmartMenuOptim.Tests should only be used for dotnet test, not for publish.name: CI/CD Pipeline for SmartMenuOptim
-
+# --------------------------------------------------------------------------------------------------
+# Triggers:
+# Defines the events that will trigger this workflow to run.
+# --------------------------------------------------------------------------------------------------
 on:
   push:
     branches:
         - Staging
-        # - dev
         - master
         - env-dev/*       
         - env-staging/*
   pull_request:
     branches:
         - Staging
-        # - dev
         - master
         - env-dev/*
         - env-staging/*
 
-# Jobs List
-# Each job runs in its own virtual environment
-# Jobs can run sequentially or in parallel
-# Jobs can share data using artifacts
-# Build-Test job runs first, followed by CodeQL analysis, then deployments, and finally notifications
-# Build-Test job: Builds the solution, runs tests, applies EF Core migrations to a local PostgreSQL instance, and uploads build artifacts
-# CodeQL Analysis job: Performs static code analysis for security vulnerabilities
-# Deploy-Azure-Server job: Deploys the Blazor Server app to Azure Web App and applies EF Core migrations to the Azure PostgreSQL database
-# Deploy-Azure-API job: Deploys the API app to Azure Web App and applies EF Core migrations to the Azure PostgreSQL database
-# Notify-On-Failure job: Sends email notification if any previous job fails
-# Notify-On-Success job: Sends email notification if all previous jobs succeed
-# Optional jobs for AWS and Docker deployments are commented out and can be enabled if needed
+# ==================================================================================================
+# Jobs:
+# The workflow is composed of several jobs that run in a specific order.
+#
+# Job Execution Flow:
+# 1. `build-test`: Compiles the code, runs tests against a temporary database, and packages the application.
+# 2. `codeql-analysis`: Runs in parallel with `build-test` to perform static code analysis for security vulnerabilities.
+# 3. `deploy-azure-server` & `deploy-azure-api`: Run after `build-test` and `codeql-analysis` succeed. They deploy the packaged applications to Azure.
+# 4. `notify-on-failure` / `notify-on-success`: Run at the end to send a notification based on the final outcome of the pipeline.
+# ==================================================================================================
 jobs:
+  # --------------------------------------------------------------------------------------------------
+  # Job: build-test
+  # Purpose: To build the entire solution, run unit and integration tests, and publish the
+  #          deployable artifacts. It uses a PostgreSQL service container to run integration
+  #          tests that require a database.
+  # --------------------------------------------------------------------------------------------------
   build-test:
     runs-on: ubuntu-latest
 
+    # Service Container: A temporary PostgreSQL database is created for this job.
+    # This allows EF Core migrations and integration tests to run against a clean, isolated database.
     services:
       postgres:
         image: postgres:17
@@ -55,9 +70,11 @@ jobs:
           --health-retries=5
 
     steps:
+    # Step 1: Check out the repository code so the workflow can access it.
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # Step 2: Set up the required .NET SDK versions. Both 8.0 and 9.0 are installed to support all projects.
     - name: Setup .NET 8.0 and 9.0
       uses: actions/setup-dotnet@v4
       with:
@@ -65,36 +82,42 @@ jobs:
           8.0.x
           9.0.x
 
+    # Step 3: Restore all NuGet packages for all projects in the solution.
     - name: Restore dependencies
       run: dotnet restore
 
-      # Install the EF Core CLI tool globally to manage migrations
+    # Step 4: Install the EF Core command-line tool, which is required to apply database migrations.
     - name: Install EF Core CLI
       run: dotnet tool install --global dotnet-ef
   
-      # Add this to ensure dotnet tools (like dotnet-ef) are on the PATH
+    # Step 5: Add the .NET tools directory to the system's PATH to make `dotnet-ef` accessible.
     - name: Add dotnet tools to PATH
       run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      # --- Ensure database migrations are applied before tests ---
-      # Only run dotnet ef database update for the project where your DbContext (and therefore your migrations) actually live.
+    # Step 6: Apply EF Core migrations to the PostgreSQL service container.
+    # This sets up the database schema required for integration tests.
     - name: Apply EF Core Migrations
       env:
         ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=SmartMenuDb;Username=postgres;Password=admin123"
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
-
-      # --- List tables after migration to verify
+    # Step 7: Verify that the migrations were applied successfully by listing the tables in the database.
     - name: List tables after migration
       run: |
        sudo apt-get install -y postgresql-client
        PGPASSWORD=admin123 psql -h localhost -U postgres -d SmartMenuDb -c '\dt'
-
       
+    # Step 8: Build the entire solution to ensure all projects compile successfully.
     - name: Build solution
-      run: dotnet build SmartMenuOptim.sln
+      run: dotnet build SmartMenuOptim.sln --no-restore
       working-directory: ${{ github.workspace }}
 
+    # Step 9: Run tests and collect code coverage.
+    # This command executes all test projects in the solution and generates a coverage report.
+    - name: Run tests and collect code coverage
+      run: dotnet test --no-build --collect:"XPlat Code Coverage"
+
+    # Step 10: Upload code coverage reports as an artifact for analysis.
     - name: Upload code coverage
       if: always()
       uses: actions/upload-artifact@v4
@@ -102,17 +125,20 @@ jobs:
         name: code-coverage
         path: '**/TestResults/**/coverage.cobertura.xml'
 
+    # Step 11: Scan for any NuGet packages with known vulnerabilities.
     - name: Security check - vulnerable packages
       run: dotnet list package --vulnerable
 
-
+    # Step 11: Publish the API project into a deployable format and place it in the './publish/api' directory.
     - name: Publish API app
       run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --output ./publish/api
 
+    # Step 12: Publish the Server project into a deployable format and place it in the './publish/server' directory.
     - name: Publish Server app
       run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --output ./publish/server
     
-
+    # Step 13: Upload the entire 'publish' directory as a build artifact.
+    # This artifact will be used by the deployment jobs.
     - name: Publish build artifacts
       if: success()
       uses: actions/upload-artifact@v4
@@ -120,6 +146,11 @@ jobs:
         name: publish
         path:  ./publish
 
+  # --------------------------------------------------------------------------------------------------
+  # Job: codeql-analysis
+  # Purpose: To perform static code analysis using GitHub's CodeQL engine to find security
+  #          vulnerabilities in the codebase.
+  # --------------------------------------------------------------------------------------------------
   codeql-analysis:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
@@ -151,6 +182,11 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
 
+  # --------------------------------------------------------------------------------------------------
+  # Job: deploy-azure-server
+  # Purpose: To deploy the Blazor Server application to an Azure Web App.
+  # Depends on: `build-test` and `codeql-analysis`.
+  # --------------------------------------------------------------------------------------------------
   deploy-azure-server:
     needs: [build-test, codeql-analysis]
     env:
@@ -158,12 +194,14 @@ jobs:
       AZURE_WEBAPP_SERVER_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
     runs-on: ubuntu-latest
     steps:
+    # Step 1: Download the build artifacts created in the `build-test` job.
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: publish
         path: ./publish
 
+    # Step 2: Deploy the Server application to Azure using its publish profile.
     - name: Deploy Blazor Server to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
@@ -171,6 +209,12 @@ jobs:
         publish-profile: ${{ env.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
         package: ./publish/server
 
+  # --------------------------------------------------------------------------------------------------
+  # Job: deploy-azure-api
+  # Purpose: To deploy the API application to an Azure Web App and apply database migrations
+  #          to the production/staging database.
+  # Depends on: `build-test` and `codeql-analysis`.
+  # --------------------------------------------------------------------------------------------------
   deploy-azure-api:
     needs: [build-test, codeql-analysis]
     env:
@@ -178,12 +222,14 @@ jobs:
       AZURE_WEBAPP_API_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
     runs-on: ubuntu-latest
     steps:
+    # Step 1: Download the build artifacts.
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: publish
         path: ./publish
 
+    # Step 2: Deploy the API application to Azure.
     - name: Deploy API to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
@@ -191,67 +237,33 @@ jobs:
         publish-profile: ${{ env.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
         package: ./publish/api
     
-        # --- Run EF Core migrations AFTER deployment ---
-        # Best practice to run EF Core migrations after the API is deployed, so your migrations match the deployed code.
-    
+    # Step 3: Set up .NET SDK to run the EF Core CLI.
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x' 
        
+    # Step 4: Install the EF Core CLI tool.
     - name: Install EF Core CLI
       run: dotnet tool install --global dotnet-ef
 
+    # Step 5: Add the .NET tools directory to the PATH.
     - name: Add dotnet tools to PATH
       run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
+    # Step 6: Apply EF Core migrations to the live Azure PostgreSQL database.
+    # This is a critical step to ensure the database schema is in sync with the deployed application code.
+    # It runs only for specific branches to prevent accidental changes to production.
     - name: Apply EF Core Migrations to Azure PostgreSQL
       if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/Staging'
       env:
         ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
 
-
-
-  # --- Optional: Deploy to AWS Elastic Beanstalk ---
-  # Uncomment and configure the following job if you want to deploy to AWS
-  # deploy-aws:
-  #   needs: build-test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Download build artifacts
-  #     uses: actions/download-artifact@v4
-  #     with:
-  #       name: publish
-  #       path: ./publish
-  #   - name: Deploy to AWS Elastic Beanstalk
-  #     uses: einaregilsson/beanstalk-deploy@v21
-  #     with:
-  #       aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #       aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #       application_name: ${{ secrets.AWS_EB_APP_NAME }}
-  #       environment_name: ${{ secrets.AWS_EB_ENV_NAME }}
-  #       version_label: ${{ github.sha }}
-  #       region: ${{ secrets.AWS_REGION }}
-  #       deployment_package: ./publish/SmartMenuOptim.API.zip
-
-  # --- Optional: Deploy to Docker Hub ---
-  # Uncomment and configure the following job if you want to push to Docker Hub
-  # deploy-docker:
-  #   needs: build-test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Login to Docker Hub
-  #     uses: docker/login-action@v3
-  #     with:
-  #       username: ${{ secrets.DOCKERHUB_USERNAME }}
-  #       password: ${{ secrets.DOCKERHUB_TOKEN }}
-  #   - name: Build and push Docker image
-  #     run: |
-  #       docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/smartmenuoptim:latest .
-  #       docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartmenuoptim:latest
-
-  # --- Notification on Failure ---
+  # --------------------------------------------------------------------------------------------------
+  # Job: notify-on-failure
+  # Purpose: To send an email notification if any of the preceding jobs fail.
+  # --------------------------------------------------------------------------------------------------
   notify-on-failure:
     if: failure()
     runs-on: ubuntu-latest
@@ -271,10 +283,13 @@ jobs:
         to: softevolutionsl@gmail.com
         from: ${{ secrets.SMTP_USERNAME }}
         body: |
-          The CI/CD pipeline for branch 'Staging' has failed.
+          The CI/CD pipeline for branch '${{ github.ref_name }}' has failed.
           Please check the Actions tab for details.
 
-  # --- Notification on Success ---
+  # --------------------------------------------------------------------------------------------------
+  # Job: notify-on-success
+  # Purpose: To send an email notification when all jobs in the pipeline complete successfully.
+  # --------------------------------------------------------------------------------------------------
   notify-on-success:
     if: success()
     runs-on: ubuntu-latest
@@ -294,5 +309,5 @@ jobs:
         to: softevolutionsl@gmail.com
         from: ${{ env.SMTP_USERNAME }}
         body: |
-          The CI/CD pipeline for branch 'Staging' has completed successfully.
-          All checks for build-test and codeql-analysis passed!
+          The CI/CD pipeline for branch '${{ github.ref_name }}' has completed successfully.
+          All checks for build, test, analysis, and deployment passed!
