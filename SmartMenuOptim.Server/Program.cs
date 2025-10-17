@@ -1,14 +1,3 @@
-using Azure.Identity;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Azure;
-using Microsoft.Extensions.Http.Resilience;
-using MudBlazor.Services;
-using Polly;
-using Polly.Extensions.Http;
-using SmartMenuOptim.Server.Components;
-using SmartMenuOptim.Server.Services;
-using SmartMenuOptim.Server.Services.Interfaces;
-using System.Threading.RateLimiting;
 using SmartMenuOptim.Server.Extensions;
 
 namespace SmartMenuOptim.Server;
@@ -46,7 +35,8 @@ public class Program
         // Configures HttpClients, including resilience policies like retries and circuit breakers,
         // for communicating with the backend API.
         builder.Services.AddHttpClients();
-        
+
+
         // Sets up rate limiting policies to protect the application from excessive requests.
         builder.Services.AddRateLimiting();
 
