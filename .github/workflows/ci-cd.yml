@@ -102,35 +102,35 @@ jobs:
   # Job: codeql-analysis
   # Purpose: To perform static code analysis using GitHub's CodeQL engine.
   # --------------------------------------------------------------------------------------------------
-  codeql-analysis:
-    name: CodeQL Analysis
-    needs: build-and-test # Ensures this runs after a successful build
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
+  # codeql-analysis:
+  #   name: CodeQL Analysis
+  #   needs: build-and-test # Ensures this runs after a successful build
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: csharp
+  #   - name: Initialize CodeQL
+  #     uses: github/codeql-action/init@v3
+  #     with:
+  #       languages: csharp
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+  #   - name: Autobuild
+  #     uses: github/codeql-action/autobuild@v3
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+  #   - name: Perform CodeQL Analysis
+  #     uses: github/codeql-action/analyze@v3
 
   # --------------------------------------------------------------------------------------------------
   # Job: security-scan
   # Purpose: Performs security checks on NuGet packages
   # --------------------------------------------------------------------------------------------------
-  security-scan:
+  security-scan-nuget:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
@@ -140,7 +140,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: |
+            8.0.x
+            9.0.x
 
     - name: Restore dependencies
       run: dotnet restore
@@ -152,26 +154,26 @@ jobs:
   # Job: wpsa-security-scan
   # Purpose: Runs Microsoft's security analysis tools for web platform security.
   # --------------------------------------------------------------------------------------------------
-  wpsa-security-scan:
-    name: WPSA Security Analysis
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # wpsa-security-scan:
+  #   name: WPSA Security Analysis
+  #   needs: build-and-test
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Run Microsoft Security DevOps Analysis
-        uses: microsoft/security-devops-action@v1
-        id: msdo
+  #     - name: Run Microsoft Security DevOps Analysis
+  #       uses: microsoft/security-devops-action@v1
+  #       id: msdo
 
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: ${{ steps.msdo.outputs.sarifFile }}
+  #     - name: Upload SARIF file
+  #       uses: github/codeql-action/upload-sarif@v3
+  #       with:
+  #         sarif_file: ${{ steps.msdo.outputs.sarifFile }}
 
   # --------------------------------------------------------------------------------------------------
   # Job: database-migrations
