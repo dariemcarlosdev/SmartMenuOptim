@@ -70,7 +70,7 @@ jobs:
       run: dotnet restore
 
     - name: Build solution
-      run: dotnet build SmartMenuOptim.sln --no-restore
+      run: dotnet build SmartMenuOptim.sln --configuration Release
 
     # - name: Run tests with coverage
     #   run: |
@@ -81,11 +81,16 @@ jobs:
     #       /p:Exclude="[*]*.Migrations.*" \
     #       /p:Threshold=80
 
+    - name: Generate static web assets
+      run: |
+        dotnet build SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release
+        dotnet build SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release
+
     - name: Publish API app
       run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --output ./publish/api
 
     - name: Publish Server app
-      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --no-build --output ./publish/server
+      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --output ./publish/server
 
     - name: Upload deployment artifacts
       uses: actions/upload-artifact@v4
