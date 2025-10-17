@@ -99,7 +99,7 @@ jobs:
         path: ./publish
 
   # --------------------------------------------------------------------------------------------------
-  # Job: codeql-analysis
+  # Job: codeql-analysis (just available in Organization Plan)
   # Purpose: To perform static code analysis using GitHub's CodeQL engine.
   # --------------------------------------------------------------------------------------------------
   # codeql-analysis:
@@ -130,7 +130,7 @@ jobs:
   # Job: security-scan
   # Purpose: Performs security checks on NuGet packages
   # --------------------------------------------------------------------------------------------------
-  security-scan-nuget:
+  security-scan:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
@@ -151,7 +151,7 @@ jobs:
       run: dotnet list package --vulnerable --include-transitive
 
   # --------------------------------------------------------------------------------------------------
-  # Job: wpsa-security-scan
+  # Job: wpsa-security-scan (does not works)
   # Purpose: Runs Microsoft's security analysis tools for web platform security.
   # --------------------------------------------------------------------------------------------------
   # wpsa-security-scan:
