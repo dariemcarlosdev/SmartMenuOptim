@@ -83,15 +83,15 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             var request = new AiRecomendationRequestDTO
             {
                 Reviews = new List<ReviewDTO>
-                {   new ReviewDTO { CustomerName = "Jonh", SentimentScore=0.6, Comment = "Pizza was delicious", DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 5 },
-                    new ReviewDTO { CustomerName = "Kim", SentimentScore=0.8, Comment = "Burger was great", DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 4 },
-                    new ReviewDTO { CustomerName = "Dariem", SentimentScore=0.5, Comment = "Pasta was okay", DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 3 }
+                {   new ReviewDTO { CustomerName = "Jonh", SentimentScore=0.7,DishName ="Pizza", Comment = "Pizza was delicious", DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 5 },
+                    new ReviewDTO { CustomerName = "Kim", SentimentScore=0.6, DishName= "Burger", Comment = "Burger was great", DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 4 },
+                    new ReviewDTO { CustomerName = "Dariem", SentimentScore=0.5,DishName = "Pasta", Comment = "Pasta was okay", DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 3 }
                 },
                 SaleRecords = new List<SaleRecordDTO>
                 {
-                    new SaleRecordDTO { DishId = 1, QuantitySold = 10 },
-                    new SaleRecordDTO { DishId = 2, QuantitySold = 5 },
-                    new SaleRecordDTO { DishId = 3, QuantitySold = 8 }
+                    new SaleRecordDTO { DishId = 1, QuantitySold = 10, DishName = "Pizza" },
+                    new SaleRecordDTO { DishId = 2, QuantitySold = 5 , DishName = "Burger"},
+                    new SaleRecordDTO { DishId = 3, QuantitySold = 8 , DishName = "Pasta"}
                 }
             };
             // Act: Act define the action to be tested.Desire to call the Recommend method.
@@ -120,7 +120,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             {
                 Reviews = new List<ReviewDTO>
                 {
-                    new ReviewDTO { CustomerName = "Jonh", DishName = "Pizza", SentimentScore = 0.6, Comment = "Pizza was delicious", DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 5 },
+                    new ReviewDTO { CustomerName = "Jonh", DishName = "Pizza", SentimentScore = 0.7, Comment = "Pizza was delicious", DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 5 },
                     new ReviewDTO { CustomerName = "Kim", DishName = "Burger", SentimentScore = 0.8, Comment = "Burger was great", DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 4 },
                     new ReviewDTO { CustomerName = "Dariem", DishName = "Pasta", SentimentScore = 0.5, Comment = "Pasta was okay", DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 3 }
                 },
