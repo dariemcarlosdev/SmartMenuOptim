@@ -85,7 +85,7 @@ public class Program
         builder.Services.AddApiVersioningServices();
         builder.Services.AddDataServices(builder.Configuration);
         builder.Services.AddCustomServices();
-        builder.Services.AddCustomCors(builder.Configuration);
+        builder.Services.AddCustomCorsPolicy(builder.Configuration);
 
         // Add services for controllers, API explorer (for Swagger), and Swagger generation.
         builder.Services.AddControllers();

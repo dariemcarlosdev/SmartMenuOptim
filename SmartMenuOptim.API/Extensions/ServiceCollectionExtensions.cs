@@ -89,7 +89,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The IServiceCollection to add services to.</param>
     /// <param name="configuration">The application configuration for accessing CORS settings.</param>
     /// <returns>The configured IServiceCollection.</returns>
-    public static IServiceCollection AddCustomCors(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddCustomCorsPolicy(this IServiceCollection services, IConfiguration configuration)
     {
         const string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         // Get the allowed origins from appsettings.json.
@@ -104,8 +104,8 @@ public static class ServiceCollectionExtensions
                     {
                         // Configure the policy to allow requests from specific origins, with any method and header.
                         policy.WithOrigins(corsOrigins)
-                              .AllowAnyMethod()
-                              .AllowAnyHeader();
+                              .AllowAnyMethod() // Allow any HTTP method (GET, POST, etc.)
+                              .AllowAnyHeader(); // Allow any HTTP headers
                     }
                 });
         });

@@ -55,23 +55,39 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds and configures the HttpClient for communicating with the backend API, including resilience policies.
+    /// Adds and configures the HttpClient for communicating with the backend API, including resilience policies and configurations.
     /// </summary>
     public static IServiceCollection AddHttpClients(this IServiceCollection services)
     {
-        // Add httpClient for external API calls
-        // Implement resiliency with Polly. This is to handle transient faults when calling the backend API.
-        // Resiliency policies can include retries, circuit breakers, timeouts, etc. The benefit is to improve the stability and reliability of the application when making HTTP calls.
-        // Allowing 5 exceptions before breaking the circuit.
-        // Retry 3 times with exponential backoff and circuit breaker policy.
         var httpClientBuilder = services.AddHttpClient("BackendAPI", (serviceProvider, client) =>
         {
             var config = serviceProvider.GetRequiredService<IConfiguration>();
-            var baseUrl = config["BackendApi:BaseUrl"]; // access the BaseUrl from configuration
-            client.BaseAddress = new Uri(baseUrl);
+            var baseUrl = config["BackendApi:BaseUrl"];
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+
+            if (string.IsNullOrEmpty(baseUrl))
+            {
+                logger.LogError("BackendApi:BaseUrl is not configured");
+                throw new InvalidOperationException("BackendApi:BaseUrl configuration is missing");
+            }
+
+            try
+            {
+                client.BaseAddress = new Uri(baseUrl);
+                logger.LogInformation("HttpClient configured with BaseAddress: {BaseAddress}", baseUrl);
+                
+                // Add default headers if needed
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            }
+            catch (UriFormatException ex)
+            {
+                logger.LogError(ex, "Invalid BackendApi:BaseUrl configuration: {BaseUrl}", baseUrl);
+                throw;
+            }
         });
 
-        // Circuit breaker is a pattern that prevents an application from performing an operation that's likely to fail. Stop trying to perform the operation for a period of time.
+        // Circuit breaker is a pattern that prevents an application from performing an operation that's likely to fail.
+        // Stop trying to perform the operation for a period of time.
         // Prevent cascading failures and improve the stability of the application. Enable the system to recover more quickly from transient faults.
         // Resilience Circuit breaker implementation using Microsoft.Extensions.Http.Resilience
         // Circuit breaker will break the circuit for 15 seconds if there are 10 requests and 10% or more of them fail.
@@ -113,11 +129,13 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddRateLimiting(this IServiceCollection services)
     {
-        //Implement rate limiting and throttling mechanism to limit the number of requests a client can make to the API within a specified time period.
+        //Implement rate limiting and throttling control mechanism to limit the number of requests a client can make to the API within a specified time period.
         // The benefit of rate limiting is to protect the API from being overwhelmed by too many requests in a short period of time.
         // In the context of Azure App Service, rate limiting can help manage traffic spikes and ensure fair usage among clients.
         // Ensures fair usage, and protects the stability and availability of the service
         // Scopped to SmartMenuOptim.API the benefit is to protect backend resources and maintain performance.
+        // I monitored the API usage and found that 100 requests per minute is a reasonable limit for most clients.
+        // I use to monitor the Rate Limiting metrics in Azure App Service to see how many requests are being throttled, and pause or adjust the rate limiting policy if necessary.
         services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("FixedPolicy", policy =>

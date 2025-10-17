@@ -12,6 +12,9 @@ public static class WebApplicationExtensions
     /// </summary>
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
+        app.UseRouting();
+
+
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {

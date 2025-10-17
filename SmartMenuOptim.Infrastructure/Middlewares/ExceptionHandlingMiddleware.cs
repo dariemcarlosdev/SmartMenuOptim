@@ -1,5 +1,27 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;  
 using Microsoft.Extensions.Logging;
+
+/*
+-------------------------------------------------------------
+How to register ExceptionHandlingMiddleware in Program.cs:
+
+1. Add the following using directive if needed:
+   using SmartMenuOptim.Infrastructure.NewFolder;
+
+2. After building the app (after 'var app = builder.Build();'), register the middleware before other middlewares:
+   app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+   // Example placement:
+   var app = builder.Build();
+   app.UseMiddleware<ExceptionHandlingMiddleware>();
+   app.UseRateLimiter();
+   app.UseCors(MyAllowSpecificOrigins);
+   // ... other middleware registrations
+
+This ensures all unhandled exceptions are logged and a generic error response is returned to the client.
+-------------------------------------------------------------
+*/
+
 
 namespace SmartMenuOptim.Infrastructure.Middlewares
 {
@@ -50,23 +72,3 @@ namespace SmartMenuOptim.Infrastructure.Middlewares
     }
 }
 
-/*
--------------------------------------------------------------
-How to register ExceptionHandlingMiddleware in Program.cs:
-
-1. Add the following using directive if needed:
-   using SmartMenuOptim.Infrastructure.NewFolder;
-
-2. After building the app (after 'var app = builder.Build();'), register the middleware before other middlewares:
-   app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-   // Example placement:
-   var app = builder.Build();
-   app.UseMiddleware<ExceptionHandlingMiddleware>();
-   app.UseRateLimiter();
-   app.UseCors(MyAllowSpecificOrigins);
-   // ... other middleware registrations
-
-This ensures all unhandled exceptions are logged and a generic error response is returned to the client.
--------------------------------------------------------------
-*/

@@ -1,3 +1,4 @@
+using Sentry;
 using SmartMenuOptim.API.Data;
 using SmartMenuOptim.Infrastructure.Middlewares;
 
@@ -15,15 +16,14 @@ public static class WebApplicationExtensions
     /// <returns>The configured web application.</returns>
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
+        // Adds a custom middleware for centralized exception handling.
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         // Adds endpoint routing to the middleware pipeline. This is necessary for matching requests to endpoints.
         app.UseRouting();
         
         // Integrates Sentry's performance tracing to monitor and trace requests.
         app.UseSentryTracing();
-
-        // Adds a custom middleware for centralized exception handling.
-        // This helps in logging errors and returning standardized error responses.
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
 
         // Exposes a health check endpoint at /health, which can be used by monitoring services.
         app.MapHealthChecks("/health").AllowAnonymous();
