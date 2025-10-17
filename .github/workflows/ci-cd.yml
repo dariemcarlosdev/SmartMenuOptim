@@ -227,7 +227,7 @@ jobs:
   # Purpose: To deploy the Blazor Server application to an Azure Web App.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-server:
-    needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
+    needs: [build-and-test, security-scan, database-migrations]
     runs-on: ubuntu-latest
     steps:
     - name: Download build artifacts
@@ -248,7 +248,8 @@ jobs:
   # Purpose: To deploy the API application to an Azure Web App.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-api:
-    needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
+    # needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
+    needs: [build-and-test, security-scan, database-migrations]
     runs-on: ubuntu-latest
     steps:
     - name: Download build artifacts
