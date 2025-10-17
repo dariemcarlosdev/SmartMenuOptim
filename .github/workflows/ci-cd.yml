@@ -180,7 +180,7 @@ jobs:
   # Purpose: Applies database migrations and verifies schema
   # --------------------------------------------------------------------------------------------------
   database-migrations:
-    needs: build-and-test
+    needs: security-scan
     runs-on: ubuntu-latest
     services:
       postgres:
