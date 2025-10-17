@@ -82,7 +82,7 @@ jobs:
     #       /p:Threshold=80
 
     - name: Publish API app
-      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --no-build --output ./publish/api
+      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --output ./publish/api
 
     - name: Publish Server app
       run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --no-build --output ./publish/server
