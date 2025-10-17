@@ -33,22 +33,27 @@ on:
         - env-dev/*
         - env-staging/*
 
+# Improvement: Prevent concurrent workflows on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # ==================================================================================================
 # Jobs:
 # The workflow is composed of several jobs that run in a specific order.
 #
 # Job Execution Flow:
-# 1. `build-test`: Compiles the code, runs tests against a temporary database, and packages the application.
-# 2. `codeql-analysis`: Runs in parallel with `build-test` to perform static code analysis for security vulnerabilities.
-# 3. `deploy-azure-server` & `deploy-azure-api`: Run after `build-test` and `codeql-analysis` succeed. They deploy the packaged applications to Azure.
-# 4. `notify-on-failure` / `notify-on-success`: Run at the end to send a notification based on the final outcome of the pipeline.
+# 1. `build-and-test`: Compiles the code, runs tests, and packages the application.
+# 2. `codeql-analysis`, `security-scan`, `database-migrations`: Run in parallel after `build-and-test` starts.
+# 3. `deploy-azure-server` & `deploy-azure-api`: Run after all checks succeed.
+# 4. `notify-on-failure` / `notify-on-success`: Run at the end to send a notification.
 # ==================================================================================================
 jobs:
   # --------------------------------------------------------------------------------------------------
-  # Job: build
-  # Purpose: To build the entire solution and ensure all projects compile successfully.
+  # Job: build-and-test
+  # Purpose: To build, test, and publish the application in a single, efficient job.
   # --------------------------------------------------------------------------------------------------
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -66,42 +71,7 @@ jobs:
 
     - name: Build solution
       run: dotnet build SmartMenuOptim.sln --no-restore
-      working-directory: ${{ github.workspace }}
 
-    - name: Upload build output
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-output
-        path: |
-          **/bin
-          **/obj
-
-  # --------------------------------------------------------------------------------------------------
-  # Job: test
-  # Purpose: Executes all tests and collects code coverage information using coverlet
-  # --------------------------------------------------------------------------------------------------
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
-
-    - name: Download build output
-      uses: actions/download-artifact@v4
-      with:
-        name: build-output
-
-    # Install the coverlet tool for code coverage collection
-    - name: Install coverlet
-      run: dotnet tool install --global coverlet.console
-
-    # Run tests with coverage collection
     - name: Run tests with coverage
       run: |
         dotnet test --no-build \
@@ -111,50 +81,52 @@ jobs:
           /p:Exclude="[*]*.Migrations.*" \
           /p:Threshold=80
 
-    # Generate HTML report from coverage data
-    - name: Generate coverage report
-      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
-      with:
-        reports: '**/Coverage/*.cobertura.xml'
-        targetdir: 'coveragereport'
-        reporttypes: 'Html;Cobertura;Badges'
+    - name: Publish API app
+      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --no-build --output ./publish/api
 
-    # Upload detailed HTML coverage report
-    - name: Upload detailed coverage report
+    - name: Publish Server app
+      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --no-build --output ./publish/server
+
+    - name: Upload deployment artifacts
       uses: actions/upload-artifact@v4
-      if: always()
       with:
-        name: coverage-report
-        path: coveragereport
+        name: publish
+        path: ./publish
 
-    # Upload coverage summary
-    - name: Upload coverage summary
-      uses: actions/upload-artifact@v4
-      if: always()
+  # --------------------------------------------------------------------------------------------------
+  # Job: codeql-analysis
+  # Purpose: To perform static code analysis using GitHub's CodeQL engine.
+  # --------------------------------------------------------------------------------------------------
+  codeql-analysis:
+    name: CodeQL Analysis
+    needs: build-and-test # Ensures this runs after a successful build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
       with:
-        name: code-coverage
-        path: '**/Coverage/*.cobertura.xml'
+        languages: csharp
 
-    # Add coverage summary to job summary
-    - name: Coverage Summary Report
-      if: always()
-      run: |
-        echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
-        echo "Coverage report has been generated and is available as an artifact." >> $GITHUB_STEP_SUMMARY
-        
-        if [ -f "coveragereport/Summary.txt" ]; then
-          echo "### Coverage Metrics" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat coveragereport/Summary.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-        fi
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
 
   # --------------------------------------------------------------------------------------------------
   # Job: security-scan
   # Purpose: Performs security checks on NuGet packages
   # --------------------------------------------------------------------------------------------------
   security-scan:
-    needs: build
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -165,15 +137,43 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
+    - name: Restore dependencies
+      run: dotnet restore
+
     - name: Security check - vulnerable packages
-      run: dotnet list package --vulnerable
+      run: dotnet list package --vulnerable --include-transitive
+
+  # --------------------------------------------------------------------------------------------------
+  # Job: wpsa-security-scan
+  # Purpose: Runs Microsoft's security analysis tools for web platform security.
+  # --------------------------------------------------------------------------------------------------
+  wpsa-security-scan:
+    name: WPSA Security Analysis
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Microsoft Security DevOps Analysis
+        uses: microsoft/security-devops-action@v1
+        id: msdo
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.msdo.outputs.sarifFile }}
 
   # --------------------------------------------------------------------------------------------------
   # Job: database-migrations
   # Purpose: Applies database migrations and verifies schema
   # --------------------------------------------------------------------------------------------------
   database-migrations:
-    needs: build
+    needs: build-and-test
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -216,161 +216,71 @@ jobs:
         PGPASSWORD=admin123 psql -h localhost -U postgres -d SmartMenuDb -c '\dt'
 
   # --------------------------------------------------------------------------------------------------
-  # Job: publish
-  # Purpose: Creates deployment packages for both API and Server applications
-  # --------------------------------------------------------------------------------------------------
-  publish:
-    needs: [test, security-scan, database-migrations]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
-
-    - name: Download build output
-      uses: actions/download-artifact@v4
-      with:
-        name: build-output
-
-    - name: Publish API app
-      run: dotnet publish SmartMenuOptim.API/SmartMenuOptim.API.csproj --configuration Release --no-build --output ./publish/api
-
-    - name: Publish Server app
-      run: dotnet publish SmartMenuOptim.Server/SmartMenuOptim.Server.csproj --configuration Release --no-build --output ./publish/server
-
-    - name: Upload deployment artifacts
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: publish
-        path: ./publish
-
-  # --------------------------------------------------------------------------------------------------
-  # Job: codeql-analysis
-  # Purpose: To perform static code analysis using GitHub's CodeQL engine to find security
-  #          vulnerabilities in the codebase.
-  # --------------------------------------------------------------------------------------------------
-  codeql-analysis:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: csharp
-
-    - name: Setup .NET 9.0
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
-
-    - name: Restore dependencies
-      run: dotnet restore SmartMenuOptim.sln
-
-    - name: Build Solution
-      run: dotnet build SmartMenuOptim.sln --no-restore --configuration Release
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-
-  # --------------------------------------------------------------------------------------------------
   # Job: deploy-azure-server
   # Purpose: To deploy the Blazor Server application to an Azure Web App.
-  # Depends on: `build-test` and `codeql-analysis`.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-server:
-    needs: [publish, codeql-analysis]
-    env:
-      AZURE_WEBAPP_SERVER_NAME: ${{ secrets.AZURE_WEBAPP_SERVER_NAME }}
-      AZURE_WEBAPP_SERVER_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
+    needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
     runs-on: ubuntu-latest
     steps:
-    # Step 1: Download the build artifacts created in the `build-test` job.
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: publish
         path: ./publish
 
-    # Step 2: Deploy the Server application to Azure using its publish profile.
     - name: Deploy Blazor Server to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ env.AZURE_WEBAPP_SERVER_NAME }}
-        publish-profile: ${{ env.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
+        app-name: ${{ secrets.AZURE_WEBAPP_SERVER_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
         package: ./publish/server
 
   # --------------------------------------------------------------------------------------------------
   # Job: deploy-azure-api
-  # Purpose: To deploy the API application to an Azure Web App and apply database migrations
-  #          to the production/staging database.
-  # Depends on: `build-test` and `codeql-analysis`.
+  # Purpose: To deploy the API application to an Azure Web App.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-api:
-    needs: [publish, codeql-analysis]
-    env:
-      AZURE_WEBAPP_API_NAME: ${{ secrets.AZURE_WEBAPP_API_NAME }}
-      AZURE_WEBAPP_API_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
+    needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
     runs-on: ubuntu-latest
     steps:
-    # Step 1: Download the build artifacts.
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: publish
         path: ./publish
 
-    # Step 2: Deploy the API application to Azure.
     - name: Deploy API to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ env.AZURE_WEBAPP_API_NAME }}
-        publish-profile: ${{ env.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
+        app-name: ${{ secrets.AZURE_WEBAPP_API_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
         package: ./publish/api
     
-    # Step 3: Set up .NET SDK to run the EF Core CLI.
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x' 
        
-    # Step 4: Install the EF Core CLI tool.
     - name: Install EF Core CLI
       run: dotnet tool install --global dotnet-ef
 
-    # Step 5: Add the .NET tools directory to the PATH.
     - name: Add dotnet tools to PATH
       run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-    # Step 6: Apply EF Core migrations to the live Azure PostgreSQL database.
-    # This is a critical step to ensure the database schema is in sync with the deployed application code.
-    # It runs only for specific branches to prevent accidental changes to production.
     - name: Apply EF Core Migrations to Azure PostgreSQL
-      if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/Staging'
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
       env:
         ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
-      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj --connection "$ConnectionStrings__DefaultConnection"
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
   # --------------------------------------------------------------------------------------------------
   # Job: notify-on-failure
-  # Purpose: To send an email notification if any of the preceding jobs fail.
   # --------------------------------------------------------------------------------------------------
   notify-on-failure:
     if: failure()
     runs-on: ubuntu-latest
-    needs: [build, test, security-scan, database-migrations, publish, codeql-analysis, deploy-azure-server, deploy-azure-api]
+    needs: [deploy-azure-server, deploy-azure-api]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
@@ -391,12 +301,11 @@ jobs:
 
   # --------------------------------------------------------------------------------------------------
   # Job: notify-on-success
-  # Purpose: To send an email notification when all jobs in the pipeline complete successfully.
   # --------------------------------------------------------------------------------------------------
   notify-on-success:
     if: success()
     runs-on: ubuntu-latest
-    needs: [build, test, security-scan, database-migrations, publish, codeql-analysis, deploy-azure-server, deploy-azure-api]
+    needs: [deploy-azure-server, deploy-azure-api]
     env:
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
