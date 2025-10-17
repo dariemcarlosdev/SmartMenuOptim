@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SmartMenuOptim.API;
 using SmartMenuOptim.Shared.Data.Entities;
 using SmartMenuOptim.Shared.Data.Dtos;
+using SmartMenuOptim.Tests.IntegrationTests.Helpers;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {
@@ -19,10 +20,11 @@ namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
     // Integration tests typically involve making HTTP requests to the API and verifying the responses, ensuring that the entire stack (from the controller to the database) works as intended.
     // It differs from unit tests, which focus on testing individual components in isolation without external dependencies.
     
-    public class RecommendEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+    public class RecommendEndpointTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
-        public RecommendEndpointTests(WebApplicationFactory<Program> factory)
+
+        public RecommendEndpointTests(CustomWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }

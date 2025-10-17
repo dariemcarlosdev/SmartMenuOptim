@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.13.35913.81
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11012.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Shared", "SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj", "{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}"
 EndProject
@@ -17,6 +17,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Infrastructure", "SmartMenuOptim.Infrastructure\SmartMenuOptim.Infrastructure.csproj", "{75AE1EE9-6D3E-4F6A-B8C1-C6C615EAF88D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Domain", "SmartMenuOptim.Domain\SmartMenuOptim.Domain.csproj", "{796EF42E-3C36-4A90-B2C3-7B66045F596F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub Action", "GitHub Action", "{E3AFF49C-8323-4761-98B4-81C5B1ACA6DA}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\ci-cd.yml = .github\workflows\ci-cd.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
