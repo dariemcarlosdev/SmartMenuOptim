@@ -1,0 +1,44 @@
+﻿@* Example component stubs for reference (implement in separate .razor files) *@
+@* RestaurantDashboardCard.razor *@
+
+@using SmartMenuOptim.Shared.Data.Dtos
+<div class="mb-5">
+    <div class="mb-5 dashboard-header-container">
+        <h5 class="dashboard-header-dark">
+            <span>
+                <button class="btn btn-sm me-2" @onclick="onToggle" aria-label="Expand/Collapse">
+                    <span>@(isExpanded ? "−" : "+")</span>
+                </button>
+                <span>
+                    Restaurant: <span class="fw-bold">@restaurantName</span>
+                </span>
+                <span class="badge dashboard-badge bg-warning text-dark" title="Average Rating">
+                    @for (int i = 0; i < Math.Round(avgRating); i++)
+                    {
+                        <span>★</span>
+                    }
+                    @for (int i = (int)Math.Round(avgRating); i < 5; i++)
+                    {
+                        <span class="text-secondary">☆</span>
+                    }
+                    <span class="ms-1">(@avgRating.ToString("0")/5)</span>
+                </span>
+            </span>
+        </h5>
+    </div>
+    @if (isExpanded)
+    {
+        @foreach (var category in categories)
+        {
+            <CategoryTable categoryName="@category.CategoryName" dishes="@category.Records" />
+        }
+    }
+</div>
+@code {
+    [Parameter] public string restaurantName { get; set; }
+    [Parameter] public decimal totalSales { get; set; }
+    [Parameter] public double avgRating { get; set; }
+    [Parameter] public bool isExpanded { get; set; }
+    [Parameter] public EventCallback onToggle { get; set; }
+    [Parameter] public IEnumerable<CategoryGroupDTO> categories { get; set; }
+}

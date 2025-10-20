@@ -1,90 +1,62 @@
-using Azure.Identity;
-using MudBlazor.Services;
-using SmartMenuOptim.Server.Components;
-using SmartMenuOptim.Server.Services;
-using SmartMenuOptim.Server.Services.Interfaces;
-using Polly;
-using Polly.Extensions.Http;
-using Microsoft.Extensions.Azure;
-
+using SmartMenuOptim.Server.Extensions;
 
 namespace SmartMenuOptim.Server;
+
+/// <summary>
+/// The main entry point for the SmartMenuOptim Server application.
+/// This class is responsible for configuring and running the web application.
+/// </summary>
 public class Program
 {
+    /// <summary>
+    /// The main method that configures and starts the web server.
+    /// </summary>
+    /// <param name="args">Command-line arguments passed to the application.</param>
     public static void Main(string[] args)
     {
+        // 1. Initialize the WebApplication builder. This sets up the application's configuration,
+        // services, and logging.
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add Key Vault configuration( before configuration is built) and then Get Key Vault name from environment/app settings (recommended)
-        // This is to ensure that the Key Vault secrets are available before any services are added
-        var keyVaultName = builder.Configuration["KeyVaultName"]; // Set this in Azure App Settings
-        if (!string.IsNullOrEmpty(keyVaultName))
-        {
-            var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
-            builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
-        }
-        // 
-        builder.Services.AddMudServices(); // <-- This line is required for MudBlazor dialogs, snackbars, etc.
-        // Add services to the container.
-        builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
+        // 2. Configure Azure Key Vault as a configuration source.
+        // This extension method loads secrets from Azure Key Vault, making them available
+        // throughout the application's configuration.
+        builder.AddKeyVaultConfiguration();
+        
+        // 3. Register all necessary services with the dependency injection container
+        // using custom extension methods for better organization.
+        
+        // Registers UI-specific services like MudBlazor and Razor Components.
+        builder.Services.AddUiServices();
+        
+        // Registers custom application services (e.g., AIService, ReviewService).
+        builder.Services.AddAppServices();
+        
+        // Configures HttpClients, including resilience policies like retries and circuit breakers,
+        // for communicating with the backend API.
+        builder.Services.AddHttpClients();
 
 
-        builder.Services.AddScoped<IAIService, AIService>();
-        builder.Services.AddScoped<ISaleRecordService, SaleRecordService>();
-        builder.Services.AddScoped<IReviewService, ReviewService>();
-        builder.Services.AddLogging();
+        // Sets up rate limiting policies to protect the application from excessive requests.
+        builder.Services.AddRateLimiting();
 
-        // Add httpClient for external API calls
-        builder.Services.AddHttpClient("BackendAPI", (serviceProvider, client) =>
-        {
-            var config = serviceProvider.GetRequiredService<IConfiguration>();
-            var baseUrl = config["BackendApi:BaseUrl"]; // access the BaseUrl from configuration
-            //client.BaseAddress = new Uri("https://localhost:7119/");
-            client.BaseAddress = new Uri(baseUrl);
-        });
-
-
-        // Implement resiliency with Polly. This is to handle transient faults when calling the backend API.
-        // Resiliency policies can include retries, circuit breakers, timeouts, etc. The benefit is to improve the stability and reliability of the application when making HTTP calls.
-        // Allowing 5 exceptions before breaking the circuit.
-        // Retry 3 times with exponential backoff and circuit breaker policy.
-
-        // Replace the existing code block for adding HttpClient with the following:
-        // Note: I do have to commented out the code below because it was causing issues with the HttpClient registration.
-
-
-        //builder.Services.AddHttpClient<IAIService, AIService>("BackendAPI")
-        //    .AddTransientHttpErrorPolicy(policy =>
-        //    policy.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
-        //    .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Set lifetime to 5 minutes
-
-
-
-
+        // 4. Add console logging to the application's logging providers.
         builder.Logging.AddConsole();
+        
+        // 5. Build the WebApplication instance. This composes the services and middleware pipeline.
         var app = builder.Build();
 
+        // 6. For diagnostic purposes, retrieve configuration and logger after the app is built
+        // to log the backend API's base URL. This helps confirm that the configuration is loaded correctly.
         var config = app.Services.GetRequiredService<IConfiguration>();
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("BackendAPI BaseUrl from config: {BaseUrl}", config["BackendApi:BaseUrl"]);
 
-        // Configure the HTTP request pipeline.
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseExceptionHandler("/Error", createScopeForErrors: true);
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            app.UseHsts();
-        }
+        // 7. Configure the HTTP request pipeline using a custom extension method.
+        // This encapsulates the setup of all middleware (e.g., exception handling, HSTS, HTTPS redirection).
+        app.ConfigurePipeline();
 
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
-        app.UseAntiforgery();
-
-        app.MapStaticAssets();
-        app.MapRazorComponents<App>()
-            .AddInteractiveServerRenderMode();
-
+        // 8. Run the application. This starts the web server and begins listening for incoming requests.
         app.Run();
     }
 }
