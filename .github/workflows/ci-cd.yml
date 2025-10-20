@@ -283,7 +283,7 @@ jobs:
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
       env:
         ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
-      run: dotnet ef database update --project ./SmartMenuOptim.API/SmartMenuOptim.API.csproj
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
   # --------------------------------------------------------------------------------------------------
   # Job: notify-on-failure
