@@ -243,13 +243,45 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
         package: ./publish/server
 
+       
+  
+  # --------------------------------------------------------------------------------------------------
+  # Job: apply-prod-migrations
+  # Purpose: To apply EF Core migrations to the production database before deployment.
+  # --------------------------------------------------------------------------------------------------
+  apply-prod-migrations:
+    needs: [build-and-test, security-scan, database-migrations]
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x' 
+       
+    - name: Install EF Core CLI
+      run: dotnet tool install --global dotnet-ef
+
+    - name: Add dotnet tools to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Apply EF Core Migrations to Azure PostgreSQL
+      env:
+        ConnectionStrings__DefaultConnection: "${{ secrets.NEON_POSTGRES_CONNECTION_TEMPLATE }};Password=${{ secrets.NEON_POSTGRES_PASSWORD }}"
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
+
+  
   # --------------------------------------------------------------------------------------------------
   # Job: deploy-azure-api
   # Purpose: To deploy the API application to an Azure Web App.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-api:
     # needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
-    needs: [build-and-test, security-scan, database-migrations]
+    # needs: [build-and-test, security-scan, database-migrations]
+    needs: apply-prod-migrations
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -268,22 +300,22 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
         package: ./publish/api
     
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x' 
+    # - name: Setup .NET
+    #   uses: actions/setup-dotnet@v4
+    #   with:
+    #     dotnet-version: '9.0.x' 
        
-    - name: Install EF Core CLI
-      run: dotnet tool install --global dotnet-ef
+    # - name: Install EF Core CLI
+    #   run: dotnet tool install --global dotnet-ef
 
-    - name: Add dotnet tools to PATH
-      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+    # - name: Add dotnet tools to PATH
+    #   run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-    - name: Apply EF Core Migrations to Azure PostgreSQL
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
-      env:
-        ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
-      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
+    # - name: Apply EF Core Migrations to Azure PostgreSQL
+    #   if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
+    #   env:
+    #     ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
+    #   run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
   # --------------------------------------------------------------------------------------------------
   # Job: notify-on-failure
