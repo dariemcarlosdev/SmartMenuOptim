@@ -5,6 +5,15 @@ namespace SmartMenuOptim.Shared.Data.Context
 {
     public class AppDbContext : DbContext
     {
+        // DbSets for your entities
+        public DbSet<Restaurant> Restaurants { get; set; }
+        public DbSet<Review> Reviews { get; set; }
+        public DbSet<SaleRecord> SaleRecords { get; set; }
+        public DbSet<Dish> Dishes { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<Customer> Customers { get; set; }
+        public DbSet<AdminUser> AdminUsers { get; set; }
+    
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
@@ -14,6 +23,7 @@ namespace SmartMenuOptim.Shared.Data.Context
             // Restaurant-Owner relationship: Each Restaurant is owned by one AdminUser (Owner),
             // and an AdminUser can own multiple Restaurants (One-to-Many, Required).
             modelBuilder.Entity<Restaurant>()
+                //.HasQueryFilter(p => !p.IsDeleted); //for soft delete propose
                 .HasOne(r => r.Owner)
                 .WithMany()
                 .HasForeignKey(r => r.OwnerId)
@@ -78,13 +88,25 @@ namespace SmartMenuOptim.Shared.Data.Context
 
             base.OnModelCreating(modelBuilder);
         }
-        // DbSets for your entities
-        public DbSet<Restaurant> Restaurants { get; set; }
-        public DbSet<Review> Reviews { get; set; }
-        public DbSet<SaleRecord> SaleRecords { get; set; }
-        public DbSet<Dish> Dishes { get; set; }
-        public DbSet<Category> Categories { get; set; }
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<AdminUser> AdminUsers { get; set; }
+
+        /// <summary>
+        ///  This method overrides the default SaveChangesAsync to implement soft deletion.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) // cancelationToken is optional, but good practice for async methods. It allows the operation to be cancelled if needed.
+        {
+            foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+            {
+                if (entry.State == EntityState.Deleted)
+                {
+                    entry.State = EntityState.Modified;
+                    entry.Entity.IsDeleted = true;
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
+        }
     }
+
 }

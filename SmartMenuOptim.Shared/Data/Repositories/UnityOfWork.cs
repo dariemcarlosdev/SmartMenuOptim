@@ -22,23 +22,6 @@ namespace SmartMenuOptim.Shared.Data.Repositories
         private readonly AppDbContext _context;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="UnityOfWork"/> class with the provided database context.
-        /// </summary>
-        /// <param name="context">The database context to use for all repositories.</param>
-        /// <exception cref="ArgumentNullException">Thrown if context is null.</exception>
-        public UnityOfWork(AppDbContext context)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            SaleRecords = new Repository<SaleRecord>(_context);
-            Reviews = new Repository<Review>(_context);
-            Dishes = new Repository<Dish>(_context);
-            Categories = new Repository<Category>(_context); // Add Categories repository
-            Customers = new Repository<Customer>(_context); // Add Customers repository
-            AdminUsers = new Repository<AdminUser>(_context); // Add AdminUsers repository
-            Restaurants = new Repository<Restaurant>(_context); // Add Restaurants repository
-        }
-
-        /// <summary>
         /// Repository for <see cref="SaleRecord"/> entities, supporting advanced querying and includes.
         /// </summary>
         /// <remarks>
@@ -95,14 +78,49 @@ namespace SmartMenuOptim.Shared.Data.Repositories
         public IRepositoryWithIncludes<Restaurant> Restaurants { get; }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="UnityOfWork"/> class with the provided database context.
+        /// </summary>
+        /// <param name="context">The database context to use for all repositories.</param>
+        /// <exception cref="ArgumentNullException">Thrown if context is null.</exception>
+        public UnityOfWork(AppDbContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            SaleRecords = new Repository<SaleRecord>(_context); // Add SaleRecords repository
+            Reviews = new Repository<Review>(_context); // Add Review repository
+            Dishes = new Repository<Dish>(_context); // Add Diwsh repository
+            Categories = new Repository<Category>(_context); // Add Categories repository
+            Customers = new Repository<Customer>(_context); // Add Customers repository
+            AdminUsers = new Repository<AdminUser>(_context); // Add AdminUsers repository
+            Restaurants = new Repository<Restaurant>(_context); // Add Restaurants repository
+        }
+
+
+        /// <summary>
         /// Commits all changes made in the context to the database as a single transaction.
         /// </summary>
         /// <returns>The number of state entries written to the database.</returns>
         /// <remarks>
         /// Call this method after performing create, update, or delete operations to persist changes.
         /// </remarks>
-        public async Task<int> SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
+        public async Task<int> SaveChangesAsync(){
+
+            // Here we can implement transaction management if needed.
+            // Transaction ensures all operations either succeed or fail together. It is useful when multiple related changes must be atomic and maintain data integrity.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var result = await _context.SaveChangesAsync();
+                    await transaction.CommitAsync(); // CommitAsync ensures all changes are saved to the database.
+                    return result;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(); // RollbackAsync reverts all changes if an error occurs, maintaining data integrity.
+                    throw;
+                }
+            }
+        }
 
         /// <summary>
         /// Disposes the database context and releases all resources.
