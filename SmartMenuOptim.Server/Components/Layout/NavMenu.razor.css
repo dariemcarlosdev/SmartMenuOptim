@@ -24,6 +24,34 @@
     font-size: 1.1rem;
 }
 
+/* Used on aside for the sidebar in MainLayout.razor */
+.sidebar {
+    width: 250px;
+    background: #232e3c !important;
+    min-height: 100vh;
+    padding: 1.5rem 1rem;
+    box-sizing: border-box;
+}
+
+/* Used for app version and phase below sidebar logo in MainLayout.razor */
+.sidebar-meta {
+    font-size: 0.95rem;
+    color: #bfc8da;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+/* Used on span for the sidebar logo in MainLayout.razor */
+.sidebar-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Used on <hr> for the sidebar divider in MainLayout.razor */
+.sidebar-hr {
+    border-color: #6c757d; /* Bootstrap secondary */
+}
+
 .bi {
     display: inline-block;
     position: relative;
@@ -60,7 +88,7 @@
     }
 
     .nav-item ::deep .nav-link {
-        color: #d7d7d7;
+        color: white;
         background: none;
         border: none;
         border-radius: 4px;
@@ -103,3 +131,78 @@
         overflow-y: auto;
     }
 }
+
+/* Sidebar always visible on desktop */
+.sidebar {
+    transition: left 0.3s;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1040;
+    background: #212529;
+}
+
+/* Hide sidebar on mobile unless open */
+@media (max-width: 991.98px) {
+    .sidebar.sidebar-closed {
+        left: -300px;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.12);
+        border-top-right-radius: 16px;
+        border-bottom-right-radius: 16px;
+        transition: left 0.3s, box-shadow 0.3s;
+    }
+
+    .sidebar.sidebar-open {
+        left: 0;
+        box-shadow: 2px 0 16px rgba(0,0,0,0.18);
+        border-radius: 0;
+    }
+}
+
+
+@media (min-width: 992px) {
+    .sidebar {
+        left: 0;
+        position: static;
+        height: auto;
+        z-index: auto;
+    }
+}
+
+.btn-dark.d-lg-none {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    border-radius: 8px;
+}
+
+.sidebar-fab {
+    position: fixed;
+    top: 50%;
+    left: 0.15rem; /* Move closer to the left edge */
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    background: rgba(44, 62, 80, 0.18); /* semi-transparent */
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    transition: background 0.2s, box-shadow 0.2s;
+    padding: 0; /* Ensure no extra padding */
+}
+
+    .sidebar-fab .bi {
+        margin: 0;
+        position: static;
+        top: 0;
+        left: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
