@@ -1,0 +1,22 @@
+@* Example component stubs for reference (implement in separate .razor files) *@
+@* SummaryCard.razor *@
+ 
+<div class="card shadow-sm w-100">
+    <div class="card-body d-flex align-items-center">
+        <div class="@colorClass text-white rounded d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+            @iconFragment
+        </div>
+        <div>
+            <div class="h5 mb-1">@value</div>
+            <div class="fw-semibold">@title</div>
+            <div class="text-muted small">@description</div>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter] public string title { get; set; }
+    [Parameter] public string value { get; set; }
+    [Parameter] public RenderFragment iconFragment { get; set; }
+    [Parameter] public string description { get; set; }
+    [Parameter] public string colorClass { get; set; }
+}

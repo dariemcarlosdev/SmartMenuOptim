@@ -1,0 +1,149 @@
+﻿@* 
+    Example usage and implementation of SummaryCard and RestaurantDashboardCard components.
+    See BlazorComponentBestPractices.md for more details.
+*@
+
+@page "/dashboard_Stubs_Components"
+@using SmartMenuOptim.Shared.Data
+@using SmartMenuOptim.Shared.Data.Dtos
+@using SmartMenuOptim.Shared.Data.Entities
+@inject NavigationManager NavigationManager
+@inject ISaleRecordService SaleRecordService
+
+@* Example SummaryCard component implementation *@
+@code {
+    // Example icon fragments for SummaryCard
+    private RenderFragment DocumentIcon => @<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h10M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>;
+    private RenderFragment PlateIcon => @<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h8" />
+    </svg>;
+    private RenderFragment MoneyIcon => @<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 16v-4" />
+    </svg>;
+}
+
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>📊 Sales Dashboard</h2>
+        <p class="text-muted">Track sales performance across your dishes in real time.</p>
+    </div>
+
+    <!-- Example usage of SummaryCard components -->
+    <div class="row justify-content-center my-4">
+        <div class="col-12 col-md-4 d-flex align-items-stretch mb-4">
+            <SummaryCard
+                title="Total Items"
+                value="@SummarySaleRecords.ToString()"
+                iconFragment="DocumentIcon"
+                description="Number of dishes transactions recorded"
+                colorClass="bg-primary" />
+        </div>
+        <div class="col-12 col-md-4 d-flex align-items-stretch mb-4">
+            <SummaryCard
+                title="Total Dishes Sold"
+                value="@SummaryDishesSold.ToString()"
+                iconFragment="PlateIcon"
+                description="Total number of dishes sold"
+                colorClass="bg-success" />
+        </div>
+        <div class="col-12 col-md-4 d-flex align-items-stretch mb-4">
+            <SummaryCard
+                title="Total Sales"
+                value="@SummaryTotalSales.ToString("C")"
+                iconFragment="MoneyIcon"
+                description="Total revenue generated from sales"
+                colorClass="bg-warning" />
+        </div>
+    </div>
+
+    <div class="alert alert-info mb-4" role="alert">
+        <strong>How to Use the Sales Dashboard:</strong><br />
+        <!-- ... unchanged ... -->
+    </div>
+
+    @if (isloading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <span class="ms-2 align-self-center">Loading Dashboard page...</span>
+        </div>
+    }
+    @if (saleRecords == null)
+    {
+        <div class="alert alert-info text-center">🔄 Loading sales data...</div>
+    }
+    else if (!saleRecords.Any())
+    {
+        <div class="alert alert-warning text-center">📭 No sales records available yet.</div>
+    }
+    else
+    {
+        @foreach (var restaurantGroup in saleRecords.GroupBy(r => r.RestaurantName))
+        {
+            var restaurantTotalSales = restaurantGroup.Sum(r => r.DishPrice * r.QuantitySold);
+            var restaurantAvgRating = restaurantGroup.Any(r => r.Rating > 0) ? restaurantGroup.Where(r => r.Rating > 0).Average(r => r.Rating) : 0;
+            bool isExpanded = expandedRestaurant == restaurantGroup.Key;
+            <RestaurantDashboardCard
+                restaurantName="@restaurantGroup.Key"
+                totalSales="@restaurantTotalSales"
+                avgRating="@restaurantAvgRating"
+                isExpanded="@isExpanded"
+                onToggle="@(() => ToggleRestaurant(restaurantGroup.Key))"
+                categories="@restaurantGroup.GroupBy(r => r.Category).Select(g => new CategoryGroupDTO { CategoryName = g.Key, Records = g.ToList() })" />
+        }
+    }
+</div>
+
+@code {
+    // Holds all sale records loaded from the service
+    private List<SaleRecordDTO> saleRecords;
+
+    // Indicates if the dashboard is still loading data
+    private bool isloading = true;
+
+    // Only one restaurant group can be expanded at a time
+    private string? expandedRestaurant = null;
+
+    // Loads sale records when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        saleRecords = await SaleRecordService.GetSaleRecordsAsync();
+        isloading = false;
+        // Start with all restaurants collapsed
+    }
+
+    // Toggles expansion for a single restaurant group
+    private void ToggleRestaurant(string restaurantName)
+    {
+        if (expandedRestaurant == restaurantName)
+            expandedRestaurant = null; // Collapse if already expanded
+        else
+            expandedRestaurant = restaurantName; // Expand only the clicked one
+    }
+
+    // Navigates to the reviews page for a specific dish
+    private void OnDishClicked(string dishName)
+    {
+        NavigationManager.NavigateTo($"/reviews?dishname={Uri.EscapeDataString(dishName)}");
+    }
+
+    // Returns the total sale records, overall or for the expanded restaurant
+    private int SummarySaleRecords => expandedRestaurant is null
+        ? saleRecords?.Count ?? 0
+        : saleRecords?.Count(r => r.RestaurantName == expandedRestaurant) ?? 0;
+
+    // Returns the total dishes sold, overall or for the expanded restaurant
+    private int SummaryDishesSold => expandedRestaurant is null
+        ? saleRecords?.Sum(r => r.QuantitySold) ?? 0
+        : saleRecords?.Where(r => r.RestaurantName == expandedRestaurant).Sum(r => r.QuantitySold) ?? 0;
+
+    // Returns the total sales amount, overall or for the expanded restaurant
+    private decimal SummaryTotalSales => expandedRestaurant is null
+        ? saleRecords?.Sum(r => r.DishPrice * r.QuantitySold) ?? 0
+        : saleRecords?.Where(r => r.RestaurantName == expandedRestaurant).Sum(r => r.DishPrice * r.QuantitySold) ?? 0;
+
+
+}
