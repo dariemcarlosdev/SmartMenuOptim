@@ -1,0 +1,192 @@
+﻿@page "/underperforming"
+@using SmartMenuOptim.Server.Services.Interfaces
+@using SmartMenuOptim.Shared.Data.Dtos
+@using MudBlazor
+@inject IAIService aIService
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IReviewService ReviewService
+
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>📉 Underperforming Dishes</h2>
+        <p class="text-muted">
+            Leverage sales insights and customer sentiment to spot and improve your weakest menu items.
+        </p>
+    </div>
+
+    <div class="alert alert-info mb-4" role="alert">
+        <strong>How to Use Sales & Sentiment Insights to Improve Your Menu:</strong><br />
+        <ul class="mb-1 mt-2">
+            <li>
+                <b>Spot Weaknesses:</b> Dishes with low sales and low average sentiment are underperforming. These are highlighted here for your attention.
+            </li>
+            <li>
+                <b>Understand the Why:</b> Review customer comments and sentiment scores to identify common complaints or improvement areas (e.g., taste, portion size, presentation).
+            </li>
+            <li>
+                <b>AI-Powered Suggestions:</b> Click <span class="text-primary">💡 Improve</span> to get actionable, AI-generated strategies tailored to each dish—such as recipe tweaks, marketing ideas, or service enhancements.
+            </li>
+            <li>
+                <b>Take Action:</b> Implement the suggested improvements, then monitor changes in sales and sentiment to measure impact.
+            </li>
+        </ul>
+        <span class="text-primary">
+            By combining real sales data, customer feedback, rating and AI-driven recommendations, you can turn weak menu items into customer favorites—boosting satisfaction and profits.
+        </span>
+    </div>
+
+    @if (isloading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <span class="ms-2 align-self-center">Loading underperformance dishes page...</span>
+        </div>
+    }
+    @if (underperformingDishes == null)
+    {
+        <div class="alert alert-info text-center">🔄 Loading underperforming dishes data...</div>
+    }
+    else if (!underperformingDishes.Any())
+    {
+        <div class="alert alert-success text-center">
+            🎉 No underperforming dishes found. Everything's running smoothly!
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center">Dish Name</th>
+                        <th class="text-center">Total Sales</th>
+                        <th class="text-center">Avg Sentiment</th>
+                        <th class="text-center">Avg Rating</th>
+                        <th class="text-center"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dish in underperformingDishes) 
+                    {
+                        <tr>
+                            <td class ="text-center">
+                                <a href="#" class="dish-link" @onclick="() => OnDishClicked(dish.DishName, dish.AverageSentiment)">
+                                    @dish.DishName
+                                </a>
+                            </td>
+                            <td class ="text-center">@dish.TotalSales</td>
+                            <td class="text-center">
+                                @* Display sentiment as a percentage with emoji *@
+                                @* @dish.AverageSentiment.ToString("P0") *@
+                                @dish.AverageSentiment.ToString()
+                                @(dish.AverageSentiment < 0.4 ? "😠" :
+                                    dish.AverageSentiment < 0.6 ? "😐" : "🙂")
+                            </td>
+                            <td class="text-center">
+                                <span class="text-warning" title="Average Rating">
+                                    @for (int i = 0; i < Math.Round((double)dish.AverageRating); i++)
+                                    {
+                                        <span>★</span>
+                                    }
+                                    @for (int i = (int)Math.Round((double)dish.AverageRating); i < 5; i++)
+                                    {
+                                        <span class="text-secondary">☆</span>
+                                    }
+                                </span>
+                                <span class="ms-1">(@dish.AverageRating.ToString("0.0")/5)</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-outline-primary btn-sm"
+                                        @onclick="() => ShowImproveModal(dish)">
+                                    💡 Improve
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }    
+    <AiSuggestionModal Show="@showModal"  
+                       Title="@($"AI Suggestion for {selectedDish?.DishName}")"  
+                       OnClose="CloseModal"
+                       TypingText="@aiSuggestion"
+                       Typing="@(loadingSuggestion == false && !string.IsNullOrEmpty(aiSuggestion))"
+                       TypingDelay="25">
+        @if (loadingSuggestion)  
+        {  
+            <div class="d-flex justify-content-center align-items-center" style="height: 100px;">  
+                <div class="spinner-border" role="status" aria-hidden="true"></div>  
+                <span class="ms-3">Generating improvement suggestion...</span>  
+            </div>  
+        }  
+        else if (string.IsNullOrEmpty(aiSuggestion) && showModal)
+        {  
+            <div class="alert alert-warning">
+                Could not retrieve a suggestion. Please try again later.
+            </div>
+        }
+    </AiSuggestionModal>
+</div>
+@code {
+    private List<UnderperformingDishDTO>? underperformingDishes;
+    private bool isloading = true;
+
+    //Modal State. It is used to show the AI suggestion modal.
+    private bool showModal = false;
+    private UnderperformingDishDTO? selectedDish;
+    private string? aiSuggestion;
+    private bool loadingSuggestion = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        underperformingDishes = await aIService.GetUnderperformingDishesAsync();
+        isloading = false;
+    }
+    private async void ShowImproveModal(UnderperformingDishDTO dish)
+    {
+        // Reset modal state
+        selectedDish = dish;
+        showModal = true;
+        loadingSuggestion = true;
+        aiSuggestion = null;
+        StateHasChanged(); // Force UI update to show loading state
+
+        // Call the AI service to get improvement suggestions
+        try
+        {
+            var response = await aIService.GetImprovementStrategyAsync(dish);
+            if (!string.IsNullOrEmpty(response))
+            {
+                aiSuggestion = response;
+            }
+            else
+            {
+                aiSuggestion = "Failed to fetch suggestion. Please try again later.";
+            }
+
+
+        }
+        catch (Exception ex)
+        {
+            aiSuggestion = $"Error fetching suggestion: {ex.Message}";
+        }
+        loadingSuggestion = false;
+        StateHasChanged(); // Update UI with the fetched suggestion
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedDish = null;
+        aiSuggestion = null;
+    }
+
+    private void OnDishClicked(string dishName, double sentiment)
+    {
+        // Optionally update the URL:
+        NavigationManager.NavigateTo($"/reviews?dishname={Uri.EscapeDataString(dishName)}&sentiment={sentiment}");
+
+    }
+}

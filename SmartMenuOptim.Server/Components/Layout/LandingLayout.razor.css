@@ -1,0 +1,23 @@
+﻿/* Used for landing background in LandingLayout.razor */
+.landing-bg {
+    position: relative;
+    min-height: 100vh;
+    width: 100vw;
+    background: url('/images/restaurant-bg.jpg') no-repeat center center;
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Used for overlay in LandingLayout.razor */
+.overlay {
+    background-color: rgba(2, 0, 2, 0.6);
+    width: 100%;
+    height: 100%;
+    padding: 2rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}

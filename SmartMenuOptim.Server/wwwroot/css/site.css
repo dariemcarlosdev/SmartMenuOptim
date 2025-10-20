@@ -1,4 +1,30 @@
-﻿.centered-container {
+﻿/* ==========================================================================
+   SmartMenuOptim Blazor Project CSS Usage Guidelines
+   --------------------------------------------------------------------------
+   Use site.css ONLY for global/shared styles. This is the recommended and
+   future-proof approach for Blazor projects.
+
+   For component-specific styles, use scoped CSS files named [Component].razor.css
+   (e.g., Dashboard.razor.css) placed in the same folder as the component.
+   Blazor will automatically scope these styles to the component, preventing
+   conflicts and ensuring maintainability.
+
+   Why use this approach?
+   - Global CSS (site.css) is best for styles shared across many components,
+     such as typography, layout, Bootstrap overrides, and utility classes
+     (e.g., .text-center, .mt-4).
+   - Component-scoped CSS is best for styles that should only affect a single
+     component, keeping your UI modular, maintainable, and free from style
+     conflicts.
+
+   Summary:
+   - Use site.css for global/shared styles and utilities.
+   - Use [Component].razor.css for component-specific styles.
+   ========================================================================== */
+
+
+/* Used in various components for centering content vertically and horizontally */
+.centered-container {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -6,12 +32,149 @@
     height: 100vh; /* Makes it take the full height of the viewport */
     text-align: center;
 }
-
-.background-image {
-    background-image: url('images/smart1.jpg'); /* Replace with your image URL */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    width: 100%;
-    height: 100vh; /* Full viewport height */
+/* Used in: (No direct usage found in scanned components) */
+body, main {
+    margin: 0;
+    padding: 0;
 }
+
+/* Used for review cards in Reviews.razor */
+.card {
+    border-radius: 12px;
+    border: none;
+/*    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+*/    background-color: #fff;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+    /* Used for review cards in Reviews.razor */
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    }
+/* Used for review cards in Reviews.razor */
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+/* Used for review cards in Reviews.razor */
+.card-text {
+    color: #555;
+    font-style: italic;
+    margin-bottom: 1rem;
+}
+/* Used for review cards in Reviews.razor */
+.card-body {
+    padding: 1.5rem;
+}
+/* Used for sentiment score display in Reviews.razor */
+.text-end small {
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+}
+
+/* Used on links to individual dishes in Menu.razor and Order.razor */
+.dish-link {
+    color: #0074d9;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+/* Hover and focus states for dish links */
+.dish-link:hover, .dish-link:focus {
+    color: #ff8800; /* Highlight color on hover/focus */
+    outline: none;
+}
+
+/* Used on the outermost container div in MainLayout.razor */
+.admin-bg {
+    background: #f5f7fb;
+}
+
+
+
+/* Custom button style for Go to Dashboard in Home.razor */
+.btn_content {
+    background-color: #232e3c;
+    color: #fff;
+    border: 1px solid #232e3c;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s;
+}
+
+    .btn_content:hover,
+    .btn_content:focus {
+        background-color: #3a4658;
+        color: #e9ecef;
+        border-color: #232e3c;
+    }
+
+
+
+/* Feature grid for Home landing page (Home.razor) */
+.feature-tile {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(44,62,80,0.07);
+    transition: box-shadow 0.2s;
+}
+
+    .feature-tile:hover {
+        box-shadow: 0 4px 18px rgba(44,62,80,0.13);
+    }
+
+/* Used for feature icons in Home.razor */
+.feature-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 56px;
+}
+
+/* Used for brand section background and feature tiles in Home.razor */
+.brand-section-bg {
+    background: rgba(255,255,255,0.92);
+    border-radius: 18px;
+    box-shadow: 0 2px 16px rgba(44,62,80,0.08);
+    padding: 2.5rem 2rem;
+}
+
+
+
+
+/* Used for illustration spacing in Home.razor (mobile) */
+@media (max-width: 991.98px) {
+    .illustration-mobile-spacing {
+        margin-top: 2rem;
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .feature-tile {
+        margin-bottom: 1.5rem;
+    }
+    /* Remove margin from last feature-tile */
+    .row.justify-content-center > div:last-child .feature-tile {
+        margin-bottom: 0;
+    }
+    .row.justify-content-center > div {
+        padding-bottom: 1.5rem;
+    }
+    .row.justify-content-center > div:last-child {
+        padding-bottom: 0;
+    }
+}
+
+
+
+
+
+
+
+

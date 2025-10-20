@@ -1,36 +1,158 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Smart Menu</a>
-    </div>
-</div>
+﻿@inject IJSRuntime JS
+@implements IAsyncDisposable
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@code {
+    // JS interop in this component is used for:
+    // - Responsive UI: Detects window width to adapt sidebar behavior for mobile/desktop.
+    // - Event bridging: Adds/removes outside click listeners in JS to close the sidebar when clicking outside.
+    // - .NET/JS communication: Allows JS to invoke C# methods (e.g., OnOutsideSidebarClick) for interactive UI logic.
+    //
+    // Typical use cases for JS interop in Blazor:
+    // - Manipulating DOM elements not directly accessible from C#.
+    // - Integrating with third-party JS libraries (e.g., Bootstrap, charting libraries).
+    // - Handling browser events (resize, scroll, clipboard, etc.) or APIs (localStorage, geolocation).
+    // - Performing actions that require direct JS access (e.g., animations, custom input handling).
+    //
+    // In this component, JS interop enables a mobile-friendly sidebar that closes when the user clicks outside,
+    // and adapts its behavior based on the browser window size.
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    private bool sidebarOpen = false;
+    private DotNetObjectReference<NavMenu>? dotNetRef;
+    private bool _disposed = false;
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Dashboard" Match="NavLinkMatch.All">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Dashboard
-            </NavLink>
-        </div>
+    /// <summary>
+    /// Closes the sidebar if the screen width is less than 992px (Bootstrap's mobile breakpoint).
+    /// Uses JS interop to get the current window width.
+    /// Called when a sidebar menu item is clicked.
+    /// </summary>
+    private async Task CloseSidebarOnMobileAsync()
+    {
+        if (_disposed) return;
+        var width = await JS.InvokeAsync<int>("getWindowWidth"); // JS interop: gets window width
+        if (width < 992)
+        {
+            sidebarOpen = false;
+            StateHasChanged();
+            await RemoveOutsideClickListenerAsync(); // JS interop: removes outside click listener
+        }
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Insights" Match="NavLinkMatch.All">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Insights
-            </NavLink>
-        </div>
+    /// <summary>
+    /// Called by JS when user clicks outside the sidebar.
+    /// JS interop: Invoked from site.js via DotNet.invokeMethodAsync.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnOutsideSidebarClick()
+    {
+        if (_disposed) return;
+        await CloseSidebarOnMobileAsync();
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Reviews" Match="NavLinkMatch.All">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Reviews
-            </NavLink>
-        </div>
+    /// <summary>
+    /// Adds JS listener for outside clicks when sidebar opens on mobile.
+    /// Uses JS interop to register the event handler in site.js.
+    /// </summary>
+    private async Task OpenSidebarAsync()
+    {
+        if (_disposed) return;
+        sidebarOpen = true;
+        var width = await JS.InvokeAsync<int>("getWindowWidth"); // JS interop: gets window width
+        if (width < 992)
+        {
+            dotNetRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("sidebarInterop.addOutsideClickListener", dotNetRef, ".sidebar.sidebar-open"); // JS interop: adds outside click listener
+        }
+    }
+
+    /// <summary>
+    /// Removes JS listener for outside clicks when sidebar closes.
+    /// Uses JS interop to unregister the event handler in site.js.
+    /// </summary>
+    private async Task RemoveOutsideClickListenerAsync()
+    {
+        if (_disposed) return;
+        await JS.InvokeVoidAsync("sidebarInterop.removeOutsideClickListener"); // JS interop: removes outside click listener
+    }
+
+    /// <summary>
+    /// Toggles sidebar (hamburger button).
+    /// </summary>
+    private async Task ToggleSidebarAsync()
+    {
+        if (_disposed) return;
+        if (!sidebarOpen)
+            await OpenSidebarAsync();
+        else
+        {
+            sidebarOpen = false;
+            await RemoveOutsideClickListenerAsync();
+        }
+    }
+
+    /// <summary>
+    /// Clean up JS listeners when component is disposed.
+    /// Ensures no JS interop calls are made after disposal.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        try
+        {
+            await RemoveOutsideClickListenerAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit is disconnected, safe to ignore
+        }
+        dotNetRef?.Dispose();
+    }
+}
+
+<!-- Hamburger button for toggling sidebar visibility on mobile devices -->
+@* <button class="btn btn-dark d-lg-none mb-2" type="button" @onclick="ToggleSidebarAsync">
+    <span class="bi bi-list"></span>
+</button> *@
+@* <button class="sidebar-fab d-lg-none" type="button" @onclick="ToggleSidebarAsync" aria-label="Open menu">
+    <span class="bi bi-list"></span>
+</button> *@
+
+
+@* 
+    Sidebar toggle button (floating, circular, transparent) for mobile devices.
+    This button is only visible when the sidebar is closed (sidebarOpen == false).
+    It remains accessible in the middle-left of the viewport, allowing users to open the sidebar.
+*@
+@if (!sidebarOpen)
+{
+    <button class="sidebar-fab d-lg-none" type="button" @onclick="ToggleSidebarAsync" aria-label="Open menu">
+        <span class="bi bi-list"></span>
+    </button>
+}
+
+<!-- Sidebar navigation menu -->
+<aside class="@(sidebarOpen ? "sidebar sidebar-open" : "sidebar sidebar-closed") d-flex flex-column flex-shrink-0 p-3 text-white"
+       style="min-width: 220px; max-width: 280px;">
+    <a href="/" class="d-flex flex-column align-items-start mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <span class="sidebar-logo"><i class="bi bi-speedometer2 me-2"></i>Smart Menu</span>
+        <span class="sidebar-meta mt-1">Version 1.0 <span class="text-info ms-1">| In Development</span></span>
+    </a>
+    <hr class="sidebar-hr" />
+    <nav class="nav flex-column gap-1">
+        <NavLink class="nav-link text-white d-flex align-items-center" href="" Match="NavLinkMatch.All" activeClass="active bg-secondary" @onclick="CloseSidebarOnMobileAsync">
+            <span class="bi bi-house-door-fill me-2"></span> Home
+        </NavLink>
+        <NavLink class="nav-link text-white d-flex align-items-center" href="Dashboard" activeClass="active bg-secondary" @onclick="CloseSidebarOnMobileAsync">
+            <span class="bi bi-speedometer2 me-2"></span> Dashboard
+        </NavLink>
+        <NavLink class="nav-link text-white d-flex align-items-center" href="Insights" activeClass="active bg-secondary" @onclick="CloseSidebarOnMobileAsync">
+            <span class="bi bi-bar-chart-line me-2"></span> Insights
+        </NavLink>
+        <NavLink class="nav-link text-white d-flex align-items-center" href="Reviews" activeClass="active bg-secondary" @onclick="CloseSidebarOnMobileAsync">
+            <span class="bi bi-people me-2"></span> Customers Feedback
+        </NavLink>
+        <NavLink class="nav-link text-white d-flex align-items-center" href="underperforming" activeClass="active bg-secondary" @onclick="CloseSidebarOnMobileAsync">
+            <span class="bi bi-exclamation-triangle me-2"></span> Underperformance
+        </NavLink>
     </nav>
-</div>
-
+</aside>

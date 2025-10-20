@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/SmartMenuOptim.API/appsettings.Development.json
+/.stfolder/syncthing-folder-2a3acf.txt
+/.stfolder/syncthing-folder-e03bb1.txt
+/SmartMenuOptim.Server/appsettings.Development.json
