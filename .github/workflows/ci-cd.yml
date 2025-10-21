@@ -23,15 +23,25 @@ on:
     branches:
         - Staging
         - master
-        - env-dev/*       
-        - env-staging/*
+        # push Trigger: This is now limited to long-lived branches (master, Staging) This ensures that only merged and approved code is deployed. It's assumed that feature branches (env-dev/*, env-staging/*) will be merged via pull requests.
+        # - env-dev/*       
+        # - env-staging/*
+    paths-ignore:
+      - '**/README.md'
+      - '**/.gitignore'
+      - '**/.gitattributes'
 
   pull_request:
     branches:
         - Staging
         - master
-        - env-dev/*
-        - env-staging/*
+        # This now targets master and Staging. It will run for any pull request aimed at these branches, which is ideal for validating changes from your env-dev/* and env-staging/* branches  before they are merged into important branches like master or Staging.
+        # - env-dev/*
+        # - env-staging/*
+    paths-ignore:
+      - '**/README.md'
+      - '**/.gitignore'
+      - '**/.gitattributes'
 
 # Improvement: Prevent concurrent workflows on the same branch
 concurrency:
@@ -243,27 +253,20 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_SERVER_PUBLISH_PROFILE }}
         package: ./publish/server
 
+       
+  
   # --------------------------------------------------------------------------------------------------
-  # Job: deploy-azure-api
-  # Purpose: To deploy the API application to an Azure Web App.
+  # Job: apply-prod-migrations
+  # Purpose: To apply EF Core migrations to the production database before deployment.
   # --------------------------------------------------------------------------------------------------
-  deploy-azure-api:
-    # needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
+  apply-prod-migrations:
     needs: [build-and-test, security-scan, database-migrations]
+    #// Only run on master or Staging branches
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'  
     runs-on: ubuntu-latest
     steps:
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: publish
-        path: ./publish
-
-    - name: Deploy API to Azure Web App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: ${{ secrets.AZURE_WEBAPP_API_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
-        package: ./publish/api
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -277,10 +280,53 @@ jobs:
       run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Apply EF Core Migrations to Azure PostgreSQL
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
       env:
         ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
+
+  
+  # --------------------------------------------------------------------------------------------------
+  # Job: deploy-azure-api
+  # Purpose: To deploy the API application to an Azure Web App.
+  # --------------------------------------------------------------------------------------------------
+  deploy-azure-api:
+    # needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
+    # needs: [build-and-test, security-scan, database-migrations]
+    needs: apply-prod-migrations
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish
+        path: ./publish
+
+    - name: Deploy API to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_API_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_API_PUBLISH_PROFILE }}
+        package: ./publish/api
+    
+    # - name: Setup .NET
+    #   uses: actions/setup-dotnet@v4
+    #   with:
+    #     dotnet-version: '9.0.x' 
+       
+    # - name: Install EF Core CLI
+    #   run: dotnet tool install --global dotnet-ef
+
+    # - name: Add dotnet tools to PATH
+    #   run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    # - name: Apply EF Core Migrations to Azure PostgreSQL
+    #   if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
+    #   env:
+    #     ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
+    #   run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
   # --------------------------------------------------------------------------------------------------
   # Job: notify-on-failure
