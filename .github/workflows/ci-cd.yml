@@ -270,7 +270,7 @@ jobs:
 
     - name: Apply EF Core Migrations to Azure PostgreSQL
       env:
-        ConnectionStrings__DefaultConnection: "${{ secrets.NEON_POSTGRES_CONNECTION_TEMPLATE }};Password=${{ secrets.NEON_POSTGRES_PASSWORD }}"
+        ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
       run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
 
   
