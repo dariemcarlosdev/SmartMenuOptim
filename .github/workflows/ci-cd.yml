@@ -251,7 +251,8 @@ jobs:
   # --------------------------------------------------------------------------------------------------
   apply-prod-migrations:
     needs: [build-and-test, security-scan, database-migrations]
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'
+    #// Only run on master or Staging branches
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'  
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
