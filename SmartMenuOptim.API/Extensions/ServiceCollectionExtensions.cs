@@ -105,7 +105,8 @@ public static class ServiceCollectionExtensions
                         // Configure the policy to allow requests from specific origins, with any method and header.
                         policy.WithOrigins(corsOrigins)
                               .AllowAnyMethod() // Allow any HTTP method (GET, POST, etc.)
-                              .AllowAnyHeader(); // Allow any HTTP headers
+                              .AllowAnyHeader() // Allow any HTTP headers
+                              .SetPreflightMaxAge(TimeSpan.FromMinutes(10)); // Cache preflight response for 10 minutes. It is good for performance since it reduces the number of preflight requests. 
                     }
                 });
         });
