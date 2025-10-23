@@ -1,0 +1,250 @@
+﻿@page "/reviews"
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.AspNetCore.Components
+@using SmartMenuOptim.Server.Services
+@using SmartMenuOptim.Server.Services.Interfaces
+@using SmartMenuOptim.Shared.Data.Dtos
+@using SmartMenuOptim.Shared.Data.Entities
+@inject IAIService AIService
+@inject IReviewService ReviewService
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <CascadingValue Value="@filterState">
+    <div class="text-center mb-4">
+        <h2>📝 Customer Reviews</h2>
+        <p class="text-muted">What your diners are saying — powered by AI-driven sentiment analysis.</p>
+    </div>
+
+    @* ... sentiment explanation card ... *@
+    <div class="alert alert-info mb-4" role="alert">
+        <strong>Understanding Sentiment & Rating:</strong><br />
+        <b>Average Sentiment Score</b> (<span style="font-size:1.2em;">💬</span>) shows how positive or negative each review is, based on AI analysis of the comment text.
+        <ul class="mb-1 mt-2">
+            <li><b>Range:</b> 0 (very negative) to 1 (very positive)</li>
+            <li><b>0.0 – 0.4:</b> Mostly negative feedback <span style="font-size:1.1em;">😠</span></li>
+            <li><b>0.4 – 0.75:</b> Mixed or neutral feedback <span style="font-size:1.1em;">😐</span></li>
+            <li><b>0.75 – 1.0:</b> Mostly positive feedback <span style="font-size:1.1em;">😊</span></li>
+        </ul>
+        <b>Rating</b> (<span class="text-warning" style="font-size:1.2em;">★</span>) is the direct score given by the customer (1–5 stars).<br />
+        <span class="text-primary">Use both metrics together:</span> Dishes with high ratings and high sentiment are customer favorites—consider promoting them! If a dish has a high rating but low sentiment, check the comments for improvement ideas.
+    </div>
+
+    <ReviewFilters OnFiltersChanged="HandleFiltersChanged" />
+
+    @if (isloading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <span class="ms-2 align-self-center">Loading reviews page...</span>
+        </div>
+    }
+    else if (reviews == null || !reviews.Any())
+    {
+        <div class="alert alert-warning text-center mt-4">📭 No reviews available at the moment.</div>
+    }
+    else
+    {
+        <ReviewStatistics Reviews="FilteredReviews" />
+
+        @if (!FilteredReviews.Any())
+        {
+            <div class="alert alert-secondary text-center mt-4">No reviews match the current filters.</div>
+        }
+        else
+        {
+            @foreach (var review in PagedAndFilteredReviews)
+            {
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">@review.CustomerName says:</h6>
+                        @if (!string.IsNullOrWhiteSpace(review.DishName))
+                        {
+                            <div class="mb-1 text-muted small">
+                                Dish: <strong>@review.DishName</strong>
+                            </div>
+                            <div class="mb-1 text-muted small">
+                                Rating: <span class="text-warning" title="Rating">
+                                    @for (int i = 0; i < review.Rating; i++)
+                                    {
+                                        <span>★</span>
+                                    }
+                                    @for (int i = review.Rating; i < 5; i++)
+                                    {
+                                        <span class="text-secondary">☆</span>
+                                    }
+                                </span>
+                                <span class="ms-1">(@review.Rating/5)</span>
+                            </div>
+                        }
+                        <p class="card-text">"@review.Comment"</p>
+                        <div class="text-end">
+                            <small>
+                                Sentiment: <strong>@review.SentimentScore.ToString("F2")</strong>
+                                (@(review.SentimentScore > 0.75 ? "😊" :
+                                   review.SentimentScore < 0.4 ? "😠" : "😐"))
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            }
+				@* ...pagination ... *@
+            <nav aria-label="Review pagination" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
+                        <a class="page-link" href="#" @onclick="() => ChangePage(CurrentPage - 1)" @onclick:preventDefault aria-label="Previous" tabindex="-1">&laquo;</a>
+                    </li>
+                    @if (TotalPages <= 7)
+                    {
+                        @for (var i = 1; i <= TotalPages; i++)
+                        {
+                            <li class="page-item @(i == CurrentPage ? "active" : null)">
+                                <a class="page-link" href="#" @onclick="() => ChangePage(i)" @onclick:preventDefault>@i</a>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="page-item @(1 == CurrentPage ? "active" : null)">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(1)" @onclick:preventDefault>1</a>
+                        </li>
+                        @if (CurrentPage > 4)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        @for (var i = Math.Max(2, CurrentPage - 2); i <= Math.Min(TotalPages - 1, CurrentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == CurrentPage ? "active" : null)">
+                                <a class="page-link" href="#" @onclick="() => ChangePage(i)" @onclick:preventDefault>@i</a>
+                            </li>
+                        }
+                        @if (CurrentPage < TotalPages - 3)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        <li class="page-item @(TotalPages == CurrentPage ? "active" : null)">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(TotalPages)" @onclick:preventDefault>@TotalPages</a>
+                        </li>
+                    }
+                    <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
+                        <a class="page-link" href="#" @onclick="() => ChangePage(CurrentPage + 1)" @onclick:preventDefault aria-label="Next">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    </CascadingValue>
+</div>
+
+@code {
+    private ReviewFilterState filterState = new ReviewFilterState(); // Shared filter state
+    private List<ReviewDTO>? reviews;
+    private bool isloading = true;
+    private int CurrentPage = 1;
+    private int PageSize = 10;
+
+
+    // Computed properties for filtering and sorting
+    private IEnumerable<ReviewDTO> FilteredReviews
+    {
+        get
+        {
+            if (reviews == null)
+                return Enumerable.Empty<ReviewDTO>();
+
+            var query = reviews.AsEnumerable();
+
+            // Apply rating filter
+            if (filterState.MinRating > 0)
+            {
+                query = query.Where(r => r.Rating >= filterState.MinRating);
+            }
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(filterState.SearchTerm))
+            {
+                var term = filterState.SearchTerm.Trim().ToLowerInvariant();
+                query = query.Where(r => 
+                    (r.Comment?.ToLowerInvariant().Contains(term) ?? false) ||
+                    (r.DishName?.ToLowerInvariant().Contains(term) ?? false) ||
+                    (r.CustomerName?.ToLowerInvariant().Contains(term) ?? false));
+            }
+
+            // Apply sorting
+            return filterState.SortBy switch
+            {
+                "rating" => query.OrderByDescending(r => r.Rating),
+                "sentiment" => query.OrderByDescending(r => r.SentimentScore),
+                _ => query.OrderByDescending(r => r.DateCreated)
+            };
+
+        }
+    }
+
+	// Pagination logic for filtered reviews
+    private IEnumerable<ReviewDTO> PagedAndFilteredReviews =>
+        FilteredReviews
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize);
+
+    // Calculate total pages based on filtered reviews
+    private int TotalPages =>
+        (int)Math.Ceiling(FilteredReviews.Count() / (double)PageSize);
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReviews();
+    }
+
+    private async Task LoadReviews()
+    {
+        isloading = true;
+     
+        try
+        {
+            string? dishNameFilter = null;
+            double? sentimentFilter = null;
+
+            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+			var query = QueryHelpers.ParseQuery(uri.Query); // Parse query parameters
+
+            if (query.TryGetValue("dishname", out var dishNameParam))
+            {
+                dishNameFilter = dishNameParam.ToString();
+            }
+            if (query.TryGetValue("sentiment", out var sentimentParam) &&
+                double.TryParse(sentimentParam, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var sentimentValue))
+            {
+                sentimentFilter = sentimentValue;
+            }
+
+            reviews = await ReviewService.GetReviewsAsync(dishNameFilter, sentimentFilter);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading reviews: {ex.Message}");
+		}
+        finally
+        {
+            isloading = false;
+            CurrentPage = 1;
+            StateHasChanged(); // Refresh UI after loading
+		}
+
+    }
+
+	private void ChangePage(int page)
+	{
+		if (page < 1 || page > TotalPages) return;
+		CurrentPage = page;
+		StateHasChanged();
+	}
+
+	private void HandleFiltersChanged()
+	{
+        CurrentPage = 1;
+        StateHasChanged();
+	}
+}

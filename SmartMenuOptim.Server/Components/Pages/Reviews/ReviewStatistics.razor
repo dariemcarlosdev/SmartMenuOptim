@@ -1,0 +1,39 @@
+﻿@using SmartMenuOptim.Shared.Data.Dtos
+
+@if (Reviews?.Any() == true)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <h5>Total Reviews</h5>
+                    <p class="h4">@Reviews.Count()</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Average Rating</h5>
+                    <p class="h4">@AverageRating.ToString("F1") <span class="text-warning">★</span></p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Average Sentiment</h5>
+                    <p class="h4">
+                        @AverageSentiment.ToString("F2")
+                        <span class="ms-1">
+                            @(@AverageSentiment > 0.75 ? "😊" : @AverageSentiment < 0.4 ? "😠" : "😐")
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+	// Parameters is a collection of ReviewDTO objects passed to the component
+    [Parameter]
+    public IEnumerable<ReviewDTO>? Reviews { get; set; }
+
+	// Calculate average rating and sentiment score
+    private double AverageRating => Reviews?.Any() == true ? Reviews.Average(r => r.Rating) : 0;
+    private double AverageSentiment => Reviews?.Any() == true ? Reviews.Average(r => r.SentimentScore) : 0;
+}
