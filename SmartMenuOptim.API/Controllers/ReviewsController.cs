@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Shared.Data;
 using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.Entities;
+using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
 using SmartMenuOptim.Shared.Data.Interfaces;
 
 
