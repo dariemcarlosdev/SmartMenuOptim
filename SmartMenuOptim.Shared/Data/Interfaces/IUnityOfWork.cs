@@ -1,4 +1,6 @@
 ﻿using SmartMenuOptim.Shared.Data.Entities;
+using SmartMenuOptim.Shared.Data.Entities.GlobalEntities;
+using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
 using System.Threading.Tasks;
 
 namespace SmartMenuOptim.Shared.Data.Interfaces

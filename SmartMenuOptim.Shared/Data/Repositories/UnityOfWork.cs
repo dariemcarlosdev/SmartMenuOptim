@@ -1,5 +1,7 @@
 ﻿using SmartMenuOptim.Shared.Data.Context;
 using SmartMenuOptim.Shared.Data.Entities;
+using SmartMenuOptim.Shared.Data.Entities.GlobalEntities;
+using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
 using SmartMenuOptim.Shared.Data.Interfaces;
 using System;
 using System.Collections.Generic;
