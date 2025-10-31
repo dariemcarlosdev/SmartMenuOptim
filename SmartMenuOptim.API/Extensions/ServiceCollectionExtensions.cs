@@ -76,7 +76,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISentimentService, SentimentService>();
         services.AddScoped<IAiImprovementStrategyService, AiImprovementService>();
         services.AddScoped<IOpenIAGptService, OpenIaGptService>();
-        
+        services.AddScoped<IAdminAuthorizationService, AdminAuthorizationService>();
+
         // Add health check services.
         services.AddHealthChecks();
         
