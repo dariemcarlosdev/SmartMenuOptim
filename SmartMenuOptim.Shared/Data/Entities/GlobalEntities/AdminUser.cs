@@ -38,17 +38,65 @@ namespace SmartMenuOptim.Shared.Data.Entities.GlobalEntities
     /// </summary>
     [Flags]
     public enum AdminPermission
-    {
+    {   
+        /// <summary>
+        /// Represents the absence of any value or option.
+        /// </summary>
         None = 0,
+        /// <summary>
+        /// Represents the permission to manage restaurant entities within the system.
+        /// </summary>
         ManageRestaurants = 1 << 0,      // Create, edit, delete restaurants
+        /// <summary>
+        /// Represents permission to view reports within the system.
+        /// </summary>
+        /// <remarks>Use this value to grant or check access for users who need to view generated reports.
+        /// This flag can be combined with other permissions in a bitwise manner if the enumeration supports flag
+        /// operations.</remarks>
         ViewReports = 1 << 1,            // Access to analytics and reports
+        /// <summary>
+        /// Represents permission to edit menu items within the application.
+        /// </summary>
         EditMenus = 1 << 2,              // Modify menus and dishes
+        /// <summary>
+        /// Represents the permission to manage staff members within the system and their schedules.
+        /// </summary>
+        /// <remarks>This value can be combined with other permission flags to grant multiple access
+        /// rights. Assign this flag to enable actions such as adding, editing, or removing staff records.</remarks>
         ManageStaff = 1 << 3,            // Manage staff members and schedules
+        /// <summary>
+        /// Represents permission to create, modify, or delete promotional offers within the system.
+        /// </summary>
+        /// <remarks>Assign this value to grant users the ability to manage all aspects of promotions,
+        /// including configuring discounts and activating or deactivating promotional campaigns. This flag can be
+        /// combined with other permission flags using bitwise operations.</remarks>
         ManagePromotions = 1 << 4,       // Create and manage promotions
+        /// <summary>
+        /// Represents permission to view customer data within the system.
+        /// </summary>
         ViewCustomerData = 1 << 5,       // Access customer information and loyalty
+        /// <summary>
+        /// Represents the permission to manage orders within the system.
+        /// </summary>
         ManageOrders = 1 << 6,           // Manage and process orders
+        /// <summary>
+        /// Specifies the permission to configure application or system settings.
+        /// </summary>
+        /// <remarks>Use this value to grant or check access for operations that modify configuration
+        /// parameters. This permission is typically required for administrative tasks that affect the application's
+        /// behavior or environment.</remarks>
         ConfigureSettings = 1 << 7,      // Modify restaurant settings and thresholds
+        /// <summary>
+        /// Specifies permission to manage user accounts, including creating, updating, or deleting users.
+        /// </summary>
+        /// <remarks>Assign this flag to grant access to user management operations. This permission is
+        /// typically required for administrative roles responsible for maintaining user information.</remarks>
         ManageUsers = 1 << 8,            // Manage other admin users
+        /// <summary>
+        /// Represents a value that includes all available permissions.
+        /// </summary>
+        /// <remarks>This value can be used to grant or check for every permission defined in the set. It
+        /// is typically used when full access is required.</remarks>
         All = ~None                       // All permissions
     }
 
@@ -243,39 +291,6 @@ namespace SmartMenuOptim.Shared.Data.Entities.GlobalEntities
         [InverseProperty(nameof(BusinessRule.AdminUser))]
         public ICollection<BusinessRule> BusinessRules { get; set; } = new List<BusinessRule>();
 
-        /// <summary>
-        /// Helper method to get default permissions for a role
-        /// </summary>
-        public static AdminPermission GetDefaultPermissionsForRole(AdminRole role)
-        {
-            return role switch
-            {
-                AdminRole.SystemAdmin => AdminPermission.All,
-                AdminRole.Owner => AdminPermission.ManageRestaurants | 
-                                 AdminPermission.EditMenus | 
-                                 AdminPermission.ViewReports | 
-                                 AdminPermission.ManageStaff |
-                                 AdminPermission.ManagePromotions |
-                                 AdminPermission.ManageOrders |
-                                 AdminPermission.ConfigureSettings |
-                                 AdminPermission.ViewCustomerData,
-                AdminRole.Manager => AdminPermission.EditMenus | 
-                                   AdminPermission.ViewReports | 
-                                   AdminPermission.ManageStaff |
-                                   AdminPermission.ManageOrders |
-                                   AdminPermission.ViewCustomerData,
-                AdminRole.Supervisor => AdminPermission.ViewReports | 
-                                      AdminPermission.ViewCustomerData |
-                                      AdminPermission.ManageOrders,
-                _ => AdminPermission.None
-            };
-        }
-
-        /// <summary>
-        /// Returns true if this admin user has the specified permission flag.
-        /// </summary>
-        public bool HasPermission(AdminPermission permission)
-            => (Permissions & permission) == permission;
 
         /// <summary>
         /// Returns true if this admin user is allowed to manage staff schedules for the specified restaurant.
@@ -290,6 +305,33 @@ namespace SmartMenuOptim.Shared.Data.Entities.GlobalEntities
         /// 3. Modify this method to include the new role and (optionally) require a specific permission flag.
         /// 4. Update any seeding or tests to include the new role.
         /// </summary>
+        /// <param name="restaurantId">The ID of the restaurant to check.</param>
+        /// <returns>True if the admin user can manage staff schedules for the specified restaurant; otherwise, false.</returns>
+
+        /* 
+        Keep it on the entity by default — but provide options depending on responsibility and testability.
+        
+        CanManageStaffSchedules() makes decisions using navigation properties and instance-level rules (ownership checks).
+        That logic belongs either on the entity (if you treat the entity as an aggregate with behaviour) or in a domain/service layer that orchestrates repository/loaded navigation properties.
+        Moving it to a general-purpose static extension reduces clarity and may hide where business rules live.
+
+        Recommendation (short)
+
+        •	Leave CanBeManagedBy(AdminUser?) on StaffSchedule (recommended). It is instance-level domain logic that depends on RestaurantId and expresses the schedule aggregate's authorization rule.
+        •	If you need DB lookups, orchestration, feature flags or richer policies, add an application-level authorization service in the API layer that uses the entity method or replicates the logic after loading required data.
+        
+        Why?
+
+        •	Entity (recommended): the method uses instance data (RestaurantId) and navigation data (OwnedRestaurants) — keeping it on StaffSchedule keeps the rule with the data it applies to and simplifies unit testing.
+        •	AdminUser: if policy is primarily about admin role/permissions (not schedule semantics), exposing a method on AdminUser (you already have CanManageStaffSchedules) is fine — but it duplicates intent if you also keep the entity method.
+        •	Service (application layer): use when you need to load navigation properties from DB, combine multiple data sources, or centralize authorization across controllers/background jobs.
+            
+            Implementation options:
+            - SmartMenuOptim.API\Services\IAdminAuthorizationService.cs // interface for service
+            - SmartMenuOptim.API\Services\AdminAuthorizationService.cs // uses AdminUser.CanManageStaffSchedules()
+            -SmartMenuOptim.API\Program.cs // register in DI
+         
+        */
         public bool CanManageStaffSchedules(int restaurantId)
         {
             // SystemAdmin has global rights

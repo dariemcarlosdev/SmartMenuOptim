@@ -63,30 +63,21 @@ namespace SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities
 
         // Helper methods: these do not perform DB checks. For AdminUser ownership checks, the caller
         // should ensure `AdminUser.OwnedRestaurants` is loaded or pass a predicate from service layer.
-
+        
         /// <summary>
         /// Returns true if given admin user is allowed to create/modify schedules for this restaurant.
-        /// Current policy: only SystemAdmin and Owner roles are allowed.
-        /// - SystemAdmin: global rights
-        /// - Owner: allowed for restaurants they own (if OwnedRestaurants is loaded this is enforced),
-        ///   otherwise Owner role is allowed (caller should load OwnedRestaurants for strict enforcement).
+        /// Delegates to AdminUser.CanManageStaffSchedules to keep a single canonical implementation.
+        /// This ensures all admin schedule management policy is maintained in one place (AdminUser).
+        /// If you need to change business rules, update AdminUser.CanManageStaffSchedules only.
         /// </summary>
+        // Delegation rationale: This method delegates to AdminUser.CanManageStaffSchedules(RestaurantId)
+        // to ensure a single canonical implementation for admin schedule management policy.
+        // All business logic for admin schedule management is centralized in AdminUser.
         public bool CanBeManagedBy(AdminUser? admin)
         {
             if (admin == null) return false;
-
-            // SystemAdmin has global rights
-            if (admin.Role == AdminRole.SystemAdmin) return true;
-
-            // Only Owners (not Managers) are allowed in the admin role scope per current policy
-            if (admin.Role != AdminRole.Owner) return false;
-
-            // If OwnedRestaurants navigation is populated, enforce ownership strictly
-            if (admin.OwnedRestaurants != null && admin.OwnedRestaurants.Any())
-                return admin.OwnedRestaurants.Any(r => r.Id == RestaurantId);
-
-            // Fallback: allow based on Owner role only (service layer should enforce tenant scoping when possible)
-            return true;
+            // Delegate to AdminUser method to keep single source of truth for admin schedule management policy
+            return admin.CanManageStaffSchedules(RestaurantId);
         }
 
         /// <summary>
@@ -102,6 +93,8 @@ namespace SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities
             // Only staff with managerial role should be allowed to manage schedules
             return staff.Role == StaffRole.Manager;
         }
+
+        // Validation logic
 
         // Simple validation to ensure sensible shift times and audit presence
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
