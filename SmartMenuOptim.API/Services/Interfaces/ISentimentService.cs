@@ -1,4 +1,5 @@
 ﻿using SmartMenuOptim.Shared.Data.Entities;
+using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
 
 namespace SmartMenuOptim.API.Services.Interfaces
 {
