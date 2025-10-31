@@ -45,6 +45,9 @@ Any entity that represents data or business logic unique to a single restaurant 
 */
 
 
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 using SmartMenuOptim.Shared.Data.Entities.GlobalEntities;
 
 namespace SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities
@@ -54,37 +57,39 @@ namespace SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities
     /// and can have its own dishes, categories, and reviews.
     /// </summary>
     /// <remarks>
-    /// Multi-Tenant Support: This entity is the root tenant entity. Each Restaurant acts as a tenant, allowing the application to support multiple restaurants per owner (AdminUser), each with their own menus, dishes, and reviews. This structure is a solid foundation for a multi-tenant application.
+    /// Multi-Tenant Support: This entity is the root tenant entity. Each Restaurant acts as a tenant.
+    /// Indexes for common queries (e.g., by OwnerId, Name, Email) should be centralized in `AppDbContext.OnModelCreating`.
+    ///
+    /// NOTE: Design rationale for inheritance
+    /// - Restaurant is the tenant root and therefore MUST NOT inherit from `TenantEntityBase`.
+    /// - `TenantEntityBase` contains a `RestaurantId` foreign key and `Restaurant` navigation; inheriting it would create
+    ///   a self-referencing tenant FK on the Restaurant table (conceptually incorrect and problematic for migrations).
+    /// - Shared audit/concurrency properties live on `EntityBase`. Tenant-scoped entities should inherit `TenantEntityBase : EntityBase`.
+    /// - Recommended model:
+    ///     `EntityBase` (Id, CreatedAt, UpdatedAt, IsDeleted, xmin/RowVersion)
+    ///     `TenantEntityBase : EntityBase` (+ RestaurantId, Restaurant nav)
+    ///     `Restaurant : EntityBase` (tenant root)
+    /// - This separation keeps the domain model clean and avoids redundant or circular FK mappings.
     /// </remarks>
-    public class Restaurant
+    [Table("Restaurants")]
+    public class Restaurant : EntityBase, IValidatableObject
     {
         // === Standalone Properties ===
 
         /// <summary>
-        /// Primary key for the Restaurant entity.
-        /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
         /// Name of the restaurant.
         /// </summary>
+        [Required(ErrorMessage = "Restaurant name is required")]
+        [MaxLength(200, ErrorMessage = "Restaurant name cannot exceed 200 characters")]
         public string Name { get; set; } = string.Empty;
-
-        // === Multi-Tenancy Expansion Properties ===
-        // The following properties are required for advanced multi-tenancy support (e.g., tenant isolation, auditing, soft deletion, concurrency control).
-        // Uncomment these when expanding the application to support full multi-tenant scenarios.
-
-        /// <summary>
-        /// Unique tenant identifier for the restaurant (for multi-tenant isolation).
-        /// </summary>
-        //public Guid TenantId { get; set; } = Guid.NewGuid();
-
 
         // === Relationship Properties (Foreign Keys) ===
 
         /// <summary>
         /// Foreign key to the owner (AdminUser). Each restaurant is owned by a single admin user.
         /// </summary>
+        [Required]
+        [ForeignKey(nameof(Owner))]
         public int OwnerId { get; set; }
 
         // === Navigation Properties ===
@@ -93,53 +98,132 @@ namespace SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities
         /// Navigation property to the owner (AdminUser).
         /// Each restaurant is owned by a single admin user.
         /// </summary>
+        [InverseProperty(nameof(AdminUser.OwnedRestaurants))]
         public AdminUser? Owner { get; set; }
 
         /// <summary>
         /// Navigation property for all dishes in this restaurant.
         /// </summary>
-        public ICollection<Dish> Dishes { get; set; } = [];
+        [InverseProperty(nameof(Dish.Restaurant))]
+        public ICollection<Dish> Dishes { get; set; } = new List<Dish>();
 
         /// <summary>
         /// Navigation property for all categories in this restaurant.
         /// </summary>
-        public ICollection<Category> Categories { get; set; } = [];
+        [InverseProperty(nameof(Category.Restaurant))]
+        public ICollection<Category> Categories { get; set; } = new List<Category>();
 
         /// <summary>
         /// Navigation property for all reviews in this restaurant.
         /// </summary>
-        public ICollection<Review> Reviews { get; set; } = [];
+        [InverseProperty(nameof(Review.Restaurant))]
+        public ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+        /// <summary>
+        /// Navigation property for all menus in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(Menu.Restaurant))]
+        public ICollection<Menu> Menus { get; set; } = new List<Menu>();
+
+        /// <summary>
+        /// Navigation property for all orders in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(Order.Restaurant))]
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
+
+        /// <summary>
+        /// Navigation property for all tables in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(Table.Restaurant))]
+        public ICollection<Table> Tables { get; set; } = new List<Table>();
+
+        /// <summary>
+        /// Navigation property for all staff schedules in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(StaffSchedule.Restaurant))]
+        public ICollection<StaffSchedule> StaffSchedules { get; set; } = new List<StaffSchedule>();
+
+        /// <summary>
+        /// Navigation property for all customer loyalty records in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(CustomerLoyalty.Restaurant))]
+        public ICollection<CustomerLoyalty> CustomerLoyalties { get; set; } = new List<CustomerLoyalty>();
+
+        /// <summary>
+        /// Navigation property for all promotions in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(Promotion.Restaurant))]
+        public ICollection<Promotion> Promotions { get; set; } = new List<Promotion>();
+
+        /// <summary>
+        /// Navigation property for all sale records in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(SaleRecord.Restaurant))]
+        public ICollection<SaleRecord> SaleRecords { get; set; } = new List<SaleRecord>();
+
+        /// <summary>
+        /// Gets or sets the collection of menu types associated with this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(MenuType.Restaurant))]
+        public ICollection<MenuType> MenuTypes { get; set; } = new List<MenuType>();
+
+        /// <summary>
+        /// Navigation property for all order statuses in this restaurant.
+        /// </summary>
+        [InverseProperty(nameof(OrderStatus.Restaurant))]
+        public ICollection<OrderStatus> OrderStatuses { get; set; } = new List<OrderStatus>();
+
 
         // === Business Properties ===
-        
+
         /// <summary>
         /// Contact email for the restaurant.
         /// </summary>
+        [Required]
+        [EmailAddress(ErrorMessage = "Invalid email address format")]
+        [MaxLength(150, ErrorMessage = "Email cannot exceed 150 characters")]
         public string Email { get; set; } = string.Empty;
 
         /// <summary>
         /// Phone number for the restaurant.
         /// </summary>
+        [Required]
+        [Phone(ErrorMessage = "Invalid phone number format")]
+        [MaxLength(50, ErrorMessage = "Phone number cannot exceed 50 characters")]
         public string PhoneNumber { get; set; } = string.Empty;
 
         /// <summary>
         /// Physical address of the restaurant.
         /// </summary>
+        [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
         public string Address { get; set; } = string.Empty;
 
         /// <summary>
         /// Operating hours and additional information.
         /// </summary>
+        [MaxLength(2000, ErrorMessage = "Description cannot exceed 2000 characters")]
         public string Description { get; set; } = string.Empty;
 
         /// <summary>
         /// Restaurant's timezone identifier (e.g., "America/New_York").
         /// </summary>
+        [Required]
+        [MaxLength(100, ErrorMessage = "TimeZoneId cannot exceed 100 characters")]
         public string TimeZoneId { get; set; } = "UTC";
 
-        /// <summary>
-        /// Whether the restaurant is currently active and operating.
-        /// </summary>
-        public bool IsActive { get; set; } = true;
+          // === Validation ===
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (string.IsNullOrWhiteSpace(Name))
+                yield return new ValidationResult("Name is required", new[] { nameof(Name) });
+
+            if (!string.IsNullOrWhiteSpace(TimeZoneId) && TimeZoneId.Length > 100)
+                yield return new ValidationResult("TimeZoneId is too long", new[] { nameof(TimeZoneId) });
+
+            if (!string.IsNullOrWhiteSpace(PhoneNumber) && PhoneNumber.Length > 50)
+                yield return new ValidationResult("PhoneNumber is too long", new[] { nameof(PhoneNumber) });
+
+            yield break;
+        }
     }
 }
