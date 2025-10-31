@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SmartMenuOptim.Shared.Data.Context;
-using SmartMenuOptim.Shared.Data.Entities;
+// add at top of file with other usings:
+using SmartMenuOptim.Shared.Extensions;
 using SmartMenuOptim.Shared.Data.Entities.GlobalEntities;
 using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
 
@@ -43,6 +44,7 @@ namespace SmartMenuOptim.API.Data
             // Seed AdminUsers (owners)
             if (!dbContext.AdminUsers.Any())
             {
+                // Represents a system-wide admin with full permissions
                 var admin = new AdminUser
                 {
                     Username = "admin1",
@@ -59,10 +61,12 @@ namespace SmartMenuOptim.API.Data
                     WellSoldThreshold = 20,
                     RegularCustomerReviewCountThreshold = 3,
                     PremiumCustomerReviewCountThreshold = 10,
+                    // Use extension method to get default permissions for system admin role
                     // Full access permissions for admin
-                    Permissions = AdminPermission.All
+                    Permissions = AdminRole.SystemAdmin.GetDefaultPermissionsForRole()
                 };
 
+                // Represents a restaurant manager with elevated permissions
                 var manager = new AdminUser
                 {
                     Username = "manager1",
@@ -79,11 +83,35 @@ namespace SmartMenuOptim.API.Data
                     WellSoldThreshold = 25,
                     RegularCustomerReviewCountThreshold = 5,
                     PremiumCustomerReviewCountThreshold = 15,
-                    // Get default permissions for manager role
-                    Permissions = AdminUser.GetDefaultPermissionsForRole(AdminRole.Manager)
+                    // Use extension method to get default permissions for manager role
+                    // Set permissions according to Manager role defaults
+                    Permissions = AdminRole.Manager.GetDefaultPermissionsForRole()
                 };
 
-                dbContext.AdminUsers.AddRange(admin, manager);
+                // Represents a restaurant owner with standard permissions
+                var owner = new AdminUser
+                {
+                    Username = "owner1",
+                    Email = "owner@smartmenuoptim.com",
+                    PasswordHash = "ownerhash1",  // In production, use proper password hashing
+                    Role = AdminRole.Owner,
+                    PhoneNumber = "+1 (555) 111-0002",
+                    IsActive = true,
+                    LastLoginAt = DateTime.UtcNow,
+                    // Analytics and threshold settings
+                    SalesThreshold = 35,
+                    SentimentThreshold = 0.65,
+                    ReviewCountThreshold = 6,
+                    WellSoldThreshold = 22,
+                    RegularCustomerReviewCountThreshold = 4,
+                    PremiumCustomerReviewCountThreshold = 12,
+                    // Use extension method to get default permissions for owner role
+                    // Get default permissions for owner role
+                    Permissions = AdminRole.Owner.GetDefaultPermissionsForRole()
+                };
+
+
+                dbContext.AdminUsers.AddRange(admin, manager,owner);
                 dbContext.SaveChanges();
 
                 Console.WriteLine("✅ AdminUsers seeded successfully");
