@@ -308,11 +308,20 @@ namespace SmartMenuOptim.Shared.Data.Context
                 .HasForeignKey(ss => ss.StaffMemberId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // The following staff audit relationships and indexes are commented out because
+            // the streamlined model only allows admin users to manage schedules. Staff audit properties
+            // (CreatedBy, CreatedByStaffId) are no longer present in StaffSchedule.
+            /*
             modelBuilder.Entity<StaffSchedule>()
                 .HasOne(ss => ss.CreatedBy)
                 .WithMany()
                 .HasForeignKey(ss => ss.CreatedByStaffId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StaffSchedule>()
+                .HasIndex(ss => ss.CreatedByStaffId)
+                .HasDatabaseName("IX_StaffSchedules_CreatedByStaffId");
+            */
 
             // Update index for staff schedule queries to use ShiftStart instead of non-existent ScheduleDate
             modelBuilder.Entity<StaffSchedule>()
@@ -324,14 +333,10 @@ namespace SmartMenuOptim.Shared.Data.Context
                 .HasIndex(ss => new { ss.RestaurantId, ss.ShiftStart, ss.ShiftEnd })
                 .HasDatabaseName("IX_StaffSchedules_Restaurant_ShiftRange");
 
-            // Optional: Indexes to support queries filtering schedules by creator (admin or staff)
+            // Optional: Indexes to support queries filtering schedules by creator (admin only in streamlined model)
             modelBuilder.Entity<StaffSchedule>()
                 .HasIndex(ss => ss.CreatedByAdminUserId)
                 .HasDatabaseName("IX_StaffSchedules_CreatedByAdminUserId");
-
-            modelBuilder.Entity<StaffSchedule>()
-                .HasIndex(ss => ss.CreatedByStaffId)
-                .HasDatabaseName("IX_StaffSchedules_CreatedByStaffId");
 
             // Order Status Relationships
             modelBuilder.Entity<OrderStatus>()

@@ -406,8 +406,10 @@ namespace SmartMenuOptim.API.Data
                 var johnSmith = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "John Smith");
                 var gordonChef = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Gordon Chef");
                 var juliaCook = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Julia Cook"); // Manager
+                var maryJohnson = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Mary Johnson");
+                var samBartender = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Sam Bartender");
 
-                if (johnSmith == null || gordonChef == null || juliaCook == null)
+                if (johnSmith == null || gordonChef == null || juliaCook == null || maryJohnson == null || samBartender == null)
                     throw new Exception("❌ Required staff members could not be loaded for schedule seeding.");
 
                 // Use an AdminUser as the creator/modifier for seeded schedules so audit fields align with new model
@@ -416,22 +418,17 @@ namespace SmartMenuOptim.API.Data
                 if (adminUser == null)
                     throw new Exception("❌ Required admin user could not be loaded for schedule seeding.");
 
-                // Notes:
-                // - StaffSchedule validation enforces: ShiftEnd > ShiftStart, duration <= 24 hours, recurring schedules must set RecurringDay.
-                // - Indexes for schedule queries are centralized in AppDbContext (IX_StaffSchedules_Restaurant_Staff_ShiftStart, IX_StaffSchedules_Restaurant_ShiftRange).
-                // - CreatedByAdminUserId will reference an AdminUser for seeded schedules to reflect management by owners/managers.
-
                 var now = DateTime.UtcNow;
 
                 var schedules = new[]
                 {
-                    // John Smith's schedule at Urban Bistro (valid single-day shift, 8 hours)
+                    // 1. Single-day shift, non-recurring, Approved
                     new StaffSchedule
                     {
                         StaffMemberId = johnSmith.Id,
                         RestaurantId = johnSmith.RestaurantId,
-                        ShiftStart = now.Date.AddDays(1).AddHours(9), // 9 AM tomorrow (UTC)
-                        ShiftEnd = now.Date.AddDays(1).AddHours(17),   // 5 PM tomorrow (UTC)
+                        ShiftStart = now.Date.AddDays(1).AddHours(9), // 9 AM tomorrow
+                        ShiftEnd = now.Date.AddDays(1).AddHours(17),   // 5 PM tomorrow
                         IsRecurring = false,
                         RecurringDay = null,
                         Status = ScheduleStatus.Approved,
@@ -443,18 +440,54 @@ namespace SmartMenuOptim.API.Data
                         UpdatedAt = now,
                         IsDeleted = false
                     },
-                    // Gordon Chef's schedule at Urban Bistro (valid single-day shift, 8 hours)
+                    // 2. Recurring weekly shift (every Monday), Pending
+                    new StaffSchedule
+                    {
+                        StaffMemberId = juliaCook.Id,
+                        RestaurantId = juliaCook.RestaurantId,
+                        ShiftStart = now.Date.AddDays(2).AddHours(8), // 8 AM in 2 days
+                        ShiftEnd = now.Date.AddDays(2).AddHours(16),  // 4 PM in 2 days
+                        IsRecurring = true,
+                        RecurringDay = DayOfWeek.Monday,
+                        Status = ScheduleStatus.Pending,
+                        CreatedByAdminUserId = adminUser.Id,
+                        Notes = "Weekly manager shift",
+                        LastModified = now,
+                        LastModifiedByAdminUserId = adminUser.Id,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                        IsDeleted = false
+                    },
+                    // 3. Shift with edge-case timing (overnight, <24h), Completed
                     new StaffSchedule
                     {
                         StaffMemberId = gordonChef.Id,
                         RestaurantId = gordonChef.RestaurantId,
-                        ShiftStart = now.Date.AddDays(2).AddHours(14), // 2 PM in 2 days (UTC)
-                        ShiftEnd = now.Date.AddDays(2).AddHours(22),   // 10 PM in 2 days (UTC)
+                        ShiftStart = now.Date.AddDays(3).AddHours(22), // 10 PM in 3 days
+                        ShiftEnd = now.Date.AddDays(4).AddHours(6),    // 6 AM next day
                         IsRecurring = false,
                         RecurringDay = null,
-                        Status = ScheduleStatus.Approved,
+                        Status = ScheduleStatus.Completed,
                         CreatedByAdminUserId = adminUser.Id,
-                        Notes = "Evening shift, kitchen prep",
+                        Notes = "Overnight kitchen prep",
+                        LastModified = now,
+                        LastModifiedByAdminUserId = adminUser.Id,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                        IsDeleted = false
+                    },
+                    // 4. Recurring shift (every Friday), NeedsCoverage, with notes
+                    new StaffSchedule
+                    {
+                        StaffMemberId = maryJohnson.Id,
+                        RestaurantId = maryJohnson.RestaurantId,
+                        ShiftStart = now.Date.AddDays(5).AddHours(17), // 5 PM in 5 days
+                        ShiftEnd = now.Date.AddDays(5).AddHours(23),   // 11 PM in 5 days
+                        IsRecurring = true,
+                        RecurringDay = DayOfWeek.Friday,
+                        Status = ScheduleStatus.NeedsCoverage,
+                        CreatedByAdminUserId = adminUser.Id,
+                        Notes = "Friday evening shift, needs coverage",
                         LastModified = now,
                         LastModifiedByAdminUserId = adminUser.Id,
                         CreatedAt = now,
@@ -464,6 +497,8 @@ namespace SmartMenuOptim.API.Data
                 };
                 dbContext.StaffSchedules.AddRange(schedules);
                 dbContext.SaveChanges();
+
+                Console.WriteLine("✅ Staff Schedules seeded successfully");
             }
 
             // Seed Menu Types
