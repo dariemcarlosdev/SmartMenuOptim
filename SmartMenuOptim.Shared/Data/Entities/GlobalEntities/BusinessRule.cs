@@ -67,15 +67,30 @@ namespace SmartMenuOptim.Shared.Data.Entities.GlobalEntities
     /// <remarks>
     /// While most business rules are now properties on AdminUser, this entity is maintained for historical tracking
     /// and audit purposes of rule changes over time.
+    /// 
+    /// Usage Example:
+    /// ```csharp
+    /// // Creating a new business rule
+    /// var newRule = new BusinessRule
+    /// {
+    ///     Name = "New Sales Threshold",
+    ///     Description = "Updated minimum sales threshold",
+    ///     RuleType = BusinessRuleType.SalesThreshold,
+    ///     Value = 50,
+    ///     AdminUserId = adminId,
+    ///     IsCurrentValue = true
+    /// };
+    /// 
+    /// dbContext.BusinessRules.Add(newRule);
+    /// await dbContext.SaveChangesAsync(); // This will automatically sync with AdminUser properties
+    /// ```
+    /// 
+    /// When saved:
+    /// 1. Any existing active rule of the same type will be automatically deactivated
+    /// 2. The corresponding AdminUser property will be updated
+    /// 3. Audit fields (CreatedAt, UpdatedAt) are automatically set
     /// </remarks>
     [Table("BusinessRules")]
-    /// <summary>
-    /// Composite index on (RuleType, AdminUserId, CreatedAt):
-    /// - Ensures one active rule per type per admin (unique constraint enforced separately)
-    /// - Optimizes historical queries for rule changes over time (filter by rule type, admin, and date)
-    /// - Useful for audit/reporting queries that need the latest or historical values
-    /// </summary>
-    [Index(nameof(RuleType), nameof(AdminUserId), nameof(CreatedAt), Name = "IX_BusinessRules_RuleType_AdminUser_Date")]
     public class BusinessRule : EntityBase
     {
         /// <summary>
@@ -108,7 +123,6 @@ namespace SmartMenuOptim.Shared.Data.Entities.GlobalEntities
         [EnumDataType(typeof(BusinessRuleType))]
         public BusinessRuleType RuleType { get; set; }
 
-        
         /// <summary>
         /// Foreign key to the AdminUser who created/manages this business rule
         /// </summary>
@@ -129,10 +143,112 @@ namespace SmartMenuOptim.Shared.Data.Entities.GlobalEntities
         public int Version { get; set; } = 1;
 
         /// <summary>
+        /// Indicates if this is the current active value for this rule type.
+        /// Only one rule per type per admin can be active at a time.
+        /// </summary>
+        [Required]
+        public bool IsCurrentValue { get; set; }
+
+        /// <summary>
         /// Optional notes about rule changes
         /// </summary>
         [MaxLength(1000)]
         public string? Notes { get; set; }
 
+        // --------------------------------------------------------------
+
+        /*
+        1.	Synchronization Logic:
+        •	SynchronizeWithAdminUser() method in BusinessRule to update the corresponding AdminUser property
+        •	Automatic synchronization in SaveChangesAsync in the DbContext when a BusinessRule is added or updated
+        •	Handling of multiple active rules by deactivating old rules when a new active rule is saved
+        */
+
+        /// <summary>
+        /// Updates the corresponding property on the AdminUser based on this rule's type and value
+        /// </summary>
+        /// <returns>True if the property was updated, false if no matching property exists</returns>
+        public bool SynchronizeWithAdminUser()
+        {
+            if (AdminUser == null) return false;
+
+            switch (RuleType)
+            {
+                case BusinessRuleType.SalesThreshold:
+                    AdminUser.SalesThreshold = (int)Value;
+                    break;
+                case BusinessRuleType.SentimentThreshold:
+                    AdminUser.SentimentThreshold = Value;
+                    break;
+                case BusinessRuleType.ReviewCountThreshold:
+                    AdminUser.ReviewCountThreshold = (int)Value;
+                    break;
+                case BusinessRuleType.WellSoldThreshold:
+                    AdminUser.WellSoldThreshold = (int)Value;
+                    break;
+                case BusinessRuleType.RegularCustomerReviewCountThreshold:
+                    AdminUser.RegularCustomerReviewCountThreshold = (int)Value;
+                    break;
+                case BusinessRuleType.PremiumCustomerReviewCountThreshold:
+                    AdminUser.PremiumCustomerReviewCountThreshold = (int)Value;
+                    break;
+                default:
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// --------------------------------------------------------------
+
+        /*
+         2.	Data Consistency Validation:
+            •	ValidateValueType() method in BusinessRule to ensure values match the expected type and range
+            •	Value range validation based on rule type (e.g., SentimentThreshold between 0 and 1)
+            •	Integer validation for threshold values
+            •	Prevention of duplicate active rules for the same type and admin 
+         
+         */
+
+
+        /// <summary>
+        /// Validates that the rule value is compatible with the corresponding AdminUser property type.
+        /// Ensures data integrity when synchronizing values.
+        /// </summary>
+        public IEnumerable<ValidationResult> ValidateValueType(ValidationContext validationContext)
+        {
+            switch (RuleType)
+            {
+                case BusinessRuleType.SentimentThreshold:
+                    if (Value < 0 || Value > 1)
+                    {
+                        yield return new ValidationResult(
+                            "Sentiment threshold must be between 0 and 1",
+                            new[] { nameof(Value) });
+                    }
+                    break;
+
+                case BusinessRuleType.SalesThreshold:
+                case BusinessRuleType.ReviewCountThreshold:
+                case BusinessRuleType.WellSoldThreshold:
+                    if (Value % 1 != 0 || Value < 1 || Value > 1000)
+                    {
+                        yield return new ValidationResult(
+                            $"{RuleType} must be a whole number between 1 and 1000",
+                            new[] { nameof(Value) });
+                    }
+                    break;
+
+                case BusinessRuleType.RegularCustomerReviewCountThreshold:
+                case BusinessRuleType.PremiumCustomerReviewCountThreshold:
+                    if (Value % 1 != 0 || Value < 1 || Value > 100)
+                    {
+                        yield return new ValidationResult(
+                            $"{RuleType} must be a whole number between 1 and 100",
+                            new[] { nameof(Value) });
+                    }
+                    break;
+            }
+        }
     }
 }

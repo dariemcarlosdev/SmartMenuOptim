@@ -38,22 +38,45 @@ namespace SmartMenuOptim.Shared.Data.Context
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Business Rule Relationships
+            // Business Rule Relationships and Indexes
             modelBuilder.Entity<BusinessRule>()
                 .HasOne(br => br.AdminUser)
                 .WithMany(au => au.BusinessRules)
                 .HasForeignKey(br => br.AdminUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Add index on AdminUserId as it's used in relationships
+            // Primary composite index for business rules
+            // - Optimizes historical queries by rule type, admin, and date
+            // - Supports efficient filtering for audit trails and reporting
+            // - Enables quick access to rule history for specific admins
+            modelBuilder.Entity<BusinessRule>()
+                .HasIndex(br => new { br.RuleType, br.AdminUserId, br.CreatedAt })
+                .HasDatabaseName("IX_BusinessRules_RuleType_AdminUser_Date");
+
+            // Index to optimize queries filtering by AdminUserId
+            // - Improves performance for accessing all rules for a specific admin
+            // - Supports efficient joins between BusinessRules and AdminUser
+            // - Helps with audit queries across an admin's rule changes
             modelBuilder.Entity<BusinessRule>()
                 .HasIndex(br => br.AdminUserId)
                 .HasDatabaseName("IX_BusinessRules_AdminUserId");
 
-            // Add composite index on RuleType and CreatedAt for efficient historical queries
+            // Unique constraint for active rules
+            // - Ensures only one active rule per type per admin
+            // - Prevents duplicate active rules that could cause conflicts
+            // - Critical for maintaining data consistency in business rule application
             modelBuilder.Entity<BusinessRule>()
-                .HasIndex(br => new { br.RuleType, br.CreatedAt })
-                .HasDatabaseName("IX_BusinessRules_RuleType_CreatedAt");
+                .HasIndex(br => new { br.RuleType, br.AdminUserId, br.IsCurrentValue })
+                .IsUnique()
+                .HasFilter("[IsCurrentValue] = 1")  // SQL Server syntax for filtered index
+                .HasDatabaseName("UX_BusinessRules_ActiveRule");
+
+            // Additional index for historical analysis
+            // - Supports queries analyzing rule changes over time
+            // - Helps track rule evolution and audit patterns
+            modelBuilder.Entity<BusinessRule>()
+                .HasIndex(br => new { br.Version, br.CreatedAt })
+                .HasDatabaseName("IX_BusinessRules_Version_CreatedAt");
 
             // Restaurant Relationships
             modelBuilder.Entity<Restaurant>()
@@ -601,6 +624,97 @@ namespace SmartMenuOptim.Shared.Data.Context
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
                 .ToList();
 
+            /// <summary>
+            /// Business Rule Management Logic
+            /// This section handles the synchronization and management of business rules:
+            /// 1. Rule Deactivation:
+            ///    - Automatically deactivates existing active rules when a new active rule of the same type is saved
+            ///    - Ensures only one rule per type is active at a time
+            ///    - Maintains historical record of all rule changes
+            /// 
+            /// 2. Admin User Synchronization:
+            ///    - Tracks which admin users have been updated to prevent duplicate updates
+            ///    - Uses HashSet for efficient duplicate checking
+            ///    - Updates corresponding AdminUser properties when rules change
+            /// 
+            /// 3. Entity State Management:
+            ///    - Properly handles entity state transitions (Added/Modified)
+            ///    - Maintains audit fields (CreatedAt, UpdatedAt) automatically
+            ///    - Ensures data consistency across related entities
+            /// 
+            /// Usage Example:
+            /// ```csharp
+            /// // Creating a new business rule
+            /// var newRule = new BusinessRule
+            /// {
+            ///     Name = "New Sales Threshold",
+            ///     Description = "Updated minimum sales threshold",
+            ///     RuleType = BusinessRuleType.SalesThreshold,
+            ///     Value = 50,
+            ///     AdminUserId = adminId,
+            ///     IsCurrentValue = true
+            /// };
+            /// 
+            /// dbContext.BusinessRules.Add(newRule);
+            /// await dbContext.SaveChangesAsync(); // This will automatically sync with AdminUser properties
+            /// ```
+            /// 
+            /// The SaveChangesAsync method will:
+            /// 1. Deactivate any existing active rules of the same type
+            /// 2. Update the corresponding AdminUser property
+            /// 3. Set audit fields automatically
+            /// 4. Handle all entity state transitions
+            /// 
+            /// Implementation Details:
+            /// - Uses ChangeTracker to identify modified BusinessRule entities
+            /// - Filters for active rules that are being added or modified
+            /// - Maintains a HashSet of updated AdminUsers for performance
+            /// - Handles rule deactivation and property synchronization atomically
+            /// </summary>
+
+            // Get business rule entries that are being added or modified
+            var businessRuleEntries = ChangeTracker
+                .Entries<BusinessRule>()
+                .Where(e => (e.State == EntityState.Added || e.State == EntityState.Modified) && e.Entity.IsCurrentValue)
+                .ToList();
+
+            // Track updated admin users to avoid duplicate updates
+            var updatedAdminUsers = new HashSet<int>();
+
+            // Process business rule changes and synchronize with AdminUser properties
+            foreach (var entry in businessRuleEntries)
+            {
+                var rule = entry.Entity;
+                
+                // Skip if we've already updated this admin's properties
+                if (!updatedAdminUsers.Add(rule.AdminUserId))
+                    continue;
+
+                // If this is a new active rule, deactivate any existing active rules of the same type
+                if (rule.IsCurrentValue)
+                {
+                    var existingActiveRules = ChangeTracker
+                        .Entries<BusinessRule>()
+                        .Where(e => e.Entity.AdminUserId == rule.AdminUserId &&
+                                  e.Entity.RuleType == rule.RuleType &&
+                                  e.Entity.IsCurrentValue &&
+                                  e.Entity != rule)
+                        .ToList();
+
+                    foreach (var existingRule in existingActiveRules)
+                    {
+                        existingRule.Entity.IsCurrentValue = false;
+                        existingRule.State = EntityState.Modified;
+                    }
+                }
+
+                // Synchronize the rule with AdminUser property
+                if (rule.AdminUser != null)
+                {
+                    rule.SynchronizeWithAdminUser();
+                }
+            }
+
             // Process each entry according to its state
             foreach (var entry in entries)
             {
@@ -612,35 +726,30 @@ namespace SmartMenuOptim.Shared.Data.Context
                 // Apply state-specific logic
                 switch (entry.State)
                 {
-                    // 1. Added: This logic sets initial audit info
                     case EntityState.Added:
                         // Only set CreatedAt when not provided by the caller
                         if (!(createdAtProp.CurrentValue is DateTime created) || created == default)
                         {
                             createdAtProp.CurrentValue = now;
                         }
-
                         updatedAtProp.CurrentValue = now;
                         isDeletedProp.CurrentValue = false;
                         break;
-                    // 2. Modified: This logic protects immutable fields and updates audit info
+
                     case EntityState.Modified:
                         // Protect CreatedAt from accidental updates
                         if (createdAtProp.IsModified)
                             createdAtProp.IsModified = false;
-
                         updatedAtProp.CurrentValue = now;
                         break;
-                    // 3. Deleted: This logic implements soft-delete
+
                     case EntityState.Deleted:
                         // Soft-delete: convert delete into update and mark IsDeleted
                         entry.State = EntityState.Modified;
                         isDeletedProp.CurrentValue = true;
-
                         // Protect CreatedAt from accidental updates
                         if (createdAtProp.IsModified)
                             createdAtProp.IsModified = false;
-
                         updatedAtProp.CurrentValue = now;
                         break;
                 }
@@ -652,8 +761,8 @@ namespace SmartMenuOptim.Shared.Data.Context
             }
             catch (DbUpdateConcurrencyException ex)
             {   
-                
-                throw new DbUpdateConcurrencyException("Concurrency conflict detected while saving changes to the database.", ex);
+                throw new DbUpdateConcurrencyException(
+                    "Concurrency conflict detected while saving changes to the database.", ex);
             }
         }
     }
