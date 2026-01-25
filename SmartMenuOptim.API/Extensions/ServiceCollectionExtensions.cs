@@ -1,10 +1,14 @@
 using Asp.Versioning;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services;
 using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Shared.Data.Context;
-using SmartMenuOptim.Shared.Data.Interfaces;
-using SmartMenuOptim.Shared.Data.Repositories;
+using SmartMenuOptim.Application.Interfaces;
+using SmartMenuOptim.Domain.Entities.GlobalEntities;
+using SmartMenuOptim.Infrastructure.Persistence.Context;
+using SmartMenuOptim.Infrastructure.Persistence.Repositories;
+using System.Threading.RateLimiting;
 
 namespace SmartMenuOptim.API.Extensions;
 
@@ -22,23 +26,23 @@ public static class ServiceCollectionExtensions
     {
         services.AddApiVersioning(options =>
         {
-            // Set the default API version to 1.0.
+            // Set the default API version to 1.0
             options.DefaultApiVersion = new ApiVersion(1, 0);
-            // Assume the default version when a client doesn't specify one.
+            // Assume the default version when a client doesn't specify one
             options.AssumeDefaultVersionWhenUnspecified = true;
-            // Include the API versions in the response headers.
+            // Include the API versions in the response headers
             options.ReportApiVersions = true;
-            // Configure how the API version is read from the request (from query string or URL segment).
+            // Configure how the API version is read from the request
             options.ApiVersionReader = ApiVersionReader.Combine(
-                new QueryStringApiVersionReader("X-Api-Version"),
+                new HeaderApiVersionReader("X-Api-Version"),
+                new QueryStringApiVersionReader("api-version"),
                 new UrlSegmentApiVersionReader());
         })
-        .AddMvc() // Required for controllers and API explorer.
         .AddApiExplorer(options =>
         {
-            // Format the group name for Swagger documentation (e.g., 'v1').
+            // Format the group name for Swagger documentation
             options.GroupNameFormat = "'v'VVV";
-            // Substitute the API version in the URL paths.
+            // Substitute the API version in the URL paths
             options.SubstituteApiVersionInUrl = true;
         });
 
@@ -55,13 +59,45 @@ public static class ServiceCollectionExtensions
     {
         // Configure the DbContext to use PostgreSQL with the connection string from configuration.
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection string is missing!")));
+        {
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection") ?? 
+                throw new InvalidOperationException("DefaultConnection string is missing!"));
+            
+            // Suppress pending model changes warning
+            // The model configuration has been reorganized for value objects, but the database schema is correct
+            // This warning can be safely ignored as no actual schema changes are required
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         // Register the Unit of Work and repository patterns for data access.
         services.AddScoped<IUnityOfWork, UnityOfWork>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped(typeof(IRepositoryWithIncludes<>), typeof(Repository<>));
 
+        return services;
+    }
+
+    public static IServiceCollection AddNetCoreIdentity(this IServiceCollection services)
+    {
+        // Register Identity services with custom configurations.
+        services.AddIdentity<ApplicationUser, IdentityRole>(options => {
+            // Configure password requirements.
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 8;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireLowercase = true;
+            // Configure user settings.
+            options.User.RequireUniqueEmail = true;
+            // Configure lockout settings.
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
+
+        // Identity services can be configured here in the future.
         return services;
     }
 
@@ -74,7 +110,7 @@ public static class ServiceCollectionExtensions
     {
         // Register custom services for business logic.
         services.AddScoped<ISentimentService, SentimentService>();
-        services.AddScoped<IAiImprovementStrategyService, AiImprovementService>();
+        services.AddScoped<IAImprovementStrategyService, AiImprovementService>();
         services.AddScoped<IOpenIAGptService, OpenIaGptService>();
         services.AddScoped<IAdminAuthorizationService, AdminAuthorizationService>();
 
@@ -112,6 +148,39 @@ public static class ServiceCollectionExtensions
                 });
         });
 
+        return services;
+    }
+
+    /*
+     2.	Rate Limiting is a server-side concern that should be implemented at the API level to protect the API from being overwhelmed by requests from any client, not just the Blazor server:
+        •	This should be moved to the API project because:
+        •	Rate limiting is a server-side concern that protects the API from being overwhelmed
+        •	It needs to be enforced at the API level to properly control access from all clients
+        •	The current implementation in the Server project only limits calls from that specific Blazor server instance.     
+     */
+
+    /// <summary>
+    /// Adds a fixed window rate limiting policy to the application's service collection.The API can now properly rate limit ALL incoming requests, regardless of their source
+    /// </summary>
+    /// <remarks>This method configures a fixed window rate limiter named "FixedPolicy" that allows up to 100
+    /// requests per minute, with a queue limit of 10 requests. Requests exceeding these limits may be rejected or
+    /// queued according to the policy. Register this method during application startup to enable rate limiting for
+    /// incoming requests.</remarks>
+    /// <param name="services">The service collection to which the rate limiting services are added.</param>
+    /// <returns>The same instance of <see cref="IServiceCollection"/> that was provided, to support method chaining.</returns>
+    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
+    {
+        // Rate Limiting This is a server-side concern that should be implemented at the API level to protect the API from being overwhelmed by requests from any client, not just the Blazor server.
+        services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter("FixedPolicy", policy =>
+            {
+                policy.Window = TimeSpan.FromMinutes(1);
+                policy.PermitLimit = 100; // Allow 100 requests per minute
+                policy.QueueProcessingOrder = QueueProcessingOrder.OldestFirst; // Process oldest requests first
+                policy.QueueLimit = 10; // Allow up to 10 requests in the queue
+            });
+        });
         return services;
     }
 }

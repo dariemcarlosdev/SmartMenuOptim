@@ -1,5 +1,5 @@
 
-using SmartMenuOptim.Shared.Data.Entities.GlobalEntities;
+using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using System.Threading.Tasks;
 
 ///<summary>

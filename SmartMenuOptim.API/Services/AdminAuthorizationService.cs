@@ -1,10 +1,6 @@
-using SmartMenuOptim.Shared.Data.Context;
-
-
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Shared.Data.Context;
-using SmartMenuOptim.Shared.Data.Entities.GlobalEntities;
-using System.Threading.Tasks;
+using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Infrastructure.Persistence.Context;
 namespace SmartMenuOptim.API.Services;
 
 /// <summary>

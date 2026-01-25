@@ -1,1454 +1,1311 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using SmartMenuOptim.Shared.Data.Context;
-// add at top of file with other usings:
-using SmartMenuOptim.Shared.Extensions;
-using SmartMenuOptim.Shared.Data.Entities.GlobalEntities;
-using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SmartMenuOptim.Domain.Entities.GlobalEntities;
+using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Aggregates.DishAggregate;
+using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
+using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
+using SmartMenuOptim.Domain.Aggregates.TableAggregate;
+using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
+using SmartMenuOptim.Domain.Entities.TenantSpecificEntities; // For OrderStatus, Review, SaleRecord
+using SmartMenuOptim.Domain.ValueObjects;
+using System.Data.Common;
+using SmartMenuOptim.Infrastructure.Persistence.Context;
+using SmartMenuOptim.Application.Constants;
 
 namespace SmartMenuOptim.API.Data
 {
+    /// <summary>
+    /// Provides methods to seed the application's database with initial or sample data, including users, roles,
+    /// restaurants, menus, and related entities.
+    /// </summary>
+    /// <remarks>The DbSeeder class is intended for use during application startup or testing to ensure the
+    /// database is populated with required baseline data. It supports both initial seeding and clearing of existing
+    /// data before reseeding, which is useful for development and integration testing scenarios. All seeding operations
+    /// are performed asynchronously and are designed to be idempotent when possible. This class is not thread-safe and
+    /// should be invoked in a controlled, single-threaded context, such as during application initialization.</remarks>
     public static class DbSeeder
     {
-        public static void Seed(WebApplication app)
+        public static async Task SeedAsync(IServiceProvider serviceProvider, bool clearExistingData = false)
         {
-            using var scope = app.Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext   >();
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-            // WARNING: This will delete ALL data in these tables!. Just call it when you want to reset the database.
-            ClearTables(dbContext);
+            Console.WriteLine("🌱 Starting database seeding process...");
+            await ConnectToDatabaseAsync(context);
 
-            Console.WriteLine("🌱 Seeding database...");
-
-            const int maxRetries = 10;
-            int retryCount = 0;
-            bool dbReady = false;
-
-            while (!dbReady && retryCount < maxRetries)
+            if (!context.Users.Any() || clearExistingData)
             {
+                using var transaction = await context.Database.BeginTransactionAsync();
                 try
                 {
-                    dbContext.Database.Migrate();
-                    dbReady = true;
+                    if (clearExistingData) await ExecuteSeedingPhaseAsync("Clear Tables", () => ClearTablesAsync(context));
+
+                    // Seeding Phases - Reordered for correct dependency management
+                    await ExecuteSeedingPhaseAsync("Seed Identity", () => SeedIdentityAsync(roleManager));
+                    
+                    // Step 1: Create Admins first, as they own restaurants.
+                    var adminUsers = await ExecuteSeedingPhaseAsync("Seed Admin Users", () => SeedAdminUsersAsync(userManager, context));
+                    
+                    // Step 2: Create Restaurants, owned by Admins.
+                    var restaurants = await ExecuteSeedingPhaseAsync("Seed Restaurants", () => SeedRestaurantsAsync(context, adminUsers));
+                    
+                    // Step 3: Create Customers and Staff, who may depend on Restaurants.
+                    var (customerUsers, staffUsers) = await ExecuteSeedingPhaseAsync("Seed Customer and Staff Profiles", () => SeedCustomerAndStaffUsersAsync(userManager, context, restaurants));
+
+                    // Step 4: Assign staff to restaurants
+                    await ExecuteSeedingPhaseAsync("Assign Staff to Restaurants", () => AssignStaffToRestaurantsAsync(context, staffUsers, restaurants));
+
+                    // Remaining seeding phases
+                    await ExecuteSeedingPhaseAsync("Seed Business Rules", () => SeedBusinessRulesAsync(context, adminUsers));
+                    await ExecuteSeedingPhaseAsync("Seed Menu Structure", () => SeedMenuStructureAsync(context, restaurants));
+                    await ExecuteSeedingPhaseAsync("Seed Operational Infrastructure", () => SeedOperationalInfrastructureAsync(context, restaurants));
+                    await ExecuteSeedingPhaseAsync("Seed Transactional Data", () => SeedTransactionalDataAsync(context, restaurants, customerUsers, staffUsers));
+                    await ExecuteSeedingPhaseAsync("Seed Customer Engagement", () => SeedCustomerEngagementAsync(context, restaurants, customerUsers));
+                    await ExecuteSeedingPhaseAsync("Synchronize All User Profiles", () => SynchronizeAllUserProfiles(context));
+
+                    await transaction.CommitAsync();
+                    Console.WriteLine("✅ Database seeding completed successfully!");
                 }
-                catch (NpgsqlException ex)
+                catch (Exception ex)
                 {
-                    retryCount++;
-                    Console.WriteLine($"⏳ Waiting for database connection... attempt {retryCount}/{maxRetries} - {ex.Message}");
-                    Thread.Sleep(3000);
-                }
-            }
-            if (!dbReady)
-                throw new Exception("❌ Could not connect to DB or apply migrations after retries.");
-
-            // Seed AdminUsers (owners)
-            if (!dbContext.AdminUsers.Any())
-            {
-                // Represents a system-wide admin with full permissions
-                var admin = new AdminUser
-                {
-                    Username = "admin1",
-                    Email = "admin@smartmenuoptim.com",
-                    PasswordHash = "adminhash1",  // In production, use proper password hashing
-                    Role = AdminRole.SystemAdmin,
-                    PhoneNumber = "+1 (555) 111-0000",
-                    IsActive = true,
-                    LastLoginAt = DateTime.UtcNow,
-                    // Analytics and threshold settings
-                    SalesThreshold = 30,
-                    SentimentThreshold = 0.6,
-                    ReviewCountThreshold = 5,
-                    WellSoldThreshold = 20,
-                    RegularCustomerReviewCountThreshold = 3,
-                    PremiumCustomerReviewCountThreshold = 10,
-                    // Use extension method to get default permissions for system admin role
-                    // Full access permissions for admin
-                    Permissions = AdminRole.SystemAdmin.GetDefaultPermissionsForRole()
-                };
-
-                // Represents a restaurant manager with elevated permissions
-                var manager = new AdminUser
-                {
-                    Username = "manager1",
-                    Email = "manager@smartmenuoptim.com",
-                    PasswordHash = "managerhash1",  // In production, use proper password hashing
-                    Role = AdminRole.Manager,
-                    PhoneNumber = "+1 (555) 111-0001",
-                    IsActive = true,
-                    LastLoginAt = DateTime.UtcNow,
-                    // Analytics and threshold settings (more conservative)
-                    SalesThreshold = 40,
-                    SentimentThreshold = 0.7,
-                    ReviewCountThreshold = 8,
-                    WellSoldThreshold = 25,
-                    RegularCustomerReviewCountThreshold = 5,
-                    PremiumCustomerReviewCountThreshold = 15,
-                    // Use extension method to get default permissions for manager role
-                    // Set permissions according to Manager role defaults
-                    Permissions = AdminRole.Manager.GetDefaultPermissionsForRole()
-                };
-
-                // Represents a restaurant owner with standard permissions
-                var owner = new AdminUser
-                {
-                    Username = "owner1",
-                    Email = "owner@smartmenuoptim.com",
-                    PasswordHash = "ownerhash1",  // In production, use proper password hashing
-                    Role = AdminRole.Owner,
-                    PhoneNumber = "+1 (555) 111-0002",
-                    IsActive = true,
-                    LastLoginAt = DateTime.UtcNow,
-                    // Analytics and threshold settings
-                    SalesThreshold = 35,
-                    SentimentThreshold = 0.65,
-                    ReviewCountThreshold = 6,
-                    WellSoldThreshold = 22,
-                    RegularCustomerReviewCountThreshold = 4,
-                    PremiumCustomerReviewCountThreshold = 12,
-                    // Use extension method to get default permissions for owner role
-                    // Get default permissions for owner role
-                    Permissions = AdminRole.Owner.GetDefaultPermissionsForRole()
-                };
-
-
-                dbContext.AdminUsers.AddRange(admin, manager,owner);
-                dbContext.SaveChanges();
-
-                Console.WriteLine("✅ AdminUsers seeded successfully");
-            }
-
-            // Seed BusinessRules for historical tracking
-            if (!dbContext.BusinessRules.Any())
-            {
-                var admin = dbContext.AdminUsers.FirstOrDefault(u => u.Username == "admin1");
-                var manager = dbContext.AdminUsers.FirstOrDefault(u => u.Username == "manager1");
-                if (admin == null || manager == null)
-                    throw new Exception("❌ Required admin users could not be loaded for business rules.");
-
-                // Historical rules for admin
-                var adminRules = new[]
-                {
-                    new BusinessRule
-                    {
-                        Name = "Initial Sales Threshold",
-                        Description = "Initial setup of sales threshold for popular dishes. Base threshold for considering a dish popular based on sales volume.",
-                        Value = 30,
-                        RuleType = BusinessRuleType.SalesThreshold,
-                        AdminUserId = admin.Id,
-                        AdminUser = admin,
-                        CreatedAt = DateTime.UtcNow.AddDays(-30),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Initial configuration for sales threshold"
-                    },
-                    new BusinessRule
-                    {
-                        Name = "Initial Sentiment Threshold",
-                        Description = "Initial setup of sentiment score threshold. Base threshold for determining positive customer sentiment in reviews.",
-                        Value = 0.6,
-                        RuleType = BusinessRuleType.SentimentThreshold,
-                        AdminUserId = admin.Id,
-                        AdminUser = admin,
-                        CreatedAt = DateTime.UtcNow.AddDays(-30),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Initial configuration for sentiment analysis"
-                    },
-                    new BusinessRule
-                    {
-                        Name = "Initial Review Count Threshold",
-                        Description = "Initial minimum reviews required for well-reviewed status. Minimum number of reviews needed to consider feedback statistically significant.",
-                        Value = 5,
-                        RuleType = BusinessRuleType.ReviewCountThreshold,
-                        AdminUserId = admin.Id,
-                        AdminUser = admin,
-                        CreatedAt = DateTime.UtcNow.AddDays(-30),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Initial configuration for review count requirements"
-                    },
-                    new BusinessRule
-                    {
-                        Name = "Initial Well-Sold Threshold",
-                        Description = "Initial threshold for well-sold dishes. Base number of sales required to consider a dish well-performing.",
-                        Value = 20,
-                        RuleType = BusinessRuleType.WellSoldThreshold,
-                        AdminUserId = admin.Id,
-                        AdminUser = admin,
-                        CreatedAt = DateTime.UtcNow.AddDays(-30),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Initial configuration for sales performance metrics"
-                    },
-                    new BusinessRule
-                    {
-                        Name = "Regular Customer Review Threshold",
-                        Description = "Minimum reviews needed for regular customer status. Threshold for identifying engaged customers.",
-                        Value = 3,
-                        RuleType = BusinessRuleType.RegularCustomerReviewCountThreshold,
-                        AdminUserId = admin.Id,
-                        AdminUser = admin,
-                        CreatedAt = DateTime.UtcNow.AddDays(-30),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Initial configuration for regular customer classification"
-                    }
-                };
-
-                // Historical rules for manager (more conservative settings)
-                var managerRules = new[]
-                {
-                    new BusinessRule
-                    {
-                        Name = "Manager Sales Threshold",
-                        Description = "Manager's custom sales threshold setting. Higher threshold for more stringent popularity classification.",
-                        Value = 40,
-                        RuleType = BusinessRuleType.SalesThreshold,
-                        AdminUserId = manager.Id,
-                        AdminUser = manager,
-                        CreatedAt = DateTime.UtcNow.AddDays(-15),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Manager adjusted sales threshold for better accuracy"
-                    },
-                    new BusinessRule
-                    {
-                        Name = "Manager Sentiment Threshold",
-                        Description = "Manager's custom sentiment threshold. Higher requirement for positive sentiment classification.",
-                        Value = 0.7,
-                        RuleType = BusinessRuleType.SentimentThreshold,
-                        AdminUserId = manager.Id,
-                        AdminUser = manager,
-                        CreatedAt = DateTime.UtcNow.AddDays(-15),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Manager adjusted sentiment threshold for higher quality standards"
-                    },
-                    new BusinessRule
-                    {
-                        Name = "Manager Review Count Setting",
-                        Description = "Manager's custom review count requirement. Increased minimum reviews for statistical significance.",
-                        Value = 8,
-                        RuleType = BusinessRuleType.ReviewCountThreshold,
-                        AdminUserId = manager.Id,
-                        AdminUser = manager,
-                        CreatedAt = DateTime.UtcNow.AddDays(-15),
-                        IsActive = true,
-                        Version = 1,
-                        Notes = "Manager adjusted review count for better data reliability"
-                    }
-                };
-
-                dbContext.BusinessRules.AddRange(adminRules);
-                dbContext.BusinessRules.AddRange(managerRules);
-                dbContext.SaveChanges();
-
-                Console.WriteLine("✅ Business Rules seeded successfully");
-            }
-
-            // Seed Restaurants
-            if (!dbContext.Restaurants.Any())
-            {
-                var admin = dbContext.AdminUsers.FirstOrDefault(u => u.Username == "admin1");
-                var manager = dbContext.AdminUsers.FirstOrDefault(u => u.Username == "manager1");
-                if (admin == null || manager == null)
-                    throw new Exception("❌ Required admin users could not be loaded for restaurants.");
-
-                // Restaurant validation:
-                // - Name is required and <= 200 chars
-                // - Email is required and a valid email address
-                // - PhoneNumber is required and a valid phone format
-                // - TimeZoneId is required and <= 100 chars
-                // Indexes for restaurants (e.g., by OwnerId) are defined centrally in AppDbContext
-
-                var urbanBistro = new Restaurant
-                {
-                    Name = "Urban Bistro",
-                    OwnerId = admin.Id,
-                    Email = "contact@urbanbistro.com",
-                    PhoneNumber = "+1 (555) 123-4567",
-                    Address = "123 City Center, Downtown",
-                    Description = "A modern bistro offering contemporary fusion cuisine in an elegant setting. " +
-                                "Open daily for breakfast, lunch, and dinner.",
-                    TimeZoneId = "America/New_York",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    IsDeleted = false
-                };
-
-                var greenLeaf = new Restaurant
-                {
-                    Name = "Green Leaf",
-                    OwnerId = manager.Id,
-                    Email = "info@greenleafrestaurant.com",
-                    PhoneNumber = "+1 (555) 987-6543",
-                    Address = "456 Garden Avenue, Midtown",
-                    Description = "Eco-friendly restaurant specializing in fresh, organic, and plant-based cuisine. " +
-                                "Supporting local farmers and sustainable practices.",
-                    TimeZoneId = "America/New_York",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    IsDeleted = false
-                };
-
-                dbContext.Restaurants.AddRange(urbanBistro, greenLeaf);
-                dbContext.SaveChanges();
-            }
-
-            var Bistro = dbContext.Restaurants.FirstOrDefault(r => r.Name == "Urban Bistro");
-            var GreenLeaf = dbContext.Restaurants.FirstOrDefault(r => r.Name == "Green Leaf");
-            if (Bistro == null || GreenLeaf == null)
-                throw new Exception("❌ Required restaurants could not be loaded.");
-
-            // Seed Staff Members
-            if (!dbContext.StaffMembers.Any())
-            {
-                if (Bistro == null || GreenLeaf == null)
-                    throw new Exception("❌ Required restaurants could not be loaded for staff members.");
-
-                var staffMembers = new[]
-                {
-                    // Urban Bistro Staff
-                    new StaffMember { 
-                        Name = "John Smith",
-                        Role = StaffRole.Waiter,
-                        IsActive = true,
-                        RestaurantId = Bistro.Id,
-                        Email = "john.smith@bistro.com",
-                        Username = "john.smith",
-                        PasswordHash = "hash", // In production, use proper password hashing
-                        HireDate = DateTime.UtcNow.AddMonths(-6),
-                        PhoneNumber = "+1 (555) 123-4567",
-                        PhoneNumberConfirmed = true,
-                        EmergencyContactName = "Mary Smith",
-                        EmergencyContactPhone = "+1 (555) 987-6543",
-                        EmploymentStatus = EmploymentStatus.FullTime,
-                        Notes = "Experienced waiter, excellent customer service skills"
-                    },
-                    new StaffMember { 
-                        Name = "Gordon Chef",
-                        Role = StaffRole.Chef,
-                        IsActive = true,
-                        RestaurantId = Bistro.Id,
-                        Email = "gordon.chef@bistro.com",
-                        Username = "gordon.chef",
-                        PasswordHash = "hash",
-                        HireDate = DateTime.UtcNow.AddYears(-2),
-                        PhoneNumber = "+1 (555) 234-5678",
-                        PhoneNumberConfirmed = true,
-                        EmergencyContactName = "Sarah Chef",
-                        EmergencyContactPhone = "+1 (555) 876-5432",
-                        EmploymentStatus = EmploymentStatus.FullTime,
-                        Notes = "Head chef, specializes in Italian cuisine"
-                    },
-                    new StaffMember { 
-                        Name = "Julia Cook",
-                        Role = StaffRole.Manager,
-                        IsActive = true,
-                        RestaurantId = Bistro.Id,
-                        Email = "julia.cook@bistro.com",
-                        Username = "julia.cook",
-                        PasswordHash = "hash",
-                        HireDate = DateTime.UtcNow.AddYears(-1),
-                        PhoneNumber = "+1 (555) 345-6789",
-                        PhoneNumberConfirmed = true,
-                        EmergencyContactName = "Robert Cook",
-                        EmergencyContactPhone = "+1 (555) 765-4321",
-                        EmploymentStatus = EmploymentStatus.FullTime,
-                        Notes = "Restaurant manager, handles staff scheduling"
-                    },
-
-                    // Green Leaf Staff
-                    new StaffMember { 
-                        Name = "Mary Johnson",
-                        Role = StaffRole.Waiter,
-                        IsActive = true,
-                        RestaurantId = GreenLeaf.Id,
-                        Email = "mary.j@greenleaf.com",
-                        Username = "mary.j",
-                        PasswordHash = "hash",
-                        HireDate = DateTime.UtcNow.AddMonths(-3),
-                        PhoneNumber = "+1 (555) 456-7890",
-                        PhoneNumberConfirmed = true,
-                        EmergencyContactName = "John Johnson",
-                        EmergencyContactPhone = "+1 (555) 654-3210",
-                        EmploymentStatus = EmploymentStatus.PartTime,
-                        Notes = "Part-time waiter, student"
-                    },
-                    new StaffMember { 
-                        Name = "Sam Bartender",
-                        Role = StaffRole.Bartender,
-                        IsActive = true,
-                        RestaurantId = GreenLeaf.Id,
-                        Email = "sam.b@greenleaf.com",
-                        Username = "sam.b",
-                        PasswordHash = "hash",
-                        HireDate = DateTime.UtcNow.AddMonths(-8),
-                        PhoneNumber = "+1 (555) 567-8901",
-                        PhoneNumberConfirmed = true,
-                        EmergencyContactName = "Lisa Bartender",
-                        EmergencyContactPhone = "+1 (555) 543-2109",
-                        EmploymentStatus = EmploymentStatus.FullTime,
-                        Notes = "Experienced mixologist, specializes in craft cocktails"
-                    }
-                };
-                dbContext.StaffMembers.AddRange(staffMembers);
-                dbContext.SaveChanges();
-
-                Console.WriteLine("✅ Staff Members seeded successfully");
-            }
-
-            // Seed Staff Schedules
-            if (!dbContext.StaffSchedules.Any())
-            {
-                var johnSmith = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "John Smith");
-                var gordonChef = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Gordon Chef");
-                var juliaCook = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Julia Cook"); // Manager
-                var maryJohnson = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Mary Johnson");
-                var samBartender = dbContext.StaffMembers.FirstOrDefault(s => s.Name == "Sam Bartender");
-
-                if (johnSmith == null || gordonChef == null || juliaCook == null || maryJohnson == null || samBartender == null)
-                    throw new Exception("❌ Required staff members could not be loaded for schedule seeding.");
-
-                // Use an AdminUser as the creator/modifier for seeded schedules so audit fields align with new model
-                var adminUser = dbContext.AdminUsers.FirstOrDefault(u => u.Username == "admin1")
-                                 ?? dbContext.AdminUsers.FirstOrDefault();
-                if (adminUser == null)
-                    throw new Exception("❌ Required admin user could not be loaded for schedule seeding.");
-
-                var now = DateTime.UtcNow;
-
-                var schedules = new[]
-                {
-                    // 1. Single-day shift, non-recurring, Approved
-                    new StaffSchedule
-                    {
-                        StaffMemberId = johnSmith.Id,
-                        RestaurantId = johnSmith.RestaurantId,
-                        ShiftStart = now.Date.AddDays(1).AddHours(9), // 9 AM tomorrow
-                        ShiftEnd = now.Date.AddDays(1).AddHours(17),   // 5 PM tomorrow
-                        IsRecurring = false,
-                        RecurringDay = null,
-                        Status = ScheduleStatus.Approved,
-                        CreatedByAdminUserId = adminUser.Id,
-                        Notes = "Morning shift",
-                        LastModified = now,
-                        LastModifiedByAdminUserId = adminUser.Id,
-                        CreatedAt = now,
-                        UpdatedAt = now,
-                        IsDeleted = false
-                    },
-                    // 2. Recurring weekly shift (every Monday), Pending
-                    new StaffSchedule
-                    {
-                        StaffMemberId = juliaCook.Id,
-                        RestaurantId = juliaCook.RestaurantId,
-                        ShiftStart = now.Date.AddDays(2).AddHours(8), // 8 AM in 2 days
-                        ShiftEnd = now.Date.AddDays(2).AddHours(16),  // 4 PM in 2 days
-                        IsRecurring = true,
-                        RecurringDay = DayOfWeek.Monday,
-                        Status = ScheduleStatus.Pending,
-                        CreatedByAdminUserId = adminUser.Id,
-                        Notes = "Weekly manager shift",
-                        LastModified = now,
-                        LastModifiedByAdminUserId = adminUser.Id,
-                        CreatedAt = now,
-                        UpdatedAt = now,
-                        IsDeleted = false
-                    },
-                    // 3. Shift with edge-case timing (overnight, <24h), Completed
-                    new StaffSchedule
-                    {
-                        StaffMemberId = gordonChef.Id,
-                        RestaurantId = gordonChef.RestaurantId,
-                        ShiftStart = now.Date.AddDays(3).AddHours(22), // 10 PM in 3 days
-                        ShiftEnd = now.Date.AddDays(4).AddHours(6),    // 6 AM next day
-                        IsRecurring = false,
-                        RecurringDay = null,
-                        Status = ScheduleStatus.Completed,
-                        CreatedByAdminUserId = adminUser.Id,
-                        Notes = "Overnight kitchen prep",
-                        LastModified = now,
-                        LastModifiedByAdminUserId = adminUser.Id,
-                        CreatedAt = now,
-                        UpdatedAt = now,
-                        IsDeleted = false
-                    },
-                    // 4. Recurring shift (every Friday), NeedsCoverage, with notes
-                    new StaffSchedule
-                    {
-                        StaffMemberId = maryJohnson.Id,
-                        RestaurantId = maryJohnson.RestaurantId,
-                        ShiftStart = now.Date.AddDays(5).AddHours(17), // 5 PM in 5 days
-                        ShiftEnd = now.Date.AddDays(5).AddHours(23),   // 11 PM in 5 days
-                        IsRecurring = true,
-                        RecurringDay = DayOfWeek.Friday,
-                        Status = ScheduleStatus.NeedsCoverage,
-                        CreatedByAdminUserId = adminUser.Id,
-                        Notes = "Friday evening shift, needs coverage",
-                        LastModified = now,
-                        LastModifiedByAdminUserId = adminUser.Id,
-                        CreatedAt = now,
-                        UpdatedAt = now,
-                        IsDeleted = false
-                    }
-                };
-                dbContext.StaffSchedules.AddRange(schedules);
-                dbContext.SaveChanges();
-
-                Console.WriteLine("✅ Staff Schedules seeded successfully");
-            }
-
-            // Seed Menu Types
-            if (!dbContext.MenuTypes.Any())
-            {
-                var restaurants = dbContext.Restaurants.ToList();
-                if (!restaurants.Any())
-                    throw new Exception("❌ Restaurants must be seeded before menu types.");
-
-                foreach (var restaurant in restaurants)
-                {
-                    // Create menu types with trimmed names to satisfy unique index and validation rules
-                    var breakfast = new MenuType
-                    {
-                        Name = "Breakfast".Trim(),
-                        Description = "Morning menu, served 7-11 AM",
-                        DefaultStartTime = new TimeSpan(7, 0, 0),  // 7:00 AM
-                        DefaultEndTime = new TimeSpan(11, 0, 0),   // 11:00 AM
-                        DisplayOrder = 1,
-                        IsActive = true,
-                        RestaurantId = restaurant.Id // Assign to the current restaurant
-                    };
-                    var lunch = new MenuType
-                    {
-                        Name = "Lunch".Trim(),
-                        Description = "Midday menu, served 11 AM-4 PM",
-                        DefaultStartTime = new TimeSpan(11, 0, 0), // 11:00 AM
-                        DefaultEndTime = new TimeSpan(16, 0, 0),   // 4:00 PM
-                        DisplayOrder = 2,
-                        IsActive = true,
-                        RestaurantId = restaurant.Id // Assign to the current restaurant
-                    };
-                    var dinner = new MenuType
-                    {
-                        Name = "Dinner".Trim(),
-                        Description = "Evening menu, served 4-10 PM",
-                        DefaultStartTime = new TimeSpan(16, 0, 0), // 4:00 PM
-                        DefaultEndTime = new TimeSpan(22, 0, 0),   // 10:00 PM
-                        DisplayOrder = 3,
-                        IsActive = true,
-                        RestaurantId = restaurant.Id // Assign to the current restaurant
-                    };
-                    var drinks = new MenuType
-                    {
-                        Name = "Drinks".Trim(),
-                        Description = "Beverages menu, available all day",
-                        DefaultStartTime = new TimeSpan(7, 0, 0),  // 7:00 AM
-                        DefaultEndTime = new TimeSpan(22, 0, 0),   // 10:00 PM
-                        DisplayOrder = 4,
-                        IsActive = true,
-                        RestaurantId = restaurant.Id // Assign to the current restaurant
-                    };
-
-                    // Add them while guarding against validation exceptions from EF
-                    dbContext.MenuTypes.AddRange(breakfast, lunch, dinner, drinks);
-                }
-
-                try
-                {
-                    dbContext.SaveChanges();
-                }
-                catch (DbUpdateException dbex)
-                {
-                    // Log and rethrow with context - conflicts may occur if unique index violated
-                    Console.WriteLine($"⚠️ MenuTypes seeding encountered an error: {dbex.Message}");
+                    await transaction.RollbackAsync();
+                    Console.WriteLine($"❌ Database seeding failed: {ex.Message}\n{ex.InnerException?.Message}\n{ex.StackTrace}");
                     throw;
                 }
             }
-
-            // Seed Menus
-            if (!dbContext.Menus.Any())
+            else
             {
-                var restaurants = dbContext.Restaurants.Include(r => r.MenuTypes).ToList();
-                foreach (var restaurant in restaurants)
-                {
-                    foreach (var menuType in restaurant.MenuTypes)
-                    {
-                        var menu = new Menu
-                        {
-                            Name = $"{restaurant.Name} - {menuType.Name} Menu",
-                            Description = $"{menuType.Description} at {restaurant.Name}",
-                            MenuTypeId = menuType.Id,
-                            RestaurantId = restaurant.Id,
-                            // Use the MenuType's default times for menu availability
-                            AvailableFrom = menuType.DefaultStartTime,
-                            AvailableTo = menuType.DefaultEndTime,
-                            IsActive = true // All menus start as active by default
-                        };
-                        dbContext.Menus.Add(menu);
-                    }
-                }
-                dbContext.SaveChanges();
-            }
-
-            // Seed Categories (per restaurant)
-            if (Bistro == null || GreenLeaf == null)
-                throw new Exception("❌ Required restaurants could not be loaded for categories.");
-
-            if (!dbContext.Categories.Any())
-            {
-                var bistroCategories = new[]
-                {
-                    new Category 
-                    { 
-                        Name = "Italian", 
-                        Description = "Traditional Italian cuisine including pasta, pizza, and authentic dishes",
-                        DisplayOrder = 1,
-                        IsActive = true,
-                        RestaurantId = Bistro.Id 
-                    },
-                    new Category 
-                    { 
-                        Name = "Grill", 
-                        Description = "Grilled specialties including steaks, burgers, and grilled vegetables",
-                        DisplayOrder = 2,
-                        IsActive = true,
-                        RestaurantId = Bistro.Id 
-                    },
-                    new Category 
-                    { 
-                        Name = "Dessert", 
-                        Description = "Sweet treats and desserts including cakes, ice cream, and pastries",
-                        DisplayOrder = 3,
-                        IsActive = true,
-                        RestaurantId = Bistro.Id 
-                    }
-                };
-
-                var greenLeafCategories = new[]
-                {
-                    new Category 
-                    { 
-                        Name = "Salad", 
-                        Description = "Fresh and healthy salads with organic ingredients",
-                        DisplayOrder = 1,
-                        IsActive = true,
-                        RestaurantId = GreenLeaf.Id 
-                    },
-                    new Category 
-                    { 
-                        Name = "Vegan", 
-                        Description = "Plant-based dishes and vegan alternatives",
-                        DisplayOrder = 2,
-                        IsActive = true,
-                        RestaurantId = GreenLeaf.Id 
-                    },
-                    new Category 
-                    { 
-                        Name = "Drinks", 
-                        Description = "Refreshing beverages, smoothies, and fresh juices",
-                        DisplayOrder = 3,
-                        IsActive = true,
-                        RestaurantId = GreenLeaf.Id 
-                    }
-                };
-
-                dbContext.Categories.AddRange(bistroCategories);
-                dbContext.Categories.AddRange(greenLeafCategories);
-                dbContext.SaveChanges();
-            }
-
-            // Reload categories to ensure IDs are set
-            var italianCat = dbContext.Categories.FirstOrDefault(c => c.Name == "Italian" && c.RestaurantId == Bistro.Id);
-            var grillCat = dbContext.Categories.FirstOrDefault(c => c.Name == "Grill" && c.RestaurantId == Bistro.Id);
-            var dessertCat = dbContext.Categories.FirstOrDefault(c => c.Name == "Dessert" && c.RestaurantId == Bistro.Id);
-            var saladCat = dbContext.Categories.FirstOrDefault(c => c.Name == "Salad" && c.RestaurantId == GreenLeaf.Id);
-            var veganCat = dbContext.Categories.FirstOrDefault(c => c.Name == "Vegan" && c.RestaurantId == GreenLeaf.Id);
-            var drinksCat = dbContext.Categories.FirstOrDefault(c => c.Name == "Drinks" && c.RestaurantId == GreenLeaf.Id);
-            if (italianCat == null || grillCat == null || dessertCat == null || saladCat == null || veganCat == null || drinksCat == null)
-                throw new Exception("❌ Required categories could not be loaded after save.");
-
-            // Seed Dishes (per restaurant)
-            if (!dbContext.Dishes.Any())
-            {
-                // Italian
-                var pizza = new Dish { Name = "Pizza Margherita", CategoryId = italianCat.Id, RestaurantId = Bistro.Id, DishPrice = 10.99m };
-                var spaghetti = new Dish { Name = "Spaghetti Carbonara", CategoryId = italianCat.Id, RestaurantId = Bistro.Id, DishPrice = 12.49m };
-                var lasagna = new Dish { Name = "Lasagna", CategoryId = italianCat.Id, RestaurantId = Bistro.Id, DishPrice = 13.99m };
-                // Grill
-                var steak = new Dish { Name = "Grilled Steak", CategoryId = grillCat.Id, RestaurantId = Bistro.Id, DishPrice = 19.99m };
-                var burger = new Dish { Name = "Classic Burger", CategoryId = grillCat.Id, RestaurantId = Bistro.Id, DishPrice = 11.49m };
-                // Dessert
-                var tiramisu = new Dish { Name = "Tiramisu", CategoryId = dessertCat.Id, RestaurantId = Bistro.Id, DishPrice = 6.99m };
-                var cheesecake = new Dish { Name = "Cheesecake", CategoryId = dessertCat.Id, RestaurantId = Bistro.Id, DishPrice = 7.49m };
-                // Salad
-                var caesar = new Dish { Name = "Caesar Salad", CategoryId = saladCat.Id, RestaurantId = GreenLeaf.Id, DishPrice = 8.99m };
-                var greek = new Dish { Name = "Greek Salad", CategoryId = saladCat.Id, RestaurantId = GreenLeaf.Id, DishPrice = 9.49m };
-                // Vegan
-                var tofu = new Dish { Name = "Tofu Stir Fry", CategoryId = veganCat.Id, RestaurantId = GreenLeaf.Id, DishPrice = 10.49m };
-                var veganBowl = new Dish { Name = "Vegan Power Bowl", CategoryId = veganCat.Id, RestaurantId = GreenLeaf.Id, DishPrice = 11.99m };
-                // Drinks
-                var lemonade = new Dish { Name = "Fresh Lemonade", CategoryId = drinksCat.Id, RestaurantId = GreenLeaf.Id, DishPrice = 3.99m };
-                var coffee = new Dish { Name = "Iced Coffee", CategoryId = drinksCat.Id, RestaurantId = GreenLeaf.Id, DishPrice = 4.49m };
-                dbContext.Dishes.AddRange(pizza, spaghetti, lasagna, steak, burger, tiramisu, cheesecake, caesar, greek, tofu, veganBowl, lemonade, coffee);
-                dbContext.SaveChanges();
-            }
-
-            // Seed Customers
-            if (!dbContext.Customers.Any())
-            {
-                var alice = new Customer
-                {
-                    Name = "Alice Johnson",
-                    Email = "alice@example.com",
-                    Username = "aliceuser",
-                    PasswordHash = "hashedpassword1",
-                    IsActive = true,
-                    DateRegistered = DateTime.UtcNow.AddDays(-10),
-                    LastActivityDate = DateTime.UtcNow.AddHours(-2),
-                    PreferredLanguage = "en",
-                    TimeZoneId = "America/New_York",
-                    AcceptsMarketing = true,
-                    PhoneNumber = "+1 (555) 123-4567",
-                    PhoneNumberConfirmed = true,
-                    Notes = "Regular customer, prefers vegetarian options"
-                };
-
-                var bob = new Customer
-                {
-                    Name = "Bob Smith",
-                    Email = "bob@example.com",
-                    Username = "bobuser",
-                    PasswordHash = "hashedpassword2",
-                    IsActive = true,
-                    DateRegistered = DateTime.UtcNow.AddDays(-8),
-                    LastActivityDate = DateTime.UtcNow.AddDays(-1),
-                    PreferredLanguage = "en",
-                    TimeZoneId = "America/New_York",
-                    AcceptsMarketing = false,
-                    PhoneNumber = "+1 (555) 234-5678",
-                    PhoneNumberConfirmed = true
-                };
-
-                var charlie = new Customer
-                {
-                    Name = "Charlie Brown",
-                    Email = "charlie@example.com",
-                    Username = "charlieuser",
-                    PasswordHash = "hashedpassword3",
-                    IsActive = false,
-                    DateRegistered = DateTime.UtcNow.AddDays(-5),
-                    LastActivityDate = DateTime.UtcNow.AddDays(-4),
-                    PreferredLanguage = "es",
-                    TimeZoneId = "America/Chicago",
-                    AcceptsMarketing = true,
-                    PhoneNumber = "+1 (555) 345-6789",
-                    PhoneNumberConfirmed = false
-                };
-
-                var diana = new Customer
-                {
-                    Name = "Diana Miller",
-                    Email = "diana@example.com",
-                    Username = "dianauser",
-                    PasswordHash = "hashedpassword4",
-                    IsActive = true,
-                    DateRegistered = DateTime.UtcNow.AddDays(-3),
-                    LastActivityDate = DateTime.UtcNow.AddHours(-1),
-                    PreferredLanguage = "en",
-                    TimeZoneId = "America/Los_Angeles",
-                    AcceptsMarketing = true,
-                    PhoneNumber = "+1 (555) 456-7890",
-                    PhoneNumberConfirmed = true,
-                    Notes = "Premium customer, interested in wine pairing events"
-                };
-
-                var eric = new Customer
-                {
-                    Name = "Eric Davis",
-                    Email = "eric@example.com",
-                    Username = "ericuser",
-                    PasswordHash = "hashedpassword5",
-                    IsActive = true,
-                    DateRegistered = DateTime.UtcNow.AddDays(-2),
-                    LastActivityDate = DateTime.UtcNow.AddHours(-4),
-                    PreferredLanguage = "fr",
-                    TimeZoneId = "America/New_York",
-                    AcceptsMarketing = false,
-                    PhoneNumber = "+1 (555) 567-8901",
-                    PhoneNumberConfirmed = false
-                };
-
-                dbContext.Customers.AddRange(alice, bob, charlie, diana, eric);
-                dbContext.SaveChanges();
-            }
-
-            // Seed SaleRecords (per dish)
-            if (!dbContext.SaleRecords.Any())
-            {
-                var pizza = dbContext.Dishes.FirstOrDefault(d => d.Name == "Pizza Margherita");
-                var spaghetti = dbContext.Dishes.FirstOrDefault(d => d.Name == "Spaghetti Carbonara");
-                var lasagna = dbContext.Dishes.FirstOrDefault(d => d.Name == "Lasagna");
-                var steak = dbContext.Dishes.FirstOrDefault(d => d.Name == "Grilled Steak");
-                var burger = dbContext.Dishes.FirstOrDefault(d => d.Name == "Classic Burger");
-                var tiramisu = dbContext.Dishes.FirstOrDefault(d => d.Name == "Tiramisu");
-                var cheesecake = dbContext.Dishes.FirstOrDefault(d => d.Name == "Cheesecake");
-                var caesar = dbContext.Dishes.FirstOrDefault(d => d.Name == "Caesar Salad");
-                var greek = dbContext.Dishes.FirstOrDefault(d => d.Name == "Greek Salad");
-                var tofu = dbContext.Dishes.FirstOrDefault(d => d.Name == "Tofu Stir Fry");
-                var veganBowl = dbContext.Dishes.FirstOrDefault(d => d.Name == "Vegan Power Bowl");
-                var lemonade = dbContext.Dishes.FirstOrDefault(d => d.Name == "Fresh Lemonade");
-                var coffee = dbContext.Dishes.FirstOrDefault(d => d.Name == "Iced Coffee");
-                if (pizza == null || spaghetti == null || lasagna == null || steak == null || burger == null || tiramisu == null || cheesecake == null || caesar == null || greek == null || tofu == null || veganBowl == null || lemonade == null || coffee == null)
-                    throw new Exception("❌ Required dishes could not be loaded for sale records.");
-
-                // SaleRecord validation:
-                // - QuantitySold must be >= 0
-                // - SaleDate should not be in the future
-                // Index for sales analysis centralized in AppDbContext (IX_SaleRecords_Restaurant_Dish_Date)
-
-                dbContext.SaleRecords.AddRange(
-                    // Pizza Margherita
-                    new SaleRecord { DishId = pizza.Id, RestaurantId = pizza.RestaurantId, QuantitySold = 50, SaleDate = DateTime.UtcNow.Date.AddDays(-1) },
-                    new SaleRecord { DishId = pizza.Id, RestaurantId = pizza.RestaurantId, QuantitySold = 30, SaleDate = DateTime.UtcNow.Date.AddDays(-2) },
-                    new SaleRecord { DishId = pizza.Id, RestaurantId = pizza.RestaurantId, QuantitySold = 40, SaleDate = DateTime.UtcNow.Date.AddDays(-3) },
-                    // Spaghetti Carbonara
-                    new SaleRecord { DishId = spaghetti.Id, RestaurantId = spaghetti.RestaurantId, QuantitySold = 25, SaleDate = DateTime.UtcNow.Date.AddDays(-1) },
-                    new SaleRecord { DishId = spaghetti.Id, RestaurantId = spaghetti.RestaurantId, QuantitySold = 20, SaleDate = DateTime.UtcNow.Date.AddDays(-2) },
-                    // Lasagna
-                    new SaleRecord { DishId = lasagna.Id, RestaurantId = lasagna.RestaurantId, QuantitySold = 15, SaleDate = DateTime.UtcNow.Date.AddDays(-1) },
-                    // Grilled Steak
-                    new SaleRecord { DishId = steak.Id, RestaurantId = steak.RestaurantId, QuantitySold = 18, SaleDate = DateTime.UtcNow.Date.AddDays(-2) },
-                    // Classic Burger
-                    new SaleRecord { DishId = burger.Id, RestaurantId = burger.RestaurantId, QuantitySold = 22, SaleDate = DateTime.UtcNow.Date.AddDays(-3) },
-                    // Tiramisu
-                    new SaleRecord { DishId = tiramisu.Id, RestaurantId = tiramisu.RestaurantId, QuantitySold = 12, SaleDate = DateTime.UtcNow.Date.AddDays(-1) },
-                    // Cheesecake
-                    new SaleRecord { DishId = cheesecake.Id, RestaurantId = cheesecake.RestaurantId, QuantitySold = 10, SaleDate = DateTime.UtcNow.Date.AddDays(-2) },
-                    // Caesar Salad
-                    new SaleRecord { DishId = caesar.Id, RestaurantId = caesar.RestaurantId, QuantitySold = 20, SaleDate = DateTime.UtcNow.Date.AddDays(-3) },
-                    new SaleRecord { DishId = caesar.Id, RestaurantId = caesar.RestaurantId, QuantitySold = 15, SaleDate = DateTime.UtcNow.Date.AddDays(-4) },
-                    // Greek Salad
-                    new SaleRecord { DishId = greek.Id, RestaurantId = greek.RestaurantId, QuantitySold = 13, SaleDate = DateTime.UtcNow.Date.AddDays(-2) },
-                    // Tofu Stir Fry
-                    new SaleRecord { DishId = tofu.Id, RestaurantId = tofu.RestaurantId, QuantitySold = 9, SaleDate = DateTime.UtcNow.Date.AddDays(-1) },
-                    // Vegan Power Bowl
-                    new SaleRecord { DishId = veganBowl.Id, RestaurantId = veganBowl.RestaurantId, QuantitySold = 8, SaleDate = DateTime.UtcNow.Date.AddDays(-2) },
-                    // Fresh Lemonade
-                    new SaleRecord { DishId = lemonade.Id, RestaurantId = lemonade.RestaurantId, QuantitySold = 17, SaleDate = DateTime.UtcNow.Date.AddDays(-1) },
-                    // Iced Coffee
-                    new SaleRecord { DishId = coffee.Id, RestaurantId = coffee.RestaurantId, QuantitySold = 14, SaleDate = DateTime.UtcNow.Date.AddDays(-2) }
-                );
-                dbContext.SaveChanges();
-            }
-
-            // Seed Reviews (per dish and restaurant)
-            if (!dbContext.Reviews.Any())
-            {
-                var pizza = dbContext.Dishes.FirstOrDefault(d => d.Name == "Pizza Margherita");
-                var spaghetti = dbContext.Dishes.FirstOrDefault(d => d.Name == "Spaghetti Carbonara");
-                var lasagna = dbContext.Dishes.FirstOrDefault(d => d.Name == "Lasagna");
-                var steak = dbContext.Dishes.FirstOrDefault(d => d.Name == "Grilled Steak");
-                var burger = dbContext.Dishes.FirstOrDefault(d => d.Name == "Classic Burger");
-                var tiramisu = dbContext.Dishes.FirstOrDefault(d => d.Name == "Tiramisu");
-                var cheesecake = dbContext.Dishes.FirstOrDefault(d => d.Name == "Cheesecake");
-                var caesar = dbContext.Dishes.FirstOrDefault(d => d.Name == "Caesar Salad");
-                var greek = dbContext.Dishes.FirstOrDefault(d => d.Name == "Greek Salad");
-                var tofu = dbContext.Dishes.FirstOrDefault(d => d.Name == "Tofu Stir Fry");
-                var veganBowl = dbContext.Dishes.FirstOrDefault(d => d.Name == "Vegan Power Bowl");
-                var lemonade = dbContext.Dishes.FirstOrDefault(d => d.Name == "Fresh Lemonade");
-                var coffee = dbContext.Dishes.FirstOrDefault(d => d.Name == "Iced Coffee");
-                var alice = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Alice Johnson"));
-                var bob = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Bob Smith"));
-                var charlie = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Charlie Brown"));
-                var diana = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Diana Miller")); 
-                var eric = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Eric Davis"));
-                if (pizza == null || spaghetti == null || lasagna == null || steak == null || burger == null || tiramisu == null || cheesecake == null || caesar == null || greek == null || tofu == null || veganBowl == null || lemonade == null || coffee == null)
-                    throw new Exception("❌ Required dishes could not be loaded for reviews.");
-                if (alice == null || bob == null || charlie == null || diana == null || eric == null)
-                    throw new Exception("❌ Required customers could not be loaded for reviews.");
-
-                // Ensure seeded reviews conform to validation rules: Rating 1-5, SentimentScore 0.0-1.0, lengths
-                dbContext.Reviews.AddRange(
-                    // Pizza Margherita
-                    new Review {
-                        CustomerId = alice.Id,
-                        Customer = alice,
-                        CustomerName = alice.Name,
-                        Comment = "Great food!",
-                        SentimentScore = 0.9,
-                        DishId = pizza.Id,
-                        RestaurantId = pizza.RestaurantId,
-                        DateCreated = DateTime.UtcNow.AddDays(-3),
-                        CreatedAt = DateTime.UtcNow.AddDays(-3),
-                        UpdatedAt = DateTime.UtcNow.AddDays(-3),
-                        Rating = 5,
-                        IsDeleted = false
-                    },
-                    new Review {
-                        CustomerId = bob.Id,
-                        Customer = bob,
-                        CustomerName = bob.Name,
-                        Comment = "Crust was a bit hard.",
-                        SentimentScore = 0.6,
-                        DishId = pizza.Id,
-                        RestaurantId = pizza.RestaurantId,
-                        DateCreated = DateTime.UtcNow.AddDays(-2),
-                        CreatedAt = DateTime.UtcNow.AddDays(-2),
-                        UpdatedAt = DateTime.UtcNow.AddDays(-2),
-                        Rating = 3,
-                        IsDeleted = false
-                    },
-                    new Review {
-                        CustomerId = diana.Id,
-                        Customer = diana,
-                        CustomerName = diana.Name,
-                        Comment = "Loved the cheese!",
-                        SentimentScore = 0.8,
-                        DishId = pizza.Id,
-                        RestaurantId = pizza.RestaurantId,
-                        DateCreated = DateTime.UtcNow.AddDays(-1),
-                        CreatedAt = DateTime.UtcNow.AddDays(-1),
-                        UpdatedAt = DateTime.UtcNow.AddDays(-1),
-                        Rating = 4,
-                        IsDeleted = false
-                    },
-                    new Review {
-                        CustomerId = null,
-                        CustomerName = "Anonymous",
-                        Comment = "Too cheesy for me.",
-                        SentimentScore = 0.4,
-                        DishId = pizza.Id,
-                        RestaurantId = pizza.RestaurantId,
-                        DateCreated = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        Rating = 2,
-                        IsDeleted = false
-                    },
-                    new Review {
-                        CustomerId = null,
-                        CustomerName = "Guest",
-                        Comment = "Best pizza in town!",
-                        SentimentScore = 0.95,
-                        DishId = pizza.Id,
-                        RestaurantId = pizza.RestaurantId,
-                        DateCreated = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        Rating = 5,
-                        IsDeleted = false
-                    },
-
-                    // Spaghetti Carbonara
-                    new Review { CustomerId = charlie.Id, Customer = charlie, CustomerName = charlie.Name, Comment = "Loved the sauce!", SentimentScore = 0.85, DishId = spaghetti.Id, RestaurantId = spaghetti.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-4), Rating = 5 },
-                    new Review { CustomerId = eric.Id, Customer = eric, CustomerName = eric.Name, Comment = "Could use more bacon.", SentimentScore = 0.7, DishId = spaghetti.Id, RestaurantId = spaghetti.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 4 },
-                    new Review { CustomerId = null, CustomerName = "Anonymous", Comment = "Too salty.", SentimentScore = 0.3, DishId = spaghetti.Id, RestaurantId = spaghetti.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 2 },
-                    new Review { CustomerId = bob.Id, Customer = bob, CustomerName = bob.Name, Comment = "Good but not great.", SentimentScore = 0.6, DishId = spaghetti.Id, RestaurantId = spaghetti.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 3 },
-
-                    // Lasagna
-                    new Review { CustomerId = alice.Id, Customer = alice, CustomerName = alice.Name, Comment = "Delicious layers!", SentimentScore = 0.92, DishId = lasagna.Id, RestaurantId = lasagna.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-5), Rating = 5 },
-                    new Review { CustomerId = diana.Id, Customer = diana, CustomerName = diana.Name, Comment = "Tasty and filling!", SentimentScore = 0.85, DishId = lasagna.Id, RestaurantId = lasagna.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 4 },
-                    new Review { 
-                        CustomerId = null, 
-                        CustomerName = "Guest", 
-                        Comment = "Portion was small.", 
-                        SentimentScore = 0.5, 
-                        DishId = lasagna.Id, 
-                        RestaurantId = lasagna.RestaurantId, 
-                        DateCreated = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        Rating = 3,
-                        IsDeleted = false
-                    },
-
-                    // Grilled Steak
-                    new Review { CustomerId = bob.Id, Customer = bob, CustomerName = bob.Name, Comment = "Perfectly cooked!", SentimentScore = 0.95, DishId = steak.Id, RestaurantId = steak.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 5 },
-                    new Review { CustomerId = eric.Id, Customer = eric, CustomerName = eric.Name, Comment = "A bit overdone.", SentimentScore = 0.5, DishId = steak.Id, RestaurantId = steak.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 3 },
-                    new Review { 
-                        CustomerId = null, 
-                        CustomerName = "Anonymous", 
-                        Comment = "A bit tough.", 
-                        SentimentScore = 0.4, 
-                        DishId = steak.Id, 
-                        RestaurantId = steak.RestaurantId, 
-                        DateCreated = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        Rating = 2,
-                        IsDeleted = false
-                    },
-
-                    // Classic Burger
-                    new Review { CustomerId = charlie.Id, Customer = charlie, CustomerName = charlie.Name, Comment = "Juicy and tasty!", SentimentScore = 0.88, DishId = burger.Id, RestaurantId = burger.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 4 },
-                    new Review { CustomerId = diana.Id, Customer = diana, CustomerName = diana.Name, Comment = "Loved the fries!", SentimentScore = 0.9, DishId = burger.Id, RestaurantId = burger.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 5 },
-                    new Review { 
-                        CustomerId = null, 
-                        CustomerName = "Guest", 
-                        Comment = "Bun was stale.", 
-                        SentimentScore = 0.2, 
-                        DishId = burger.Id, 
-                        RestaurantId = burger.RestaurantId, 
-                        DateCreated = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        Rating = 1,
-                        IsDeleted = false
-                    },
-
-                    // Tiramisu
-                    new Review { CustomerId = alice.Id, Customer = alice, CustomerName = alice.Name, Comment = "Best tiramisu ever!", SentimentScore = 0.95, DishId = tiramisu.Id, RestaurantId = tiramisu.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-3), Rating = 5 },
-                    new Review { CustomerId = bob.Id, Customer = bob, CustomerName = bob.Name, Comment = "Too sweet for my taste.", SentimentScore = 0.4, DishId = tiramisu.Id, RestaurantId = tiramisu.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 2 },
-                    new Review { CustomerId = diana.Id, Customer = diana, CustomerName = diana.Name, Comment = "Loved the chocolate flavor!", SentimentScore = 0.8, DishId = tiramisu.Id, RestaurantId = tiramisu.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-1), Rating = 4 },
-
-                    // Cheesecake
-                    new Review { CustomerId = alice.Id, Customer = alice, CustomerName = alice.Name, Comment = "Creamy and delicious!", SentimentScore = 0.9, DishId = cheesecake.Id, RestaurantId = cheesecake.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-4), Rating = 5 },
-                    new Review { CustomerId = bob.Id, Customer = bob, CustomerName = bob.Name, Comment = "Crust was too hard.", SentimentScore = 0.5, DishId = cheesecake.Id, RestaurantId = cheesecake.RestaurantId, DateCreated = DateTime.UtcNow.AddDays(-2), Rating = 3 },
-                    new Review { CustomerId = null, CustomerName = "Guest", Comment = "Best dessert ever!", SentimentScore = 0.95, DishId = cheesecake.Id, RestaurantId = cheesecake.RestaurantId, DateCreated = DateTime.UtcNow, Rating = 5 }
-                );
-                dbContext.SaveChanges();
-            }
-
-            // Seed Tables
-            if (!dbContext.Tables.Any())
-            {
-                if (Bistro == null || GreenLeaf == null)
-                    throw new Exception("❌ Required restaurants could not be loaded for tables.");
-
-                // Ensure seeded tables conform to validation rules:
-                // - TableNumber is required and max length 20
-                // - Capacity must be between 1 and 100
-                // Index for table availability is centralized in AppDbContext (IX_Tables_Restaurant_Availability_Capacity)
-
-                var nowTables = DateTime.UtcNow;
-
-                var bistroTables = new[]
-                {
-                    new Table 
-                    { 
-                        TableNumber = "1", 
-                        Capacity = 2, 
-                        RestaurantId = Bistro.Id,
-                        IsAvailable = true, // Ready for immediate seating
-                        CreatedAt = nowTables,
-                        UpdatedAt = nowTables,
-                        IsDeleted = false,
-                        IsActive = true
-                    },
-                    new Table 
-                    { 
-                        TableNumber = "2", 
-                        Capacity = 4, 
-                        RestaurantId = Bistro.Id,
-                        IsAvailable = true, // Ready for immediate seating
-                        CreatedAt = nowTables,
-                        UpdatedAt = nowTables,
-                        IsDeleted = false,
-                        IsActive = true
-                    },
-                    new Table 
-                    { 
-                        TableNumber = "3", 
-                        Capacity = 6, 
-                        RestaurantId = Bistro.Id,
-                        IsAvailable = false, // Under maintenance
-                        CreatedAt = nowTables,
-                        UpdatedAt = nowTables,
-                        IsDeleted = false,
-                        IsActive = true
-                    }
-                };
-
-                var greenLeafTables = new[]
-                {
-                    new Table 
-                    { 
-                        TableNumber = "A1", 
-                        Capacity = 4, 
-                        RestaurantId = GreenLeaf.Id,
-                        IsAvailable = true, // Ready for immediate seating
-                        CreatedAt = nowTables,
-                        UpdatedAt = nowTables,
-                        IsDeleted = false,
-                        IsActive = true
-                    },
-                    new Table 
-                    { 
-                        TableNumber = "A2", 
-                        Capacity = 4, 
-                        RestaurantId = GreenLeaf.Id,
-                        IsAvailable = true, // Ready for immediate seating
-                        CreatedAt = nowTables,
-                        UpdatedAt = nowTables,
-                        IsDeleted = false,
-                        IsActive = true
-                    },
-                    new Table 
-                    { 
-                        TableNumber = "B1", 
-                        Capacity = 8, 
-                        RestaurantId = GreenLeaf.Id,
-                        IsAvailable = false, // Being cleaned
-                        CreatedAt = nowTables,
-                        UpdatedAt = nowTables,
-                        IsDeleted = false,
-                        IsActive = true
-                    }
-                };
-
-                dbContext.Tables.AddRange(bistroTables);
-                dbContext.Tables.AddRange(greenLeafTables);
-                dbContext.SaveChanges();
-            }
-
-            // Seed Promotions
-            if (!dbContext.Promotions.Any())
-            {
-                if (Bistro == null || GreenLeaf == null)
-                    throw new Exception("❌ Required restaurants could not be loaded for promotions.");
-
-                // Promotion validation:
-                // - Name required and <= 150 chars
-                // - DiscountAmount must be >= 0
-                // - ValidFrom must be <= ValidTo
-
-                var bistroPromoActive = new Promotion
-                {
-                    Name = "Weekend Special",
-                    DiscountAmount = 5.00m,
-                    ValidFrom = DateTime.UtcNow.Date,
-                    ValidTo = DateTime.UtcNow.Date.AddDays(7),
-                    RestaurantId = Bistro.Id,
-                    IsActive = true // Currently running promotion
-                };
-
-                var bistroPromoInactive = new Promotion
-                {
-                    Name = "Early Bird Special",
-                    DiscountAmount = 10.00m,
-                    ValidFrom = DateTime.UtcNow.Date.AddDays(-30),
-                    ValidTo = DateTime.UtcNow.Date.AddDays(30),
-                    RestaurantId = Bistro.Id,
-                    IsActive = false // Temporarily paused promotion
-                };
-
-                var greenLeafPromoActive = new Promotion
-                {
-                    Name = "Lunch Deal",
-                    DiscountAmount = 15.0m,
-                    ValidFrom = DateTime.UtcNow.Date,
-                    ValidTo = DateTime.UtcNow.Date.AddMonths(1),
-                    RestaurantId = GreenLeaf.Id,
-                    IsActive = true // Active promotion
-                };
-
-                var greenLeafPromoFuture = new Promotion
-                {
-                    Name = "Summer Special",
-                    DiscountAmount = 20.0m,
-                    ValidFrom = DateTime.UtcNow.Date.AddMonths(1),
-                    ValidTo = DateTime.UtcNow.Date.AddMonths(3),
-                    RestaurantId = GreenLeaf.Id,
-                    IsActive = true // Ready to start when date comes
-                };
-
-                dbContext.Promotions.AddRange(bistroPromoActive, bistroPromoInactive, greenLeafPromoActive, greenLeafPromoFuture);
-                dbContext.SaveChanges();
-            }
-
-            // Seed Order Statuses
-            if (!dbContext.Set<OrderStatus>().Any())
-            {
-                var restaurants = dbContext.Restaurants.ToList();
-                if (!restaurants.Any())
-                    throw new Exception("❌ Restaurants must be seeded before order statuses.");
-
-                foreach (var restaurant in restaurants)
-                {
-                    // OrderStatus validation rules (Name required, max 50 chars; ColorCode must be '#RRGGBB' if provided)
-                    var statuses = new[]
-                    {
-                        new OrderStatus { Name = "Pending", Description = "Order received, waiting for confirmation.", DisplayOrder = 1, IsTerminal = false, ColorCode = "#FFA500", RestaurantId = restaurant.Id },
-                        new OrderStatus { Name = "Preparing", Description = "The kitchen is preparing the order.", DisplayOrder = 2, IsTerminal = false, ColorCode = "#1E90FF", RestaurantId = restaurant.Id },
-                        new OrderStatus { Name = "Ready", Description = "The order is ready for pickup or delivery.", DisplayOrder = 3, IsTerminal = false, ColorCode = "#32CD32", RestaurantId = restaurant.Id },
-                        new OrderStatus { Name = "Completed", Description = "The order has been delivered/picked up.", DisplayOrder = 4, IsTerminal = true, ColorCode = "#008000", RestaurantId = restaurant.Id },
-                        new OrderStatus { Name = "Cancelled", Description = "The order has been cancelled.", DisplayOrder = 5, IsTerminal = true, ColorCode = "#FF0000", RestaurantId = restaurant.Id }
-                    };
-                    dbContext.Set<OrderStatus>().AddRange(statuses);
-                }
-                dbContext.SaveChanges();
-            }
-
-            // Seed Orders and OrderItems
-            if (!dbContext.Orders.Any())
-            {
-                var customers = dbContext.Customers.Where(c => c.IsActive).ToList();
-                var restaurantsWithDishes = dbContext.Restaurants.Include(r => r.Dishes).Include(r => r.OrderStatuses).ToList();
-
-                if (!customers.Any() || !restaurantsWithDishes.Any())
-                    throw new Exception("❌ Required data for seeding orders is missing.");
-
-                var bistro = restaurantsWithDishes.FirstOrDefault(r => r.Name == "Urban Bistro");
-                var greenLeaf = restaurantsWithDishes.FirstOrDefault(r => r.Name == "Green Leaf");
-                // Replace exact-name lookups with substring Contains to tolerate full-name vs first-name mismatches
-                var alice = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Alice"));
-                var bob = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Bob"));
-
-                if (bistro == null || greenLeaf == null || alice == null || bob == null)
-                    throw new Exception("❌ Specific entities for order seeding could not be loaded.");
-
-                var pizza = bistro.Dishes.FirstOrDefault(d => d.Name == "Pizza Margherita");
-                var burger = bistro.Dishes.FirstOrDefault(d => d.Name == "Classic Burger");
-                var caesarSalad = greenLeaf.Dishes.FirstOrDefault(d => d.Name == "Caesar Salad");
-    
-                if (pizza == null || burger == null || caesarSalad == null)
-                    throw new Exception("❌ Specific dishes for order seeding could not be loaded.");
-
-                // choose staff member to assign as handler if available
-                var handler = dbContext.StaffMembers.FirstOrDefault(s => s.RestaurantId == bistro.Id && s.IsActive);
-
-                // NOTE: OrderItem validation rules (Quantity >= 1, UnitPrice >= 0) are enforced by data annotations
-                // on `OrderItem`. Indexes for common OrderItem queries (by OrderId, DishId, RestaurantId) are
-                // centralized in `AppDbContext.OnModelCreating` (see IX_OrderItems_* indexes). Keep seeded values
-                // within valid ranges to avoid validation exceptions.
-
-                var order1Items = new List<OrderItem>
-                {
-                    new OrderItem { DishId = pizza.Id, Quantity = 1, UnitPrice = pizza.DishPrice, RestaurantId = bistro.Id },
-                    new OrderItem { DishId = burger.Id, Quantity = 2, UnitPrice = burger.DishPrice, RestaurantId = bistro.Id }
-                };
-                var order1 = new Order
-                {
-                    CustomerId = alice.Id,
-                    RestaurantId = bistro.Id,
-                    OrderStatusId = bistro.OrderStatuses.First(s => s.Name == "Completed").Id,
-                    OrderDate = DateTime.UtcNow.AddDays(-2),
-                    SpecialInstructions = "Please provide extra napkins.",
-                    OrderItems = order1Items,
-                    TotalAmount = order1Items.Sum(oi => oi.Quantity * oi.UnitPrice),
-                    HandledByStaffId = handler?.Id
-                };
-
-                var order2Items = new List<OrderItem>
-                {
-                    new OrderItem { DishId = caesarSalad.Id, Quantity = 2, UnitPrice = caesarSalad.DishPrice, RestaurantId = greenLeaf.Id }
-                };
-                var order2 = new Order
-                {
-                    CustomerId = bob.Id,
-                    RestaurantId = greenLeaf.Id,
-                    OrderStatusId = greenLeaf.OrderStatuses.First(s => s.Name == "Pending").Id,
-                    OrderDate = DateTime.UtcNow,
-                    OrderItems = order2Items,
-                    TotalAmount = order2Items.Sum(oi => oi.Quantity * oi.UnitPrice),
-                    HandledByStaffId = null
-                };
-
-                dbContext.Orders.AddRange(order1, order2);
-                dbContext.SaveChanges();
-            }
-
-            // Seed Customer Loyalty
-            if (!dbContext.CustomerLoyalties.Any())
-            {
-                var alice = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Alice"));
-                var bob = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Bob"));
-                var diana = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Diana"));
-
-                if (alice == null || bob == null || diana == null || Bistro == null || GreenLeaf == null)
-                    throw new Exception("❌ Required customers or restaurants could not be loaded for loyalty seeding.");
-
-                var aliceAtBistro = new CustomerLoyalty
-                {
-                    CustomerId = alice.Id,
-                    RestaurantId = Bistro.Id,
-                    Points = 150,
-                    LifetimePoints = 200,
-                    Tier = LoyaltyTier.Silver,
-                    LastActivity = DateTime.UtcNow.AddDays(-2)
-                };
-
-                var bobAtBistro = new CustomerLoyalty
-                {
-                    CustomerId = bob.Id,
-                    RestaurantId = Bistro.Id,
-                    Points = 40,
-                    LifetimePoints = 40,
-                    Tier = LoyaltyTier.Bronze,
-                    LastActivity = DateTime.UtcNow.AddDays(-5)
-                };
-
-                var dianaAtGreenLeaf = new CustomerLoyalty
-                {
-                    CustomerId = diana.Id,
-                    RestaurantId = GreenLeaf.Id,
-                    Points = 550,
-                    LifetimePoints = 600,
-                    Tier = LoyaltyTier.Gold,
-                    LastActivity = DateTime.UtcNow.AddDays(-1)
-                };
-
-                dbContext.CustomerLoyalties.AddRange(aliceAtBistro, bobAtBistro, dianaAtGreenLeaf);
-                dbContext.SaveChanges(); // Save to get IDs for transactions
-
-                // Seed Loyalty Transactions
-                if (!dbContext.LoyaltyTransactions.Any())
-                {
-                    dbContext.LoyaltyTransactions.AddRange(
-                        // Alice at Urban Bistro
-                        new LoyaltyTransaction { CustomerLoyaltyId = aliceAtBistro.Id, CustomerId = alice.Id, RestaurantId = Bistro.Id, PointsChange = 100, Type = LoyaltyTransactionType.OrderEarning, Description = "Dinner purchase", BalanceAfter = 100, CreatedAt = DateTime.UtcNow.AddDays(-10) },
-                        new LoyaltyTransaction { CustomerLoyaltyId = aliceAtBistro.Id, CustomerId = alice.Id, RestaurantId = Bistro.Id, PointsChange = 100, Type = LoyaltyTransactionType.OrderEarning, Description = "Lunch special", BalanceAfter = 200, CreatedAt = DateTime.UtcNow.AddDays(-5) },
-                        new LoyaltyTransaction { CustomerLoyaltyId = aliceAtBistro.Id, CustomerId = alice.Id, RestaurantId = Bistro.Id, PointsChange = -50, Type = LoyaltyTransactionType.RewardRedemption, Description = "Redeemed for discount", BalanceAfter = 150, CreatedAt = DateTime.UtcNow.AddDays(-2) },
-
-                        // Bob at Urban Bistro
-                        new LoyaltyTransaction { CustomerLoyaltyId = bobAtBistro.Id, CustomerId = bob.Id, RestaurantId = Bistro.Id, PointsChange = 40, Type = LoyaltyTransactionType.Bonus, Description = "First visit bonus", BalanceAfter = 40, CreatedAt = DateTime.UtcNow.AddDays(-5) },
-
-                        // Diana at Green Leaf
-                        new LoyaltyTransaction { CustomerLoyaltyId = dianaAtGreenLeaf.Id, CustomerId = diana.Id, RestaurantId = GreenLeaf.Id, PointsChange = 200, Type = LoyaltyTransactionType.OrderEarning, Description = "Catering order", BalanceAfter = 200, CreatedAt = DateTime.UtcNow.AddDays(-20) },
-                        new LoyaltyTransaction { CustomerLoyaltyId = dianaAtGreenLeaf.Id, CustomerId = diana.Id, RestaurantId = GreenLeaf.Id, PointsChange = 400, Type = LoyaltyTransactionType.OrderEarning, Description = "Weekend dining", BalanceAfter = 600, CreatedAt = DateTime.UtcNow.AddDays(-10) },
-                        new LoyaltyTransaction { CustomerLoyaltyId = dianaAtGreenLeaf.Id, CustomerId = diana.Id, RestaurantId = GreenLeaf.Id, PointsChange = -50, Type = LoyaltyTransactionType.RewardRedemption, Description = "Redeemed for free drink", BalanceAfter = 550, CreatedAt = DateTime.UtcNow.AddDays(-1) }
-                    );
-                    dbContext.SaveChanges();
-                }
-            }
-
-            // Seed Reservations
-            // Note: Reservation validation is enforced on the model:
-            // - TableId must be a positive integer
-            // - ReservationTime must be within a reasonable window (not older than 1 day, not more than 1 year in the future)
-            // - CustomerId is optional to allow anonymous reservations
-            // Indexes for reservation queries are centralized in `AppDbContext.OnModelCreating` (see IX_Reservations_Restaurant_Time and IX_Reservations_Table_Time)
-            if (!dbContext.Reservations.Any())
-            {
-                var alice = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Alice"));
-                var bob = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Bob"));
-                var diana = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Diana"));
-                var eric = dbContext.Customers.FirstOrDefault(c => c.Name.Contains("Eric"));
-
-                // Get tables from both restaurants
-                var bistroTables = dbContext.Tables.Where(t => t.RestaurantId == Bistro.Id).ToList();
-                var greenLeafTables = dbContext.Tables.Where(t => t.RestaurantId == GreenLeaf.Id).ToList();
-
-                if (alice == null || bob == null || diana == null || eric == null || 
-                    !bistroTables.Any() || !greenLeafTables.Any())
-                    throw new Exception("❌ Required entities for reservation seeding could not be loaded.");
-
-                // Use DateTime.UtcNow to ensure times are stored in UTC and fall within the validation window
-                var nowDate = DateTime.UtcNow.Date;
-
-                var reservations = new List<Reservation>
-                {
-                    // Today's reservations at Urban Bistro
-                    new Reservation
-                    {
-                        CustomerId = alice.Id,
-                        TableId = bistroTables.First(t => t.Capacity == 4).Id,  // 4-seater table
-                        ReservationTime = nowDate.AddHours(19),    // Today 7 PM UTC
-                        RestaurantId = Bistro.Id
-                    },
-                    new Reservation
-                    {
-                        CustomerId = bob.Id,
-                        TableId = bistroTables.First(t => t.Capacity == 2).Id,  // 2-seater table
-                        ReservationTime = nowDate.AddHours(20),    // Today 8 PM UTC
-                        RestaurantId = Bistro.Id
-                    },
-
-                    // Tomorrow's reservations at Urban Bistro
-                    new Reservation
-                    {
-                        CustomerId = diana.Id,
-                        TableId = bistroTables.First(t => t.Capacity == 6).Id,  // 6-seater table
-                        ReservationTime = nowDate.AddDays(1).AddHours(18), // Tomorrow 6 PM UTC
-                        RestaurantId = Bistro.Id
-                    },
-
-                    // Future reservations at Urban Bistro (within one year)
-                    new Reservation
-                    {
-                        CustomerId = alice.Id,
-                        TableId = bistroTables.First(t => t.Capacity == 4).Id,  // 4-seater table
-                        ReservationTime = nowDate.AddDays(5).AddHours(19), // In 5 days, 7 PM UTC
-                        RestaurantId = Bistro.Id
-                    },
-
-                    // Today's reservations at Green Leaf
-                    new Reservation
-                    {
-                        CustomerId = eric.Id,
-                        TableId = greenLeafTables.First(t => t.Capacity == 4).Id, // 4-seater table
-                        ReservationTime = nowDate.AddHours(12),      // Today 12 PM (Lunch) UTC
-                        RestaurantId = GreenLeaf.Id
-                    },
-                    new Reservation
-                    {
-                        CustomerId = diana.Id,
-                        TableId = greenLeafTables.First(t => t.TableNumber == "A2").Id,
-                        ReservationTime = nowDate.AddHours(13),      // Today 1 PM (Lunch) UTC
-                        RestaurantId = GreenLeaf.Id
-                    },
-
-                    // Tomorrow's reservations at Green Leaf
-                    new Reservation
-                    {
-                        CustomerId = bob.Id,
-                        TableId = greenLeafTables.First(t => t.Capacity == 8).Id, // 8-seater table
-                        ReservationTime = nowDate.AddDays(1).AddHours(19), // Tomorrow 7 PM UTC
-                        RestaurantId = GreenLeaf.Id
-                    },
-
-                    // Weekend reservations at Green Leaf (within one year)
-                    new Reservation
-                    {
-                        CustomerId = alice.Id,
-                        TableId = greenLeafTables.First(t => t.TableNumber == "A1").Id,
-                        ReservationTime = nowDate.AddDays(7).AddHours(18), // Next week 6 PM UTC
-                        RestaurantId = GreenLeaf.Id
-                    }
-                };
-
-                dbContext.Reservations.AddRange(reservations);
-                dbContext.SaveChanges();
+                Console.WriteLine("✅ Database already contains data. Seeding skipped.");
             }
         }
 
-        private static void ClearTables(AppDbContext dbContext)
+        /// <summary>
+        /// Attempts to connect to the database and apply any pending migrations asynchronously, retrying on failure up
+        /// to a maximum number of attempts.
+        /// </summary>
+        /// <remarks>If the initial connection or migration attempt fails due to a database error, the
+        /// method retries the operation multiple times with a delay between attempts. If all attempts fail, the last
+        /// exception is propagated to the caller.</remarks>
+        /// <param name="context">The database context to use for applying migrations. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous operation. The task completes when the connection is established and
+        /// migrations are applied, or an exception is thrown after all retry attempts fail.</returns>
+        private static async Task ConnectToDatabaseAsync(AppDbContext context)
         {
-            // Disable constraints and delete data in specific order
+            const int maxRetries = 10;
+            for (int retryCount = 1; retryCount <= maxRetries; retryCount++)
+            {
+                try
+                {
+                    await context.Database.MigrateAsync();
+                    Console.WriteLine("✅ Database connection successful and migrations applied.");
+                    return;
+                }
+                catch (DbException ex)
+                {
+                    Console.WriteLine($"⏳ Database connection attempt {retryCount}/{maxRetries} failed: {ex.Message}");
+                    if (retryCount == maxRetries) throw;
+                    await Task.Delay(3000);
+                }
+            }
+        }
 
-            // PostgreSQL command to defer foreign key constraint checks until transaction commit.
-            // This allows deleting data from related tables in any order within the transaction.
-            // Without this, we would need to carefully order deletions to respect foreign key relationships.
-            dbContext.Database.ExecuteSqlRaw("SET CONSTRAINTS ALL DEFERRED;");
+        /// <summary>
+        /// Asynchronously removes all data from the application's database tables and resets identity columns.
+        /// </summary>
+        /// <remarks>This method truncates all major tables in the database, including user, order, and
+        /// menu-related tables, and resets their identity values. All data in these tables will be permanently deleted.
+        /// Use with caution, especially in production environments.</remarks>
+        /// <param name="context">The database context used to execute the table truncation operations. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous clear operation.</returns>
+        private static async Task ClearTablesAsync(AppDbContext context)
+        {
+            Console.WriteLine("🗑️ Clearing existing data...");
+            await context.Database.ExecuteSqlRawAsync("SET CONSTRAINTS ALL DEFERRED;");
+            var tableNames = new[]
+            {
+                "LoyaltyTransactions", "Reservations", "Reviews", "SaleRecords", "OrderItems", "Orders",
+                "StaffSchedules", "Promotions", "MenuDishes", "Dishes", "Categories", "Menus", "MenuTypes",
+                "Tables", "OrderStatuses", "UserPermissions", "BusinessRules", "Restaurants",
+                "StaffMembers", "Customers", "AdminUsers",
+                "UserRoles", "UserClaims", "UserLogins", "UserTokens", "RoleClaims", "Roles", "Users"
+            };
+            foreach (var tableName in tableNames)
+            {
+                await context.Database.ExecuteSqlRawAsync($"TRUNCATE TABLE \"{tableName}\" RESTART IDENTITY CASCADE;");
+            }
+            await context.Database.ExecuteSqlRawAsync("SET CONSTRAINTS ALL IMMEDIATE;");
+            Console.WriteLine("✅ Data cleared successfully.");
+        }
 
-            // Delete in reverse order of dependencies
-            dbContext.StaffSchedules.RemoveRange(dbContext.StaffSchedules);
-            dbContext.Reservations.RemoveRange(dbContext.Reservations);
-            dbContext.Tables.RemoveRange(dbContext.Tables);
-            dbContext.OrderItems.RemoveRange(dbContext.OrderItems);
-            dbContext.Orders.RemoveRange(dbContext.Orders);
-            dbContext.OrderStatuses.RemoveRange(dbContext.OrderStatuses);
-            dbContext.Promotions.RemoveRange(dbContext.Promotions);
-            dbContext.LoyaltyTransactions.RemoveRange(dbContext.LoyaltyTransactions);
-            dbContext.CustomerLoyalties.RemoveRange(dbContext.CustomerLoyalties);
-            dbContext.Reviews.RemoveRange(dbContext.Reviews);
-            dbContext.SaleRecords.RemoveRange(dbContext.SaleRecords);
-            dbContext.Dishes.RemoveRange(dbContext.Dishes);
-            dbContext.Categories.RemoveRange(dbContext.Categories);
-            dbContext.Menus.RemoveRange(dbContext.Menus);
-            dbContext.MenuTypes.RemoveRange(dbContext.MenuTypes);
-            dbContext.Restaurants.RemoveRange(dbContext.Restaurants);
-            dbContext.StaffMembers.RemoveRange(dbContext.StaffMembers);
-            dbContext.AdminUsers.RemoveRange(dbContext.AdminUsers);
-            dbContext.BusinessRules.RemoveRange(dbContext.BusinessRules);
+        /// <summary>
+        /// Seeds default identity roles and associated claims if no roles currently exist.
+        /// </summary>
+        /// <remarks>This method should be called during application startup to ensure that required roles
+        /// and claims are present in the identity store. If roles already exist, no changes are made.</remarks>
+        /// <param name="roleManager">The role manager used to create and manage identity roles and claims. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous seeding operation.</returns>
+        private static async Task SeedIdentityAsync(RoleManager<IdentityRole> roleManager)
+        {
+            Console.WriteLine("👥 Seeding Identity Roles and Claims...");
+            if (!await roleManager.Roles.AnyAsync())
+            {
+                await SeedHelper.CreateRolesAndClaims(roleManager);
+            }
+        }
 
-            dbContext.SaveChanges();
+        /// <summary>
+        /// Ensures that the default administrative users exist in the database, creating them if necessary, and returns
+        /// a dictionary of all admin users keyed by username.
+        /// </summary>
+        /// <remarks>If no admin users exist, this method creates a set of default admin users with
+        /// predefined roles and credentials. If admin users are already present, no new users are created. This method
+        /// is typically used during application initialization or database seeding.</remarks>
+        /// <param name="userManager">The user manager used to create and manage application users.</param>
+        /// <param name="context">The database context used to query and persist admin user data.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a dictionary mapping usernames
+        /// to their corresponding admin user entities. The dictionary will include all admin users present in the
+        /// database after seeding.</returns>
+        private static async Task<Dictionary<string, AdminUser>> SeedAdminUsersAsync(UserManager<ApplicationUser> userManager, AppDbContext context)
+        {
+            if (!await context.AdminUsers.AnyAsync())
+            {
+                var adminData = new[] {
+                    ("systemadmin", "systemadmin@smartmenu.com", "System Administrator", AdminRoleType.SystemAdmin), // AdminRoleType.SystemAdmin value 0
+                    ("restaurantowner", "owner@smartmenu.com", "Restaurant Owner", AdminRoleType.RestaurantOwner), // AdminRoleType.RestaurantOwner value 1
+                    ("restaurantmanager", "manager@smartmenu.com", "Restaurant Manager", AdminRoleType.RestaurantManager) // AdminRoleType.RestaurantManager value 2
+                };
+                foreach (var (username, email, fullName, adminRoleType) in adminData)
+                {
+                    await SeedHelper.CreateAdminUser(userManager, username, email, AuthConstants.DefaultPasswords.AdminPassword, fullName, adminRoleType);
+                }
+                await context.SaveChangesAsync();
+            }
+            return await context.AdminUsers.ToDictionaryAsync(a => a.UserName!, a => a);
+        }
 
-            // Re-enable constraints
-            dbContext.Database.ExecuteSqlRaw("SET CONSTRAINTS ALL IMMEDIATE;");
+        /// <summary>
+        /// Seeds the database with default customer and staff user accounts if none exist, and returns the resulting
+        /// lists of customers and staff members.
+        /// </summary>
+        /// <remarks>This method is intended for use during application setup or testing to ensure that
+        /// sample customer and staff accounts are available. Staff users are assigned to the first restaurant in the
+        /// provided list. The method does not reseed users if customer or staff data already exists.</remarks>
+        /// <param name="userManager">The user manager used to create and manage application user accounts.</param>
+        /// <param name="context">The database context used to access and modify customer and staff member data.</param>
+        /// <param name="restaurants">The list of restaurants to which staff members will be assigned. Must contain at least one restaurant to
+        /// seed staff users.</param>
+        /// <returns>A tuple containing a list of all customers and a list of all staff members after seeding. If no users were
+        /// seeded, the lists reflect the current database state.</returns>
+        private static async Task<(List<Customer>, List<StaffMember>)> SeedCustomerAndStaffUsersAsync(UserManager<ApplicationUser> userManager, AppDbContext context, List<Restaurant> restaurants)
+        {
+            // Seed Customers
+            if (!await context.Customers.AnyAsync())
+            {
+                var customerData = new[]
+                {
+                    ("John Doe", "john.doe@example.com"),
+                    ("Jane Smith", "jane.smith@example.com"),
+                    ("Robert Johnson", "robert.j@example.com"),
+                    ("Maria Garcia", "maria.g@example.com"),
+                    ("David Brown", "david.b@example.com")
+                };
+
+                foreach (var (name, email) in customerData)
+                {
+                    await SeedHelper.CreateCustomerUser(userManager,
+                        email.Split('@')[0], // username from email
+                        email,
+                        AuthConstants.DefaultPasswords.CustomerPassword,
+                        name);
+                }
+            }
+
+            // Seed Staff
+            if (!await context.StaffMembers.AnyAsync() && restaurants.Any())
+            {
+                var staffData = new[]
+                {
+                    ("Michael Chen", "m.chen@example.com", StaffRole.Manager),
+                    ("Sarah Wilson", "s.wilson@example.com", StaffRole.Waiter),
+                    ("James Miller", "j.miller@example.com", StaffRole.Chef),
+                    ("Emily Davis", "e.davis@example.com", StaffRole.Waiter),
+                    ("Carlos Rodriguez", "c.rodriguez@example.com", StaffRole.Chef)
+                };
+
+                foreach (var (name, email, role) in staffData)
+                {
+                    var assignedRestaurant = restaurants[0]; // Assign to first restaurant for simplicity
+                    await SeedHelper.CreateStaffUser(userManager,
+                        email.Split('@')[0], // username from email
+                        email,
+                        AuthConstants.DefaultPasswords.StaffPassword,
+                        name,
+                        role,
+                        assignedRestaurant.Id);
+                }
+            }
+
+            await context.SaveChangesAsync();
+            return (
+                await context.Customers.Include(c => c.ApplicationUser).ToListAsync(),
+                await context.StaffMembers.Include(s => s.ApplicationUser).ToListAsync()
+            );
+        }
+
+        /// <summary>
+        /// Asynchronously seeds the Restaurants table with initial data if it is empty and returns the list of all
+        /// restaurants.
+        /// </summary>
+        /// <remarks>If the Restaurants table already contains data, no new restaurants are added. The
+        /// method requires that the adminUsers dictionary includes a user with the key "restaurantowner" to assign as
+        /// the owner of the seeded restaurants.</remarks>
+        /// <param name="context">The database context used to access and modify restaurant data. Must not be null.</param>
+        /// <param name="adminUsers">A dictionary mapping admin user roles to their corresponding AdminUser objects. Used to assign ownership of
+        /// seeded restaurants. Must contain an entry for the key "restaurantowner".</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a list of all Restaurant
+        /// entities in the database after seeding.</returns>
+        private static async Task<List<Restaurant>> SeedRestaurantsAsync(AppDbContext context, Dictionary<string, AdminUser> adminUsers)
+        {
+            Console.WriteLine("🏢 Seeding Restaurants...");
+            if (!await context.Restaurants.AnyAsync() && adminUsers.TryGetValue("restaurantowner", out var owner))
+            {
+                var italianRestaurant = new Restaurant(
+                    ownerId: owner.Id,
+                    name: "La Bella Italia",
+                    location: new Address(
+                        street: "123 Main Street",
+                        city: "Downtown",
+                        state: "NY",
+                        postalCode: "10001",
+                        countryCode: "US"
+                    ),
+                    contactPhone: new PhoneNumber("+1-555-0123"),
+                    contactEmail: new Email("contact@labellaitalia.com"),
+                    maxSimultaneousOrders: 50,
+                    description: "Authentic Italian cuisine in a cozy atmosphere",
+                    timeZoneId: "America/New_York"
+                );
+
+                var sushiRestaurant = new Restaurant(
+                    ownerId: owner.Id,
+                    name: "Sushi Master",
+                    location: new Address(
+                        street: "456 Ocean Avenue",
+                        city: "Seaside",
+                        state: "CA",
+                        postalCode: "90001",
+                        countryCode: "US"
+                    ),
+                    contactPhone: new PhoneNumber("+1-555-0124"),
+                    contactEmail: new Email("info@sushimaster.com"),
+                    maxSimultaneousOrders: 50,
+                    description: "Premium Japanese dining experience",
+                    timeZoneId: "America/New_York"
+                );
+
+                await context.Restaurants.AddRangeAsync(italianRestaurant, sushiRestaurant);
+                await context.SaveChangesAsync();
+            }
+            return await context.Restaurants.ToListAsync();
+        }
+
+        /// <summary>
+        /// Assigns staff members without a restaurant association to the first restaurant in the provided list and
+        /// saves the changes asynchronously.
+        /// </summary>
+        /// <remarks>No changes are made if either the staff or restaurant list is empty. Only staff
+        /// members not already assigned to a restaurant are affected.</remarks>
+        /// <param name="context">The database context used to update staff and restaurant associations.</param>
+        /// <param name="staffUsers">The list of staff members to assign to restaurants. Staff members with a RestaurantId of 0 will be assigned.</param>
+        /// <param name="restaurants">The list of available restaurants. The first restaurant in the list will be used for assignment.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        private static async Task AssignStaffToRestaurantsAsync(AppDbContext context, List<StaffMember> staffUsers, List<Restaurant> restaurants)
+        {
+            Console.WriteLine("👨‍🍳 Assigning Staff to Restaurants...");
+            if (staffUsers.Any() && restaurants.Any())
+            {
+                bool changed = false;
+                foreach (var staff in staffUsers)
+                {
+                    if (staff.RestaurantId == 0)
+                    {
+                        var restaurant = restaurants[0]; // Assign to first restaurant for simplicity
+                        staff.RestaurantId = restaurant.Id;
+                        if (staff.ApplicationUser != null)
+                        {
+                            staff.ApplicationUser.RestaurantTenantId = restaurant.Id;
+                        }
+                        changed = true;
+                    }
+                }
+                if (changed)
+                {
+                    await context.SaveChangesAsync();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Seeds default business rules into the database if none exist.
+        /// </summary>
+        /// <remarks>If business rules already exist in the database, this method performs no action. The
+        /// method requires that the adminUsers dictionary contains a valid entry for the key "systemadmin" to associate
+        /// the seeded rules with an administrator.</remarks>
+        /// <param name="context">The database context used to access and modify business rules.</param>
+        /// <param name="adminUsers">A dictionary mapping admin user identifiers to their corresponding AdminUser objects. Must contain an entry
+        /// for the key "systemadmin".</param>
+        /// <returns>A task that represents the asynchronous seeding operation.</returns>
+        private static async Task SeedBusinessRulesAsync(AppDbContext context, Dictionary<string, AdminUser> adminUsers)
+        {
+            Console.WriteLine("📋 Seeding Business Rules...");
+            if (!await context.BusinessRules.AnyAsync() && adminUsers.TryGetValue("systemadmin", out var admin))
+            {
+                var rules = new[]
+                {
+                    new BusinessRule { Name = "Sales Threshold", RuleType = BusinessRuleType.SalesThreshold, Value = 30, AdminUserId = admin.Id, IsCurrentValue = true },
+                    new BusinessRule { Name = "Sentiment Threshold", RuleType = BusinessRuleType.SentimentThreshold, Value = 0.7, AdminUserId = admin.Id, IsCurrentValue = true }
+                };
+                await context.BusinessRules.AddRangeAsync(rules);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// Seeds the menu structure, including menu types, categories, dishes, and menus, for each restaurant if no
+        /// menu types currently exist in the database.
+        /// </summary>
+        /// <remarks>This method should be called during initial database setup or testing to populate
+        /// sample menu data for each restaurant. If menu types already exist in the database, no changes will be
+        /// made.</remarks>
+        /// <param name="context">The database context used to access and modify menu-related entities.</param>
+        /// <param name="restaurants">The list of restaurants for which the menu structure will be seeded. Each restaurant will receive its own
+        /// set of menu types, categories, dishes, and menus.</param>
+        /// <returns>A task that represents the asynchronous seeding operation.</returns>
+        private static async Task SeedMenuStructureAsync(AppDbContext context, List<Restaurant> restaurants)
+        {
+            Console.WriteLine("🍽️ Seeding Menu Structure...");
+            if (!await context.MenuTypes.AnyAsync())
+            {
+                foreach (var restaurant in restaurants)
+                {
+                    var menuTypes = new[]
+                    {
+                        new MenuType(restaurant.Id, "Breakfast", "Morning menu served daily", 1),
+                        new MenuType(restaurant.Id, "Lunch", "Midday specials and favorites", 2),
+                        new MenuType(restaurant.Id, "Dinner", "Evening fine dining experience", 3),
+                        new MenuType(restaurant.Id, "Specials", "Limited time special offerings", 4)
+                    };
+                    await context.MenuTypes.AddRangeAsync(menuTypes);
+                    await context.SaveChangesAsync();
+
+                    var categories = new[]
+                    {
+                        new Category(restaurant.Id, "Appetizers", "Start your meal with our delicious starters", 1),
+                        new Category(restaurant.Id, "Main Courses", "Signature entrees and hearty meals", 2),
+                        new Category(restaurant.Id, "Desserts", "Sweet treats to complete your dining experience", 3),
+                        new Category(restaurant.Id, "Beverages", "Refreshing drinks and specialty beverages", 4)
+                    };
+                    await context.Categories.AddRangeAsync(categories);
+                    await context.SaveChangesAsync();
+
+                    /* Improvements made to dish seeding:
+                    1. Complete Property Coverage:
+                       - All standalone properties from Dish entity now used
+                       - Added missing properties like PreparationTime, Calories
+                       - Included dietary flags (IsVegetarian, IsSpicy)
+                       - Added comprehensive Ingredients and Allergens info
+
+                    2. Enhanced Variety:
+                       - Increased from 4-5 dishes to 10 dishes per restaurant
+                       - Better category distribution
+                       - More diverse price points ($3.99 - $32.99)
+                       - Various preparation times (5-240 minutes)
+
+                    3. Realistic Data:
+                       - Accurate calorie counts
+                       - Realistic preparation times
+                       - Complete ingredient lists
+                       - Proper allergen warnings
+                       - Authentic dish descriptions
+
+                    4. Dietary Considerations:
+                       - Mix of vegetarian and non-vegetarian options
+                       - Clear allergen information
+                       - Spice level indicators
+                       - Health-conscious options
+
+                    5. Cultural Authenticity:
+                       - Restaurant-specific traditional dishes
+                       - Authentic ingredients and preparation methods
+                       - Appropriate pricing structure
+                       - Culture-specific preparation times
+
+                    6. Improved Organization:
+                       - Grouped by categories (appetizers, mains, etc.)
+                       - Logical display order
+                       - Better code readability with comments
+                       - Consistent data structure
+                    */
+
+                    // Italian restaurant dishes
+                    // Italian restaurant dishes
+                    if (restaurant.Name == "La Bella Italia")
+                    {
+                        var dishes = new[]
+                        {
+        new Dish
+        {
+            Name = "Bruschetta al Pomodoro",
+            Description = "Fresh tomatoes, garlic, and basil on toasted bread",
+            DishPrice = 8.99m,
+            CategoryId = categories[0].Id, // Appetizers
+            RestaurantId = restaurant.Id,
+            PreparationTime = 15,
+            Calories = 220,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Sourdough bread, tomatoes, garlic, fresh basil, extra virgin olive oil, sea salt",
+            Allergens = "Gluten"
+        },
+        new Dish
+        {
+            Name = "Calamari Fritti",
+            Description = "Crispy fried calamari with marinara sauce",
+            DishPrice = 12.99m,
+            CategoryId = categories[0].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 20,
+            Calories = 340,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Fresh calamari, flour, herbs, marinara sauce",
+            Allergens = "Shellfish, Gluten"
+        },
+        new Dish
+        {
+            Name = "Spaghetti Carbonara",
+            Description = "Classic pasta with eggs, pecorino, and guanciale",
+            DishPrice = 16.99m,
+            CategoryId = categories[1].Id, // Main Courses
+            RestaurantId = restaurant.Id,
+            PreparationTime = 25,
+            Calories = 850,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Spaghetti, eggs, pecorino romano, guanciale, black pepper",
+            Allergens = "Eggs, Dairy, Gluten"
+        },
+        new Dish
+        {
+            Name = "Osso Buco",
+            Description = "Braised veal shanks with gremolata and saffron risotto",
+            DishPrice = 32.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 180,
+            Calories = 780,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Veal shanks, vegetables, white wine, broth, saffron, rice",
+            Allergens = "Dairy, Celery"
+        },
+        new Dish
+        {
+            Name = "Penne Arrabbiata",
+            Description = "Spicy tomato sauce with garlic and red chilies",
+            DishPrice = 14.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 20,
+            Calories = 550,
+            IsVegetarian = true,
+            IsSpicy = true,
+            Ingredients = "Penne pasta, tomatoes, garlic, red chilies, olive oil",
+            Allergens = "Gluten"
+        },
+        new Dish
+        {
+            Name = "Tiramisu",
+            Description = "Classic coffee-flavored Italian dessert",
+            DishPrice = 8.99m,
+            CategoryId = categories[2].Id, // Desserts
+            RestaurantId = restaurant.Id,
+            PreparationTime = 30,
+            Calories = 350,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Ladyfingers, mascarpone, coffee, eggs, cocoa powder",
+            Allergens = "Eggs, Dairy, Gluten"
+        },
+        new Dish
+        {
+            Name = "Panna Cotta",
+            Description = "Silky vanilla cream dessert with berry compote",
+            DishPrice = 7.99m,
+            CategoryId = categories[2].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 240,
+            Calories = 280,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Heavy cream, vanilla, gelatin, mixed berries",
+            Allergens = "Dairy"
+        },
+        new Dish
+        {
+            Name = "Chianti Classico",
+            Description = "Premium Tuscan red wine",
+            DishPrice = 9.99m,
+            CategoryId = categories[3].Id, // Beverages
+            RestaurantId = restaurant.Id,
+            PreparationTime = 1,
+            Calories = 125,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Red wine grapes",
+            Allergens = "Sulfites"
+        },
+        new Dish
+        {
+            Name = "Margherita Pizza",
+            Description = "Classic Neapolitan pizza with tomatoes and mozzarella",
+            DishPrice = 14.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 20,
+            Calories = 850,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Pizza dough, San Marzano tomatoes, buffalo mozzarella, basil, olive oil",
+            Allergens = "Gluten, Dairy"
+        },
+        new Dish
+        {
+            Name = "Risotto ai Funghi",
+            Description = "Creamy mushroom risotto with truffle oil",
+            DishPrice = 19.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 35,
+            Calories = 620,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Arborio rice, mushrooms, white wine, parmesan, truffle oil",
+            Allergens = "Dairy"
+        }
+    };
+
+                        await context.Dishes.AddRangeAsync(dishes);
+                        await context.SaveChangesAsync();
+                    }
+                    // Japanese restaurant dishes
+                    else if (restaurant.Name == "Sushi Master")
+                    {
+                        var dishes = new[]
+                        {
+        new Dish
+        {
+            Name = "Edamame",
+            Description = "Steamed young soybeans with sea salt",
+            DishPrice = 5.99m,
+            CategoryId = categories[0].Id, // Appetizers
+            RestaurantId = restaurant.Id,
+            PreparationTime = 10,
+            Calories = 120,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Young soybeans, sea salt",
+            Allergens = "Soy"
+        },
+        new Dish
+        {
+            Name = "Miso Soup",
+            Description = "Traditional Japanese soup with tofu and seaweed",
+            DishPrice = 4.99m,
+            CategoryId = categories[0].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 15,
+            Calories = 80,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Dashi stock, miso paste, tofu, wakame seaweed, green onions",
+            Allergens = "Soy"
+        },
+        new Dish
+        {
+            Name = "Dragon Roll",
+            Description = "Eel and cucumber roll topped with avocado",
+            DishPrice = 16.99m,
+            CategoryId = categories[1].Id, // Main Courses
+            RestaurantId = restaurant.Id,
+            PreparationTime = 20,
+            Calories = 450,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Sushi rice, nori, eel, cucumber, avocado, eel sauce",
+            Allergens = "Fish, Soy, Gluten"
+        },
+        new Dish
+        {
+            Name = "Spicy Tuna Roll",
+            Description = "Fresh tuna with spicy mayo and cucumber",
+            DishPrice = 14.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 15,
+            Calories = 380,
+            IsVegetarian = false,
+            IsSpicy = true,
+            Ingredients = "Sushi rice, nori, fresh tuna, spicy mayo, cucumber",
+            Allergens = "Fish, Eggs, Soy"
+        },
+        new Dish
+        {
+            Name = "Tempura Udon",
+            Description = "Thick noodles in hot broth with tempura shrimp",
+            DishPrice = 17.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 25,
+            Calories = 680,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Udon noodles, dashi broth, tempura shrimp, green onions",
+            Allergens = "Gluten, Shellfish"
+        },
+        new Dish
+        {
+            Name = "Salmon Nigiri",
+            Description = "Fresh salmon over hand-pressed rice",
+            DishPrice = 6.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 5,
+            Calories = 150,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Fresh salmon, sushi rice, wasabi",
+            Allergens = "Fish"
+        },
+        new Dish
+        {
+            Name = "Mochi Ice Cream",
+            Description = "Japanese rice cake filled with ice cream",
+            DishPrice = 6.99m,
+            CategoryId = categories[2].Id, // Desserts
+            RestaurantId = restaurant.Id,
+            PreparationTime = 5,
+            Calories = 180,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Rice flour, ice cream, sugar",
+            Allergens = "Milk, Soy"
+        },
+        new Dish
+        {
+            Name = "Green Tea",
+            Description = "Premium Japanese green tea",
+            DishPrice = 3.99m,
+            CategoryId = categories[3].Id, // Beverages
+            RestaurantId = restaurant.Id,
+            PreparationTime = 5,
+            Calories = 0,
+            IsVegetarian = true,
+            IsSpicy = false,
+            Ingredients = "Japanese green tea leaves",
+            Allergens = null
+        },
+        new Dish
+        {
+            Name = "Chicken Katsu Curry",
+            Description = "Crispy chicken cutlet with Japanese curry",
+            DishPrice = 18.99m,
+            CategoryId = categories[1].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 30,
+            Calories = 850,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Chicken breast, panko breadcrumbs, Japanese curry roux, rice",
+            Allergens = "Gluten, Soy"
+        },
+        new Dish
+        {
+            Name = "Gyoza",
+            Description = "Pan-fried pork and vegetable dumplings",
+            DishPrice = 7.99m,
+            CategoryId = categories[0].Id,
+            RestaurantId = restaurant.Id,
+            PreparationTime = 20,
+            Calories = 320,
+            IsVegetarian = false,
+            IsSpicy = false,
+            Ingredients = "Ground pork, cabbage, garlic, ginger, dumpling wrappers",
+            Allergens = "Gluten, Soy"
+        }
+    };
+
+
+                        await context.Dishes.AddRangeAsync(dishes);
+                        await context.SaveChangesAsync();
+
+                        // Create menus and link dishes
+                        foreach (var menuType in menuTypes)
+                        {
+                            var menu = new SmartMenuOptim.Domain.Aggregates.MenuAggregate.Menu(
+                                restaurant.Id,
+                                $"{restaurant.Name} {menuType.Name}",
+                                menuType.Id,
+                                $"{menuType.Name} offerings"
+                            );
+                            await context.Menus.AddAsync(menu);
+                            await context.SaveChangesAsync();
+
+                            // Link dishes to menu through MenuDish
+                            var menuDishes = dishes.Select((dish, index) => new MenuDish
+                            {
+                                MenuId = menu.Id,
+                                DishId = dish.Id,
+                                RestaurantId = restaurant.Id,
+                                DisplayOrder = index + 1,
+                                // Optional: Add special prices for some dishes
+                                SpecialPrice = index % 3 == 0 ? dish.DishPrice * 0.9m : null, // 10% discount every third dish
+                                Notes = index % 3 == 0 ? "Special promotional price!" : null
+                            }).ToList();
+
+                            await context.MenuDishes.AddRangeAsync(menuDishes);
+                            await context.SaveChangesAsync();
+                        }
+                    }
+                    await context.SaveChangesAsync();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Seeds the operational infrastructure data for each restaurant if it does not already exist in the database.
+        /// </summary>
+        /// <remarks>This method should be called during application initialization to ensure that
+        /// essential operational data, such as tables, order statuses, and default promotions, are present for each
+        /// restaurant. The method does not add data if tables already exist in the database.</remarks>
+        /// <param name="context">The database context used to add tables, order statuses, and promotions.</param>
+        /// <param name="restaurants">A list of restaurants for which operational infrastructure data will be seeded. Each restaurant in the list
+        /// will receive its own set of tables, order statuses, and, if applicable, promotions.</param>
+        /// <returns>A task that represents the asynchronous seeding operation.</returns>
+        private static async Task SeedOperationalInfrastructureAsync(AppDbContext context, List<Restaurant> restaurants)
+        {
+            Console.WriteLine("📊 Seeding Operational Infrastructure...");
+            if (!await context.Tables.AnyAsync())
+            {
+                foreach (var restaurant in restaurants)
+                {
+                    var tables = new[]
+                    {
+                        new Table(restaurant.Id, "T1", 2, "Window seat for two"),
+                        new Table(restaurant.Id, "T2", 4, "Family table"),
+                        new Table(restaurant.Id, "T3", 6, "Group dining table"),
+                        new Table(restaurant.Id, "T4", 2, "Romantic corner table"),
+                        new Table(restaurant.Id, "T5", 8, "Large group table")
+                    };
+                    await context.Tables.AddRangeAsync(tables);
+
+                    await context.OrderStatuses.AddRangeAsync(
+                        new OrderStatus(restaurant.Id, "Pending", 1, false, "#FFA500", "Order received, awaiting confirmation"),
+                        new OrderStatus(restaurant.Id, "Preparing", 2, false, "#17A2B8", "Being prepared in kitchen"),
+                        new OrderStatus(restaurant.Id, "Ready", 3, false, "#28A745", "Ready for pickup or delivery"),
+                        new OrderStatus(restaurant.Id, "Served", 4, false, "#20C997", "Food served to customer"),
+                        new OrderStatus(restaurant.Id, "Completed", 5, true, "#218838", "Order successfully completed"),
+                        new OrderStatus(restaurant.Id, "Cancelled", 6, true, "#DC3545", "Order cancelled")
+                    );
+
+                    // Restaurant-specific promotions
+                    if (restaurant.Name == "La Bella Italia")
+                    {
+                        var happyHourPromotion = new Promotion(
+                            restaurant.Id,
+                            "Happy Hour Pasta",
+                            20.0m,
+                            DateTime.UtcNow,
+                            DateTime.UtcNow.AddMonths(1),
+                            "20% off on all pasta dishes between 3 PM and 5 PM"
+                        );
+                        happyHourPromotion.Activate();
+
+                        var familySundayPromotion = new Promotion(
+                            restaurant.Id,
+                            "Family Sunday",
+                            100.0m,
+                            DateTime.UtcNow,
+                            DateTime.UtcNow.AddMonths(2),
+                            "Kids eat free with every adult main course"
+                        );
+                        familySundayPromotion.Activate();
+
+                        await context.Promotions.AddRangeAsync(happyHourPromotion, familySundayPromotion);
+                    }
+                    else if (restaurant.Name == "Sushi Master")
+                    {
+                        var lunchSpecialPromotion = new Promotion(
+                            restaurant.Id,
+                            "Lunch Special Bento",
+                            15.0m,
+                            DateTime.UtcNow,
+                            DateTime.UtcNow.AddMonths(1),
+                            "15% off on all bento boxes during lunch hours"
+                        );
+                        lunchSpecialPromotion.Activate();
+
+                        var sushiTuesdayPromotion = new Promotion(
+                            restaurant.Id,
+                            "Sushi Tuesday",
+                            50.0m,
+                            DateTime.UtcNow,
+                            DateTime.UtcNow.AddMonths(2),
+                            "Buy one roll, get second at half price"
+                        );
+                        sushiTuesdayPromotion.Activate();
+
+                        await context.Promotions.AddRangeAsync(lunchSpecialPromotion, sushiTuesdayPromotion);
+                    }
+                }
+                await context.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously seeds sample transactional data, including orders and order items, into the database for the
+        /// specified restaurants, customers, and staff members if no orders currently exist.
+        /// </summary>
+        /// <remarks>Transactional data is only seeded if the database contains no existing orders and
+        /// both the customers and restaurants lists are not empty. This method is intended for development or testing
+        /// scenarios to populate the database with representative order data.</remarks>
+        /// <param name="context">The database context used to access and modify the application's data.</param>
+        /// <param name="restaurants">A list of restaurants for which transactional data will be seeded. Must not be null or empty.</param>
+        /// <param name="customers">A list of customers to associate with the seeded orders. Must not be null or empty.</param>
+        /// <param name="staff">A list of staff members to associate with the seeded orders. Must not be null.</param>
+        /// <returns>A task that represents the asynchronous seeding operation.</returns>
+        private static async Task SeedTransactionalDataAsync(AppDbContext context, List<Restaurant> restaurants, List<Customer> customers, List<StaffMember> staff)
+        {
+            Console.WriteLine("🛒 Seeding Transactional Data...");
+            if (!await context.Orders.AnyAsync() && customers.Any() && restaurants.Any())
+            {
+                foreach (var restaurant in restaurants)
+                {
+                    var dishes = await context.Dishes.Where(d => d.RestaurantId == restaurant.Id).ToListAsync();
+                    var statuses = await context.OrderStatuses.Where(s => s.RestaurantId == restaurant.Id).ToListAsync();
+                    var restaurantStaff = staff.Where(s => s.RestaurantId == restaurant.Id).ToList();
+
+                    if (dishes.Any() && statuses.Any())
+                    {
+                        // Create some sample orders
+                        var orders = new List<Order>();
+                        var completedStatus = statuses.First(s => s.Name == "Completed");
+                        var customer = customers.First();
+                        var staffMember = restaurantStaff.FirstOrDefault();
+
+                        // Add a few completed orders
+                        for (int i = 0; i < 3; i++)
+                        {
+                            var order = new Order(
+                                restaurantId: restaurant.Id,
+                                customerId: customer.Id,
+                                orderStatusId: completedStatus.Id,
+                                specialInstructions: "Regular customer order"
+                            );
+
+                            // Add 2-3 items to each order using aggregate method
+                            foreach (var dish in dishes.Take(2))
+                            {
+                                order.AddItem(
+                                    dishId: dish.Id,
+                                    dishName: dish.Name,
+                                    unitPrice: dish.DishPrice,
+                                    quantity: 1,
+                                    specialInstructions: null
+                                );
+                            }
+
+                            // Assign staff member if available
+                            if (staffMember != null)
+                            {
+                                order.AssignStaffMember(staffMember.Id);
+                            }
+
+                            orders.Add(order);
+                        }
+
+                        await context.Orders.AddRangeAsync(orders);
+                        await context.SaveChangesAsync();
+                    }
+                }
+
+                // Create sample sale records for each restaurant's dishes
+                if (!await context.SaleRecords.AnyAsync())
+                {
+                    // Create sales records spanning the last 30 days
+                    var endDate = DateTime.UtcNow;
+                    var startDate = endDate.AddDays(-30);
+
+                    foreach (var restaurant in restaurants)
+                    {
+                        var dishes = await context.Dishes
+                            .Where(d => d.RestaurantId == restaurant.Id)
+                            .ToListAsync();
+
+                        if (dishes.Any())
+                        {
+                            var saleRecords = new List<SaleRecord>();
+                            var random = new Random();
+
+                            // Generate sales data for each day in the range
+                            for (var date = startDate; date <= endDate; date = date.AddDays(1))
+                            {
+                                foreach (var dish in dishes)
+                                {
+                                    // Not every dish sells every day - add some randomness
+                                    if (random.Next(100) < 70) // 70% chance of a sale on any given day
+                                    {
+                                        var quantitySold = random.Next(1, 11);
+                                        var totalAmount = dish.DishPrice * quantitySold;
+                                        var saleRecord = new SaleRecord(
+                                            restaurantId: restaurant.Id,
+                                            dishId: dish.Id,
+                                            saleAmount: new Money(totalAmount, "USD"),
+                                            quantitySold: quantitySold
+                                        );
+                                        saleRecords.Add(saleRecord);
+                                    }
+                                }
+                            }
+
+                            await context.SaleRecords.AddRangeAsync(saleRecords);
+                        }
+                    }
+                    
+                    await context.SaveChangesAsync();
+                    Console.WriteLine("✅ Sales records seeded successfully.");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Seeds sample customer engagement data, including reviews, loyalty programs, and loyalty transactions, into
+        /// the database if no reviews currently exist.
+        /// </summary>
+        /// <remarks>This method is intended for use during application setup or testing to populate the
+        /// database with initial customer engagement data. No data will be seeded if reviews already exist in the
+        /// database or if the customers list is empty.</remarks>
+        /// <param name="context">The database context used to access and modify customer engagement entities. Must not be null.</param>
+        /// <param name="restaurants">The list of restaurants for which customer engagement data will be seeded. Must not be null and should
+        /// contain at least one restaurant to seed data.</param>
+        /// <param name="customers">The list of customers to associate with seeded reviews and loyalty programs. Must not be null and should
+        /// contain at least one customer to create engagement data.</param>
+        /// <returns>A task that represents the asynchronous seeding operation.</returns>
+        private static async Task SeedCustomerEngagementAsync(AppDbContext context, List<Restaurant> restaurants, List<Customer> customers)
+        {
+            Console.WriteLine("🤝 Seeding Customer Engagement Data...");
+            if (!await context.Reviews.AnyAsync() && customers.Any())
+            {
+                // First: Seed reviews for each restaurant
+                foreach (var restaurant in restaurants)
+                {
+                    var dishes = await context.Dishes.Where(d => d.RestaurantId == restaurant.Id).ToListAsync();
+                    if (dishes.Any())
+                    {
+                        await SeedRestaurantReviews(context, restaurant, dishes, customers.First());
+                    }
+                }
+
+                // Second: Seed loyalty programs (separate from reviews)
+                await SeedLoyaltyPrograms(context, restaurants, customers);
+
+                await context.SaveChangesAsync();
+                Console.WriteLine("✅ Customer Engagement Data seeded successfully.");
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously adds sample review entries for the specified restaurant and dishes to the database context,
+/// using the provided customer as the reviewer.
+/// </summary>
+/// <remarks>
+/// Review Generation Improvements:
+/// 
+/// 1. Realistic Review Distribution:
+///    - Full range of ratings (1-5 stars)
+///    - Varied sentiment scores (0.10-0.98)
+///    - Contextual comments matching ratings
+///    - Restaurant-specific content and terminology
+/// 
+/// 2. Weighted Randomization Strategy:
+///    - 35% chance: 5-star reviews (excellent experiences)
+///    - 25% chance: 4-star reviews (good but not perfect)
+///    - 20% chance: 3-star reviews (average experiences)
+///    - 15% chance: 2-star reviews (below expectations)
+///    - 5% chance: 1-star reviews (poor experiences)
+///    This distribution creates a realistic but generally positive review profile
+/// 
+/// 3. Natural Variations:
+///    - Sentiment scores include small random adjustments (±0.05)
+///    - Review dates spread across the last month
+///    - Maintains correlation between ratings and sentiment
+///    - Avoids artificial patterns in data
+/// 
+/// 4. Context-Aware Content:
+///    - Italian Restaurant:
+///      * References to pasta, sauce, authenticity
+///      * Italian cuisine-specific terminology
+///      * Cultural references (Rome, Italian flavors)
+///    
+///    - Sushi Restaurant:
+///      * Comments on fish freshness
+///      * Mentions of sushi quality
+///      * Japanese cuisine-specific details
+/// 
+/// This approach creates a more realistic and nuanced review dataset
+/// that better represents actual customer feedback patterns.
+/// </remarks>
+private static async Task SeedRestaurantReviews(
+    AppDbContext context, 
+    Restaurant restaurant, 
+    List<Dish> dishes, 
+    Customer customer)
+{
+    var reviews = new List<Review>();
+    var random = new Random();
+    var reviewData = new List<(int rating, double sentiment, string comment)>();
+    
+    // Restaurant-specific review templates with correlated ratings and sentiments
+    if (restaurant.Name == "La Bella Italia")
+    {
+        reviewData = new List<(int rating, double sentiment, string comment)>
+        {
+            // 5-star reviews focus on authenticity and excellent experiences
+            (5, 0.95, "Absolutely phenomenal! The authentic Italian flavors transported me straight to Rome. Every bite was perfection!"),
+            // 4-star reviews highlight good quality with minor issues
+            (4, 0.82, "Really enjoyed my meal. The flavors were great, though portion size could be a bit larger."),
+            // 3-star reviews express average satisfaction
+            (3, 0.50, "Decent Italian food, but nothing extraordinary. Service was okay."),
+            // 2-star reviews indicate significant issues
+            (2, 0.30, "Disappointed with my visit. The pasta was overcooked and the sauce was too salty."),
+            // 1-star reviews reflect very poor experiences
+            (1, 0.15, "Very poor experience. Food was cold and service was extremely slow.")
+        };
+    }
+    else if (restaurant.Name == "Sushi Master")
+    {
+        reviewData = new List<(int rating, double sentiment, string comment)>
+        {
+            // 5-star reviews emphasize freshness and presentation
+            (5, 0.98, "Outstanding sushi! The fish was incredibly fresh and the presentation was beautiful."),
+            // 4-star reviews note quality with price concerns
+            (4, 0.85, "Great quality sushi and excellent service. Slightly pricey but worth it."),
+            // 3-star reviews indicate mediocre experiences
+            (3, 0.55, "Average sushi restaurant. Nothing special but nothing bad either."),
+            // 2-star reviews highlight quality concerns
+            (2, 0.25, "The rice was mushy and the fish didn't taste very fresh. Disappointed."),
+            // 1-star reviews focus on serious quality/service issues
+            (1, 0.10, "Had to send my food back. Quality was questionable and service was terrible.")
+        };
+    }
+
+    foreach (var dish in dishes)
+    {
+        // Apply weighted randomization for review selection
+        var reviewChoice = random.NextDouble() switch
+        {
+            var n when n < 0.35 => 0, // 35% chance of 5 stars
+            var n when n < 0.60 => 1, // 25% chance of 4 stars
+            var n when n < 0.80 => 2, // 20% chance of 3 stars
+            var n when n < 0.95 => 3, // 15% chance of 2 stars
+            _ => 4                    // 5% chance of 1 star
+        };
+
+        var (rating, sentiment, comment) = reviewData[reviewChoice];
+
+        // Add natural variation to sentiment scores (±0.05)
+        var adjustedSentiment = Math.Min(1.0, Math.Max(0.0, 
+            sentiment + (random.NextDouble() - 0.5) * 0.1));
+
+        var review = new Review(
+            restaurantId: restaurant.Id,
+            dishId: dish.Id,
+            rating: rating,
+            comment: comment,
+            customerId: customer.Id,
+            sentimentScore: adjustedSentiment
+        );
+        reviews.Add(review);
+    }
+
+    await context.Reviews.AddRangeAsync(reviews);
+    Console.WriteLine($"✅ Added {reviews.Count} diverse reviews for {restaurant.Name}");
+}
+
+        /// <summary>
+        /// Seeds loyalty program data for all customers across all restaurants.
+        /// </summary>
+        /// <remarks>
+        /// This method creates diverse loyalty profiles for each customer-restaurant combination:
+        /// - Varied points and tiers across different loyalty levels
+        /// - Different transaction histories
+        /// - Realistic activity timestamps
+        /// 
+        /// Fix Summary:
+        /// 1. Removed nested restaurant loop that caused duplicate loyalty records
+        /// 2. Separated loyalty seeding from review seeding for better organization
+        /// 3. Added proper transaction handling and data validation
+        /// 4. Improved error handling and logging
+        /// 5. Uses simple property setters instead of Domain aggregate methods
+        /// </remarks>
+        private static async Task SeedLoyaltyPrograms(
+            AppDbContext context,
+            List<Restaurant> restaurants,
+            List<Customer> customers)
+        {
+            var random = new Random();
+
+            foreach (var customer in customers)
+            {
+                foreach (var restaurant in restaurants)
+                {
+                    // Create varied initial points and tiers for each customer
+                    var initialPoints = random.Next(50, 1001); // Random points between 50-1000
+                    var lifetimePoints = initialPoints + random.Next(0, 2001); // Ensure lifetimePoints >= current points
+                    var tier = DetermineTier(lifetimePoints); // Helper to determine tier based on points
+
+                    var loyalty = new SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate.CustomerLoyalty(
+                        restaurant.Id,
+                        customer.Id
+                    );
+                    await context.CustomerLoyalties.AddAsync(loyalty);
+                    await context.SaveChangesAsync(); // Save to get the ID
+
+                    // Add varied loyalty transactions using aggregate methods
+                    var numberOfTransactions = random.Next(2, 5);
+                    for (int i = 0; i < numberOfTransactions; i++)
+                    {
+                        var transactionTypes = new[]
+                        {
+                            (LoyaltyTransactionType.OrderEarning, "Points earned from order", 50),
+                            (LoyaltyTransactionType.Bonus, "Welcome bonus points", 100),
+                            (LoyaltyTransactionType.Bonus, "Birthday bonus", 200),
+                            (LoyaltyTransactionType.Adjustment, "Service recovery bonus", 75),
+                            (LoyaltyTransactionType.OrderEarning, "Special event bonus", 150)
+                        };
+
+                        var (type, description, points) = transactionTypes[random.Next(transactionTypes.Length)];
+                        
+                        // Use aggregate behavioral methods to add points
+                        if (type == LoyaltyTransactionType.OrderEarning)
+                        {
+                            loyalty.AddPoints(points, description, type, null);
+                        }
+                        else if (type == LoyaltyTransactionType.Bonus || type == LoyaltyTransactionType.Adjustment)
+                        {
+                            loyalty.AddPoints(points, description, type, null);
+                        }
+                    }
+                }
+            }
+            await context.SaveChangesAsync();
+        }
+
+        /// ----------------------- Helpers Methods -----------------------
+
+
+        /// <summary>
+        /// Determines the loyalty tier based on the specified total lifetime points.
+        /// </summary>
+        /// <param name="lifetimePoints">The total number of points accumulated by a customer over their lifetime. Must be zero or greater.</param>
+        /// <returns>A <see cref="LoyaltyTier"/> value representing the customer's loyalty tier. Returns <see
+        /// cref="LoyaltyTier.Platinum"/> for 2,000 or more points, <see cref="LoyaltyTier.Gold"/> for 1,000 to 1,999
+        /// points, <see cref="LoyaltyTier.Silver"/> for 500 to 999 points, and <see cref="LoyaltyTier.Bronze"/> for
+        /// fewer than 500 points.</returns>
+        private static LoyaltyTier DetermineTier( int lifetimePoints)
+        {
+            return lifetimePoints switch
+            {
+                >= 2000 => LoyaltyTier.Platinum,
+                >= 1000 => LoyaltyTier.Gold,
+                >= 500 => LoyaltyTier.Silver,
+                _ => LoyaltyTier.Bronze
+            };
+        }
+        
+        /// <summary>
+        /// Synchronizes all user profiles in the database to ensure consistency between user entities and their
+        /// associated profiles.
+        /// </summary>
+        /// <remarks>This method loads all users and their related profiles, updates each user's profile
+        /// associations as needed, and saves the changes to the database. Intended for use in administrative or
+        /// maintenance scenarios where profile data must be brought into alignment.</remarks>
+        /// <param name="context">The database context used to access and update user and profile data. Cannot be null.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        private static async Task SynchronizeAllUserProfiles(AppDbContext context)
+        {
+            Console.WriteLine("🔄 Finalizing Profile Synchronization...");
+            var users = await context.Users
+                .Include(u => u.AdminProfile)
+                .Include(u => u.CustomerProfile)
+                .Include(u => u.StaffProfile)
+                .ToListAsync();
+
+            foreach (var user in users)
+            {
+                user.SynchronizeProfiles();
+            }
+            await context.SaveChangesAsync();
+        }
+        
+        /// <summary>
+        /// Executes a seeding phase by invoking the specified asynchronous action and handles any exceptions that occur
+        /// during execution.
+        /// </summary>
+        /// <param name="phaseName">The name of the seeding phase. Used to identify the phase in error messages.</param>
+        /// <param name="seedingAction">An asynchronous delegate that performs the seeding logic for the specified phase.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if an exception occurs during the execution of the seeding action. The exception message includes the
+        /// phase name.</exception>
+        private static async Task ExecuteSeedingPhaseAsync(string phaseName, Func<Task> seedingAction)
+        {
+            try
+            {
+                await seedingAction();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in phase '{phaseName}': {ex.Message}");
+                throw new InvalidOperationException($"Seeding failed during the '{phaseName}' phase.", ex);
+            }
+        }
+        
+        /// <summary>
+        /// Executes a seeding phase by invoking the specified asynchronous action and handles any exceptions that occur
+        /// during execution.
+        /// </summary>
+        /// <typeparam name="T">The type of the result returned by the seeding action.</typeparam>
+        /// <param name="phaseName">The name of the seeding phase. Used to identify the phase in error messages.</param>
+        /// <param name="seedingAction">A function that represents the asynchronous seeding operation to execute.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the value returned by the
+        /// seeding action.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if an exception occurs during the execution of the seeding action. The exception provides details
+        /// about the failed phase.</exception>
+        private static async Task<T> ExecuteSeedingPhaseAsync<T>(string phaseName, Func<Task<T>> seedingAction)
+        {
+            try
+            {
+                return await seedingAction();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in phase '{phaseName}': {ex.Message}");
+                throw new InvalidOperationException($"Seeding failed during the '{phaseName}' phase.", ex);
+            }
         }
     }
 }
