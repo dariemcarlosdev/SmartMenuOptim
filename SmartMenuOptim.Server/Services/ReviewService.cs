@@ -1,6 +1,6 @@
-﻿using SmartMenuOptim.Shared.Data.Dtos;
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.WebUtilities;
+using SmartMenuOptim.Application.Common;
 
 internal class ReviewService : IReviewService
 {
