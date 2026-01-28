@@ -3,7 +3,7 @@ using System.Security.Claims;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using System.Transactions;
-using SmartMenuOptim.Application.Constants;
+using SmartMenuOptim.Shared.Constants;
 
 namespace SmartMenuOptim.API.Data
 {

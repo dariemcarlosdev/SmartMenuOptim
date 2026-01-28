@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SmartMenuOptim.Application.Constants
+namespace SmartMenuOptim.Shared.Constants
 {
     /// <summary>
     /// <strong>Application-level configuration constants </strong>for authentication and authorization.

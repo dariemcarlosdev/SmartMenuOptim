@@ -10,7 +10,7 @@ public static class WebApplicationExtensions
     /// <summary>
     /// Configures the HTTP request pipeline (middleware) for the application.
     /// </summary>
-    public static WebApplication ConfigurePipeline(this WebApplication app)
+    public static WebApplication ConfigureHttpPipeline(this WebApplication app)
     {
         app.UseRouting();
 
@@ -23,8 +23,6 @@ public static class WebApplicationExtensions
             app.UseHsts();
         }
         
-        // Use the rate limiting middleware
-        app.UseRateLimiter();
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseAntiforgery();

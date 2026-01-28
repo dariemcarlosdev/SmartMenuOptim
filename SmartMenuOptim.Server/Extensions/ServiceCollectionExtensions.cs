@@ -1,11 +1,9 @@
 using Azure.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Http.Resilience;
 using MudBlazor.Services;
 using Polly;
 using SmartMenuOptim.Server.Services;
 using SmartMenuOptim.Server.Services.Interfaces;
-using System.Threading.RateLimiting;
 
 namespace SmartMenuOptim.Server.Extensions;
 
@@ -86,6 +84,18 @@ public static class ServiceCollectionExtensions
             }
         });
 
+        /*
+         1.	Circuit Breaker & Retry Policy These are client-side resilience patterns that protect the Blazor server when making calls to the API. 
+            They handle transient failures and network issues between the Blazor server and the API.
+         
+            •	These are currently in the Server project because they're configured for the HttpClient that calls the API
+            •	This is actually the CORRECT placement because:
+            •	The Server (Blazor) project is the consumer of the API
+            •	These patterns protect the client-side communication with the API
+            •	They handle transient failures between the Blazor server and the API.    
+        
+         */
+
         // Circuit breaker is a pattern that prevents an application from performing an operation that's likely to fail.
         // Stop trying to perform the operation for a period of time.
         // Prevent cascading failures and improve the stability of the application. Enable the system to recover more quickly from transient faults.
@@ -100,7 +110,6 @@ public static class ServiceCollectionExtensions
                 MinimumThroughput = 10,
                 SamplingDuration = TimeSpan.FromSeconds(30),
                 BreakDuration = TimeSpan.FromSeconds(15)
-
             });
         });
 
@@ -121,31 +130,6 @@ public static class ServiceCollectionExtensions
             });
         });
 
-        return services;
-    }
-
-    /// <summary>
-    /// Adds rate limiting services to protect the application from excessive requests.
-    /// </summary>
-    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
-    {
-        //Implement rate limiting and throttling control mechanism to limit the number of requests a client can make to the API within a specified time period.
-        // The benefit of rate limiting is to protect the API from being overwhelmed by too many requests in a short period of time.
-        // In the context of Azure App Service, rate limiting can help manage traffic spikes and ensure fair usage among clients.
-        // Ensures fair usage, and protects the stability and availability of the service
-        // Scopped to SmartMenuOptim.API the benefit is to protect backend resources and maintain performance.
-        // I monitored the API usage and found that 100 requests per minute is a reasonable limit for most clients.
-        // I use to monitor the Rate Limiting metrics in Azure App Service to see how many requests are being throttled, and pause or adjust the rate limiting policy if necessary.
-        services.AddRateLimiter(options =>
-        {
-            options.AddFixedWindowLimiter("FixedPolicy", policy =>
-            {
-                policy.Window = TimeSpan.FromMinutes(1);
-                policy.PermitLimit = 100; // Allow 100 requests per minute
-                policy.QueueProcessingOrder = QueueProcessingOrder.OldestFirst; // Process oldest requests first
-                policy.QueueLimit = 10; // Allow up to 10 requests in the queue
-            });
-        });
         return services;
     }
 }

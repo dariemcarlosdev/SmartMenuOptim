@@ -1,4 +1,3 @@
-
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using System.Threading.Tasks;
 
@@ -7,7 +6,7 @@ using System.Threading.Tasks;
 /// Small DI-friendly authorization service (API layer) that loads necessary data and delegates to the entity method:
 /// </summary>
 /// 
-namespace SmartMenuOptim.API.Services;
+namespace SmartMenuOptim.API.Services.Interfaces;
 public interface IAdminAuthorizationService
 {
     Task<bool> CanManageScheduleAsync(int adminUserId, int restaurantId);

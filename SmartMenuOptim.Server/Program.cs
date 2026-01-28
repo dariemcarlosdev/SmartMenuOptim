@@ -37,10 +37,7 @@ public class Program
         builder.Services.AddHttpClients();
 
 
-        // Sets up rate limiting policies to protect the application from excessive requests.
-        builder.Services.AddRateLimiting();
-
-        // 4. Add console logging to the application's logging providers.
+       // 4. Add console logging to the application's logging providers.
         builder.Logging.AddConsole();
         
         // 5. Build the WebApplication instance. This composes the services and middleware pipeline.
@@ -54,7 +51,7 @@ public class Program
 
         // 7. Configure the HTTP request pipeline using a custom extension method.
         // This encapsulates the setup of all middleware (e.g., exception handling, HSTS, HTTPS redirection).
-        app.ConfigurePipeline();
+        app.ConfigureHttpPipeline();
 
         // 8. Run the application. This starts the web server and begins listening for incoming requests.
         app.Run();

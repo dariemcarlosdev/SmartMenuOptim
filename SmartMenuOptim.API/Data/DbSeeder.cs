@@ -12,7 +12,8 @@ using SmartMenuOptim.Domain.Entities.TenantSpecificEntities; // For OrderStatus,
 using SmartMenuOptim.Domain.ValueObjects;
 using System.Data.Common;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
-using SmartMenuOptim.Application.Constants;
+using SmartMenuOptim.Shared;
+using SmartMenuOptim.Shared.Constants;
 
 namespace SmartMenuOptim.API.Data
 {

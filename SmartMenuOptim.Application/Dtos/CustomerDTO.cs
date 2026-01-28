@@ -1,6 +1,6 @@
 using System;
 
-namespace SmartMenuOptim.Application.Dtos
+namespace SmartMenuOptim.Application.Common
 {
     /// <summary>
     /// DTO for transferring Customer data between layers and for CRUD operations in Blazor user interfaces.

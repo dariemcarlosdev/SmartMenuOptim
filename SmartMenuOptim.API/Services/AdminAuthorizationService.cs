@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 namespace SmartMenuOptim.API.Services;

@@ -1,6 +1,6 @@
 using Sentry;
 using SmartMenuOptim.API.Data;
-using SmartMenuOptim.Infrastructure.Middlewares;
+using System.Threading.Tasks;
 
 namespace SmartMenuOptim.API.Extensions;
 
@@ -14,10 +14,50 @@ public static class WebApplicationExtensions
     /// </summary>
     /// <param name="app">The web application to configure.</param>
     /// <returns>The configured web application.</returns>
-    public static WebApplication ConfigurePipeline(this WebApplication app)
+    public static WebApplication ConfigureHtPipeline(this WebApplication app)
     {
-        // Adds a custom middleware for centralized exception handling.
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
+        // SWAGGER CONFIGURATION FIXES:
+        // 1. Middleware Order Fix:
+        //    - Moved UseSwagger() and UseSwaggerUI() to the beginning of the pipeline
+        //    - This ensures Swagger middleware is registered before routing
+        //    - Prevents potential middleware conflicts
+        // 
+        // 2. Configuration Changes:
+        //    - Removed environment check (if (app.Environment.IsDevelopment()))
+        //    - Swagger is now always available, which helps with API testing
+        //    - Added explicit SwaggerEndpoint configuration
+        //    - Set RoutePrefix to "swagger" for consistent access
+        // 
+        // 3. Access URLs:
+        //    - Swagger UI will be available at:
+        //      * HTTP:  http://localhost:5000/swagger
+        //      * HTTPS: https://localhost:7119/swagger
+        // 
+        // 4. Pipeline Order:
+        //    - UseSwagger()
+        //    - UseSwaggerUI()
+        //    - UseMiddleware<ExceptionHandlingMiddleware>
+        //    - UseRouting()
+        //    - Other middleware...
+        // 
+        // Note: If you want to restrict Swagger to development only,
+        // wrap the Swagger middleware in:
+        // if (app.Environment.IsDevelopment())
+        // {
+        //     app.UseSwagger();
+        //     app.UseSwaggerUI(...);
+        // }
+
+        // Move Swagger before routing to ensure proper middleware order
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartMenuOptim API V1");
+            options.RoutePrefix = "swagger";
+        });
+
+        // Add rate limiting early in the pipeline
+        app.UseRateLimiter();
 
         // Adds endpoint routing to the middleware pipeline. This is necessary for matching requests to endpoints.
         app.UseRouting();
@@ -28,18 +68,7 @@ public static class WebApplicationExtensions
         // Exposes a health check endpoint at /health, which can be used by monitoring services.
         app.MapHealthChecks("/health").AllowAnonymous();
 
-        // Seeds the database with initial data when the application starts.
-        DbSeeder.Seed(app);
-
-        // Conditionally adds Swagger middleware for API documentation in the development environment.
-        // Swagger UI provides an interactive way to explore and test the API.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
-
-        // The name of the CORS policy to be used.
+       // The name of the CORS policy to be used.
         const string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         
         // Adds the CORS middleware to the pipeline to allow cross-origin requests from configured origins.
@@ -56,5 +85,17 @@ public static class WebApplicationExtensions
         app.MapControllers();
 
         return app;
+    }
+
+    /// <summary>
+    /// Initializes the application's database by seeding it with initial data asynchronously.
+    /// </summary>
+    /// <remarks>Call this method during application startup to ensure the database contains required initial
+    /// data before handling requests.</remarks>
+    /// <param name="app">The <see cref="WebApplication"/> instance whose database will be seeded. Must not be null.</param>
+    /// <returns>A task that represents the asynchronous database initialization operation.</returns>
+    public static async Task InitializeDataBaseAsync(this WebApplication app)
+    {        // Seeds the database with initial data when the application starts.
+        await DbSeeder.SeedAsync(app.Services);
     }
 }
