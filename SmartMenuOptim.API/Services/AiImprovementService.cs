@@ -4,15 +4,15 @@ using System.Text;
 using OpenAI.Chat;
 using OpenAI;
 using Microsoft.Extensions.Logging;
-using SmartMenuOptim.Shared.Data.Interfaces;
-using SmartMenuOptim.Shared.Data.Dtos;
 using SmartMenuOptim.API.Services.Interfaces;
+using SmartMenuOptim.Application.Interfaces;
+using SmartMenuOptim.Application.Common;
 
 namespace SmartMenuOptim.API.Services
 {
-    public class AiImprovementService : IAiImprovementStrategyService
+    public class AiImprovementService : IAImprovementStrategyService
     {
-        private readonly IOpenIAGptService _gpt;
+        private readonly IOpenIAGptService _openAIGpt;
         private readonly ILogger<AiImprovementService> _logger;
         private readonly IUnityOfWork _unityOfWork;
 
@@ -21,7 +21,7 @@ namespace SmartMenuOptim.API.Services
             IUnityOfWork unityOfWork
             )
         {
-            _gpt = openIAGptService ?? throw new ArgumentNullException(nameof(openIAGptService));
+            _openAIGpt = openIAGptService ?? throw new ArgumentNullException(nameof(openIAGptService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _unityOfWork = unityOfWork; // Assuming unityOfWork is injected or set later
         }
@@ -62,7 +62,7 @@ namespace SmartMenuOptim.API.Services
 
                 var systemChatMessage = "You are a culinary expert and menu optimization specialist. Your task is to analyze underperforming dishes based on sales, customer sentiment and negative comments, and provide actionable suggestions for improvement. Consider factors such as ingredients, presentation, pricing, and customer preferences.";
 
-                return await _gpt.GenerateAsync(prompt.ToString(), systemChatMessage);
+                return await _openAIGpt.GenerateAsync(prompt.ToString(), systemChatMessage);
             }
             catch (Exception ex)
             {

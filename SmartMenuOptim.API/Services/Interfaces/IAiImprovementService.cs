@@ -1,8 +1,8 @@
-﻿using SmartMenuOptim.Shared.Data.Dtos;
+﻿using SmartMenuOptim.Application.Common;
 
 namespace SmartMenuOptim.API.Services.Interfaces
 {
-    public interface IAiImprovementStrategyService
+    public interface IAImprovementStrategyService
     {
         Task<string> GetImprovementStrategyAsync(UnderperformingDishDTO underperformingDishes);
     }

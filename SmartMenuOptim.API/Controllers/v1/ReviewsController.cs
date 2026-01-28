@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Shared.Data;
-using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
-using SmartMenuOptim.Shared.Data.Interfaces;
+using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Interfaces;
+using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using static System.Net.Mime.MediaTypeNames;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace SmartMenuOptim.API.Controllers
+namespace SmartMenuOptim.API.Controllers.v1
 {
     //For versioning, add [ApiVersion("1.0")] above [Route("api/[controller]")]
     //[ApiVersion(1)]
@@ -128,15 +128,11 @@ namespace SmartMenuOptim.API.Controllers
             {
                 return BadRequest("Review cannot be null");
             }
-            // Set DateCreated to now if not set
-            if (review.DateCreated == default)
-            {
-                review.DateCreated = DateTime.UtcNow;
-            }
+            // DateCreated is set automatically in the Review constructor
             // Set Rating to default (e.g., 0) if not set or out of range
             if (review.Rating < 1 || review.Rating > 5)
             {
-                review.Rating = 0;
+                review.UpdateReview(0, review.Comment);
             }
             else if (string.IsNullOrWhiteSpace(review.CustomerName) || string.IsNullOrWhiteSpace(review.Comment))
             {
@@ -165,7 +161,7 @@ namespace SmartMenuOptim.API.Controllers
                     return StatusCode(500, "Database context is not initialized.");
                 }
                 var sentimentScore = await _sentimentService.AnalyzeSentimentAsync(review.Comment); // call the sentiment analysis service and get the sentiment score for sentiment analysis of the review comment.
-                review.SentimentScore = sentimentScore ?? 0.5; // Default to neutral sentiment if analysis fails
+                review.UpdateSentiment(sentimentScore ?? 0.5); // Default to neutral sentiment if analysis fails
 
                 await _unityOfWork.Reviews.AddAsync(review);
                 await _unityOfWork.SaveChangesAsync();
@@ -200,9 +196,10 @@ namespace SmartMenuOptim.API.Controllers
                 {
                     return NotFound();
                 }
-                existingReview.CustomerName = review.CustomerName;
-                existingReview.Comment = review.Comment;
-                existingReview.SentimentScore = review.SentimentScore;
+                // Replace direct property assignment with the appropriate method calls
+                existingReview.UpdateCustomerInfo(review.CustomerId, review.CustomerName);
+                existingReview.UpdateReview(review.Rating, review.Comment);
+                existingReview.UpdateSentiment(review.SentimentScore);
                 
                 _unityOfWork.Reviews.Update(existingReview);
                 await _unityOfWork.SaveChangesAsync();

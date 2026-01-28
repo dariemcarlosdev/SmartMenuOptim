@@ -1,14 +1,16 @@
 ﻿using Azure;
 using Azure.AI.TextAnalytics;
 using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Shared.Data.Entities;
-using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
 
 namespace SmartMenuOptim.API.Services
 {
     /// <summary>
-    /// Service for analyzing sentiment using Azure Text Analytics of Azure Cognitive Services resource.
+    /// Provides sentiment analysis services using Azure Text Analytics.
     /// </summary>
+    /// <remarks>The SentimentService class enables analysis of text sentiment by leveraging Azure Cognitive
+    /// Services. It requires configuration settings for the Azure endpoint and API key. This class is intended to be
+    /// used as an implementation of the ISentimentService interface.</remarks>
     public class SentimentService : ISentimentService
     {
         private readonly TextAnalyticsClient _textAnalyticsClient;

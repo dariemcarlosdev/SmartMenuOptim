@@ -1,16 +1,14 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Shared.Data;
-using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.Entities;
-using SmartMenuOptim.Shared.Data.Entities.TenantSpecificEntities;
-using SmartMenuOptim.Shared.Data.Interfaces;
+using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Interfaces;
+using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace SmartMenuOptim.API.Controllers
+namespace SmartMenuOptim.API.Controllers.v1
 {
     //For versioning, add [ApiVersion("1.0")] above [Route("api/[controller]")]
     //[ApiVersion(1)]
@@ -18,6 +16,8 @@ namespace SmartMenuOptim.API.Controllers
     //[ApiController]
     //[Route("api/v{v:apiVersion}/[controller]")]
 
+    //[ApiVersion("1.0")]
+    //[Route("api/v{version:apiVersion}/[controller]")]
     [Route("api/[controller]")]
     [ApiController]
     public class SaleRecordsController : ControllerBase
@@ -40,11 +40,12 @@ namespace SmartMenuOptim.API.Controllers
         // The convention is to return a 200 OK status code with the collection in the response body.
 
         // GET: api/<SaleRecordsController>
-
-        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
+        
         [HttpGet]
+        //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         public async Task<ActionResult<IEnumerable<SaleRecordDTO>>> GetAllSaleRecords()
         {
+            _logger.LogInformation("GetAllSaleRecords method called at: {time}", DateTime.UtcNow);
             try
             {
                 var saleRecords = await _unityOfWork.SaleRecords.GetAllAsync(s => s.Dish, s => s.Dish.Category, s => s.Dish.Reviews, s => s.Dish.Restaurant);
@@ -146,10 +147,10 @@ namespace SmartMenuOptim.API.Controllers
                     return NotFound();
                 }
 
-                // Update the properties of the sale record
-                existingSaleRecord.SaleDate = SaleRecord.SaleDate;
-                existingSaleRecord.QuantitySold = SaleRecord.QuantitySold;
-                existingSaleRecord.Dish.Name = SaleRecord.Dish.Name;
+                // Update the properties of the sale record using domain methods
+                existingSaleRecord.UpdateSaleDate(SaleRecord.SaleDate);
+                existingSaleRecord.UpdateQuantity(SaleRecord.QuantitySold);
+                existingSaleRecord.UpdateSaleAmount(SaleRecord.SaleAmount);
 
                 _unityOfWork.SaleRecords.Update(existingSaleRecord);
                 await _unityOfWork.SaveChangesAsync();
@@ -199,7 +200,7 @@ namespace SmartMenuOptim.API.Controllers
 
         private bool SaleRecordExists(int id)
         {
-            return _unityOfWork.Reviews.ExistsAsync(id).GetAwaiter().GetResult();
+            return _unityOfWork.SaleRecords.ExistsAsync(id).GetAwaiter().GetResult();
         }
     }
 }
