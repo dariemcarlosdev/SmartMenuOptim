@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;  
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 /*
@@ -23,7 +23,7 @@ This ensures all unhandled exceptions are logged and a generic error response is
 */
 
 
-namespace SmartMenuOptim.Infrastructure.Middlewares
+namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
 {
     /// <summary>
     /// Middleware for handling unhandled exceptions in the request pipeline.

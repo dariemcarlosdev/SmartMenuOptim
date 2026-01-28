@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 
-namespace SmartMenuOptim.Infrastructure.Middlewares
+namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
 {
     /// <summary>
     /// TenantResolverMiddleware

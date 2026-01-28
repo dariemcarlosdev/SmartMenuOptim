@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace SmartMenuOptim.Infrastructure.Middlewares
+namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
 {
     /// <summary>
     /// RateLimittitngMiddleware
