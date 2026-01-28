@@ -9,9 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 //using SmartMenuOptim.Server; // <-- Add this using statement
 using SmartMenuOptim.API;
-using SmartMenuOptim.Shared.Data.Entities;
-using SmartMenuOptim.Shared.Data.Dtos;
 using SmartMenuOptim.Tests.IntegrationTests.Helpers;
+using SmartMenuOptim.Application.Common;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {

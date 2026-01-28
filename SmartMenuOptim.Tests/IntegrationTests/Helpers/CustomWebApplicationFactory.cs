@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SmartMenuOptim.API;
-using SmartMenuOptim.Shared.Data;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.Helpers;
 

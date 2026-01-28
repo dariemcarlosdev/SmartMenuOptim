@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SmartMenuOptim.API.Controllers;
+using SmartMenuOptim.API.Controllers.v1;
 using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Server.Services.Interfaces;
-using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.Entities;
-using SmartMenuOptim.Shared.Data.Interfaces;
+using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,13 +25,13 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         // 5. Handling ties in sales records.
 
         private readonly IUnityOfWork _mockUnityOfWork;
-        private readonly IAiImprovementStrategyService _mock; // Mocking the service if needed for further tests
+        private readonly IAImprovementStrategyService _mock; // Mocking the service if needed for further tests
 
         //mock constructor to initialize the IUnityOfWork
         public AiControllerTests()
         {
             _mockUnityOfWork = new Mock<IUnityOfWork>().Object; // Using Moq to create a mock of IUnityOfWork
-            _mock = new Mock<IAiImprovementStrategyService>().Object; // Mocking the service if needed for further tests
+            _mock = new Mock<IAImprovementStrategyService>().Object; // Mocking the service if needed for further tests
         }
 
         [Fact]
