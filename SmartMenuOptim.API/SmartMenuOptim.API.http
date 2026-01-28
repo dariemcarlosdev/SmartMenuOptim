@@ -1,10 +1,34 @@
-@SmartMenuOptim.API_HostAddress = https://localhost:44388
+@SmartMenuOptim.API_HostAddress = https://localhost:7119
 
-GET {{SmartMenuOptim.API_HostAddress}}/api/Reviews
+### Get all sale records (using URL versioning)
+GET {{SmartMenuOptim.API_HostAddress}}/api/SaleRecords
 Accept: application/json
+
+### Get all sale records (using header versioning)
+GET {{SmartMenuOptim.API_HostAddress}}/api/SaleRecords
+Accept: application/json
+X-Api-Version: 1.0
+
+### Get specific sale record
+GET {{SmartMenuOptim.API_HostAddress}}/api/v1/SaleRecords/1
+Accept: application/json
+
+### Create new sale record
+POST {{SmartMenuOptim.API_HostAddress}}/api/v1/SaleRecords
+Content-Type: application/json
+
+{
+    "dishId": 1,
+    "quantitySold": 5,
+    "saleDate": "2024-01-21T10:00:00Z"
+}
+
+### 
+
+GET {{SmartMenuOptim.API_HostAddress}}/api/salerecords
 
 ###
 
-GET {{SmartMenuOptim.API_HostAddress}}/api/Reviews/1
-Accept: application/json
+GET {{SmartMenuOptim.API_HostAddress}}/api/salerecords
 
+###

@@ -21,7 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj" />
+    <ProjectReference Include="..\SmartMenuOptim.Application\SmartMenuOptim.Application.csproj" />
+    <ProjectReference Include="..\SmartMenuOptim.Infrastructure\SmartMenuOptim.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

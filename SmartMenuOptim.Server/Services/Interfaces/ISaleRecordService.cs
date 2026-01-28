@@ -1,5 +1,4 @@
-﻿using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.Entities;
+﻿using SmartMenuOptim.Application.Common;
 
 internal interface ISaleRecordService
 {

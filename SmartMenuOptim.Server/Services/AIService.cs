@@ -1,5 +1,5 @@
-﻿using SmartMenuOptim.Server.Services.Interfaces;
-using SmartMenuOptim.Shared.Data.Dtos;
+﻿using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Server.Services.Interfaces;
 
 namespace SmartMenuOptim.Server.Services
 {
