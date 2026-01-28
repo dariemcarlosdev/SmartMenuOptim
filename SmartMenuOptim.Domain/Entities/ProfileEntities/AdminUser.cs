@@ -1,8 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
-using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 
 namespace SmartMenuOptim.Domain.Entities.ProfileEntities
 {
