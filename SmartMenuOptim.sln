@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.0.11012.119
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Shared", "SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj", "{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Server", "SmartMenuOptim.Server\SmartMenuOptim.Server.csproj", "{C43B2F50-8E31-4450-AAAB-C8047E8DFAA0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{71713685-5407-4967-864A-5DCAAD42F2C9} = {71713685-5407-4967-864A-5DCAAD42F2C9}
@@ -25,10 +23,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub Action", "GitHub Act
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F8EF4D69-3FC1-42A9-BD7A-BF1DE3D5F183}"
 	ProjectSection(SolutionItems) = preProject
-		docs\data-access-security-guidelines.md = docs\data-access-security-guidelines.md
-		docs\database\migrations\MIGRATION GUIDE.md = docs\database\migrations\MIGRATION GUIDE.md
-		docs\README.md = docs\README.md
+		docs\database\migrations\EF_MIGRATION_GUIDE.md = docs\database\migrations\EF_MIGRATION_GUIDE.md
+		docs\SMARTMENU_DOCUMENTATION.md = docs\SMARTMENU_DOCUMENTATION.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "04 - Presentation Layer", "04 - Presentation Layer", "{21ABA395-85B1-45D8-8CA0-82FC20E34446}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "03 - Infrastructure Layer", "03 - Infrastructure Layer", "{1A7851BD-A000-4B6E-816C-E919FDF21278}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01 - Domain Layer", "01 - Domain Layer", "{D9255CEA-7F53-46C2-9ED3-6F47561D81C8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02 - Application Layer", "02 - Application Layer", "{A6CCD076-18A7-4F7D-96F7-BCD7C884F90A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "06 - Test Layer", "06 - Test Layer", "{45AAA4BB-05F8-4AF3-B117-D9C90622776E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Application", "SmartMenuOptim.Application\SmartMenuOptim.Application.csproj", "{02CA441E-0053-31B1-3334-426C6DA37308}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "05 - Cross-Cutting Concerns", "05 - Cross-Cutting Concerns", "{C18C9651-E684-473E-8F61-2CFD2D7C25E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Shared", "SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj", "{132ABC84-3782-4EC4-89A6-21137FAB6904}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,18 +53,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Debug|x64.Build.0 = Debug|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Debug|x86.Build.0 = Debug|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Release|x64.ActiveCfg = Release|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Release|x64.Build.0 = Release|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Release|x86.ActiveCfg = Release|Any CPU
-		{3191AE81-0AB2-7651-147D-9FFC1BE6CA19}.Release|x86.Build.0 = Release|Any CPU
 		{C43B2F50-8E31-4450-AAAB-C8047E8DFAA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C43B2F50-8E31-4450-AAAB-C8047E8DFAA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C43B2F50-8E31-4450-AAAB-C8047E8DFAA0}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -112,9 +113,42 @@ Global
 		{796EF42E-3C36-4A90-B2C3-7B66045F596F}.Release|x64.Build.0 = Release|Any CPU
 		{796EF42E-3C36-4A90-B2C3-7B66045F596F}.Release|x86.ActiveCfg = Release|Any CPU
 		{796EF42E-3C36-4A90-B2C3-7B66045F596F}.Release|x86.Build.0 = Release|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Debug|x64.Build.0 = Debug|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Debug|x86.Build.0 = Debug|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Release|x64.ActiveCfg = Release|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Release|x64.Build.0 = Release|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Release|x86.ActiveCfg = Release|Any CPU
+		{02CA441E-0053-31B1-3334-426C6DA37308}.Release|x86.Build.0 = Release|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Debug|x64.Build.0 = Debug|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Debug|x86.Build.0 = Debug|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Release|Any CPU.Build.0 = Release|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Release|x64.ActiveCfg = Release|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Release|x64.Build.0 = Release|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Release|x86.ActiveCfg = Release|Any CPU
+		{132ABC84-3782-4EC4-89A6-21137FAB6904}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C43B2F50-8E31-4450-AAAB-C8047E8DFAA0} = {21ABA395-85B1-45D8-8CA0-82FC20E34446}
+		{71713685-5407-4967-864A-5DCAAD42F2C9} = {21ABA395-85B1-45D8-8CA0-82FC20E34446}
+		{A2760D5F-2A01-368A-85C9-5DC25770266F} = {45AAA4BB-05F8-4AF3-B117-D9C90622776E}
+		{75AE1EE9-6D3E-4F6A-B8C1-C6C615EAF88D} = {1A7851BD-A000-4B6E-816C-E919FDF21278}
+		{796EF42E-3C36-4A90-B2C3-7B66045F596F} = {D9255CEA-7F53-46C2-9ED3-6F47561D81C8}
+		{02CA441E-0053-31B1-3334-426C6DA37308} = {A6CCD076-18A7-4F7D-96F7-BCD7C884F90A}
+		{132ABC84-3782-4EC4-89A6-21137FAB6904} = {C18C9651-E684-473E-8F61-2CFD2D7C25E4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C4B4FED1-8095-4F4B-985A-7C91BE81941D}
