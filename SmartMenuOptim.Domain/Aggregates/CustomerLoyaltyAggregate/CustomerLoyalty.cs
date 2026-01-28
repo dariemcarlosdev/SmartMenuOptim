@@ -1,4 +1,5 @@
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Entities.ProfileEntities;
 
 namespace SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 

@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;

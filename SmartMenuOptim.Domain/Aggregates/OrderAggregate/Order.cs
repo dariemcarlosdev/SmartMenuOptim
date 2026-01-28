@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
 using SmartMenuOptim.Domain.ValueObjects;
 
