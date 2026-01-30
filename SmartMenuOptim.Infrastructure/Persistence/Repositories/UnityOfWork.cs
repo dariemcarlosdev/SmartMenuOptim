@@ -1,94 +1,34 @@
-﻿using SmartMenuOptim.Application.Interfaces;
-using SmartMenuOptim.Domain.Aggregates.DishAggregate;
+﻿using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
 {
     /// <summary>
-    /// Implements the Unit of Work pattern to coordinate repository operations and manage a single database context instance.
-    /// Provides access to repositories for all major entities and ensures all changes are committed as a single transaction.
+    /// Clean Architecture compliant Unit of Work implementation coordinating repository operations 
+    /// and managing a single database context instance.
+    /// Ensures all changes are committed as a single transaction.
     /// </summary>
-    /// <remarks>
-    /// This class centralizes repository access and transaction management, promoting modularity and testability.
-    /// All repositories are exposed as <see cref="IRepositoryWithIncludes{T}"/> for advanced querying.
-    /// </remarks>
     public class UnityOfWork : IUnityOfWork
     {
         private readonly AppDbContext _context;
 
-        /// <summary>
-        /// Repository for <see cref="SaleRecord"/> entities, supporting advanced querying and includes.
-        /// </summary>
-        /// <remarks>
-        /// Use this repository for all sales record data access and queries.
-        /// </remarks>
-        public IRepositoryWithIncludes<SaleRecord> SaleRecords { get; }
-
-        /// <summary>
-        /// Repository for <see cref="Review"/> entities, supporting advanced querying and includes.
-        /// </summary>
-        /// <remarks>
-        /// Use this repository for all review data access and queries.
-        /// </remarks>
-        public IRepositoryWithIncludes<Review> Reviews { get; }
-
-        /// <summary>
-        /// Repository for <see cref="Dish"/> entities, supporting advanced querying and includes.
-        /// </summary>
-        /// <remarks>
-        /// Use this repository for all dish data access and queries.
-        /// </remarks>
-        public IRepositoryWithIncludes<Dish> Dishes { get; }
-
-        /// <summary>
-        /// Repository for <see cref="Category"/> entities, supporting advanced querying and includes.
-        /// </summary>
-        /// <remarks>
-        /// Use this repository for all category data access and queries.
-        /// </remarks>
-        public IRepositoryWithIncludes<Category> Categories { get; }
-
-        /// <summary>
-        /// Repository for <see cref="Customer"/> entities, supporting advanced querying and includes.
-        /// </summary>
-        /// <remarks>
-        /// Use this repository for all customer data access and queries.
-        /// </remarks>
-        public IRepositoryWithIncludes<Customer> Customers { get; }
-
-        /// <summary>
-        /// Repository for <see cref="AdminUser"/> entities, supporting advanced querying and includes.
-        /// </summary>
-        /// <remarks>
-        /// Use this repository for all admin user data access and queries.
-        /// </remarks>
-        public IRepositoryWithIncludes<AdminUser> AdminUsers { get; }
-
-        /// <summary>
-        /// Repository for <see cref="Restaurant"/> entities, supporting advanced querying and includes.
-        /// </summary>
-        /// <remarks>
-        /// Use this repository for all restaurant data access and queries.
-        /// </remarks>
-        public IRepositoryWithIncludes<Restaurant> Restaurants { get; }
-
-        public IRepositoryWithIncludes<ApplicationUser> ApplicationUsers { get; }
-        public IRepositoryWithIncludes<StaffMember> UserProfiles { get; }
-
-        public IRepositoryWithIncludes<BusinessRule> BussinessRules { get; }
-
-        public IRepositoryWithIncludes<Customer> Customer { get; }
-
-
+        public IRepository<SaleRecord> SaleRecords { get; }
+        public IRepository<Review> Reviews { get; }
+        public IRepository<Dish> Dishes { get; }
+        public IRepository<Category> Categories { get; }
+        public IRepository<Customer> Customers { get; }
+        public IRepository<AdminUser> AdminUsers { get; }
+        public IRepository<Restaurant> Restaurants { get; }
+        public IRepository<ApplicationUser> ApplicationUsers { get; }
+        public IRepository<StaffMember> StaffMembers { get; }
+        public IRepository<BusinessRule> BusinessRules { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UnityOfWork"/> class with the provided database context.
@@ -98,18 +38,17 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
         public UnityOfWork(AppDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            SaleRecords = new Repository<SaleRecord>(_context); // Add SaleRecords repository
-            Reviews = new Repository<Review>(_context); // Add Review repository
-            Dishes = new Repository<Dish>(_context); // Add Diwsh repository
-            Categories = new Repository<Category>(_context); // Add Categories repository
-            Customers = new Repository<Customer>(_context); // Add Customers repository
-            AdminUsers = new Repository<AdminUser>(_context); // Add AdminUsers repository
-            Restaurants = new Repository<Restaurant>(_context); // Add Restaurants repository
-            ApplicationUsers = new Repository<ApplicationUser>(_context); // Add ApplicationUsers repository
-            UserProfiles = new Repository<StaffMember>(_context); // Add UserProfiles repository
-            BussinessRules = new Repository<BusinessRule>(_context); // Add BusinessRules repository
-            Customer = new Repository<Customer>(_context); // Add Customer repository
-
+            
+            SaleRecords = new Repository<SaleRecord>(_context);
+            Reviews = new Repository<Review>(_context);
+            Dishes = new Repository<Dish>(_context);
+            Categories = new Repository<Category>(_context);
+            Customers = new Repository<Customer>(_context);
+            AdminUsers = new Repository<AdminUser>(_context);
+            Restaurants = new Repository<Restaurant>(_context);
+            ApplicationUsers = new Repository<ApplicationUser>(_context);
+            StaffMembers = new Repository<StaffMember>(_context);
+            BusinessRules = new Repository<BusinessRule>(_context);
         }
 
 

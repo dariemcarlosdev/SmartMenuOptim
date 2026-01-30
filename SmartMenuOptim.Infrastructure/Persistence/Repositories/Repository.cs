@@ -1,20 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Application.Interfaces;
+using SmartMenuOptim.Domain.Repositories;
+using SmartMenuOptim.Domain.Specifications;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
 {
     /// <summary>
-    /// Generic repository implementation for CRUD operations and flexible querying using Entity Framework Core.
-    /// Supports type-safe navigation property includes and dynamic primary key resolution.
+    /// Clean Architecture compliant generic repository implementation using Entity Framework Core.
+    /// Implements specification pattern for domain-centric querying without infrastructure coupling.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
-    public class Repository<T> : IRepositoryWithIncludes<T> where T : class
+    public class Repository<T> : IRepository<T> where T : class
     {
         protected readonly AppDbContext _context;
         protected readonly DbSet<T> _dbSet;
@@ -76,93 +76,106 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
         }
 
         /// <summary>
-        /// Retrieves all entities of type T from the database, with optional navigation property includes.
+        /// Asynchronously retrieves all entities of type T from the database.
         /// </summary>
-        /// <param name="includes">Navigation property expressions to include (optional).</param>
         /// <returns>A list of all entities of type T.</returns>
-        /// <remarks>
-        /// Use this overload to eagerly load related data via navigation properties in a type-safe manner.
-        /// </remarks>
-        public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includes)
+        public async Task<IEnumerable<T>> GetAllAsync()
         {
-            IQueryable<T> query = _dbSet;
-            if (includes != null && includes.Length > 0)
-            {
-                foreach (var include in includes)
-                {
-                    query = query.Include(include);
-                }
-                // Apply AsNoTracking once after all includes for read-only scenarios. This saves memory and improves performance.
-                query = query.AsNoTracking();
-            }
+            return await _dbSet.AsNoTracking().ToListAsync();
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves an entity by its primary key.
+        /// </summary>
+        /// <param name="id">The primary key value.</param>
+        /// <returns>The entity if found, otherwise null.</returns>
+        public async Task<T?> GetByIdAsync(int id)
+        {
+            return await _dbSet.FindAsync(id);
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves entities matching the given specification.
+        /// </summary>
+        /// <param name="spec">The specification defining filtering, ordering, includes, and pagination.</param>
+        /// <returns>A collection of entities matching the specification criteria.</returns>
+        /// <remarks>
+        /// This method translates domain specifications into EF Core queries.
+        /// </remarks>
+        public async Task<IEnumerable<T>> FindAsync(ISpecification<T> spec)
+        {
+            var query = ApplySpecification(spec);
             return await query.ToListAsync();
         }
 
         /// <summary>
-        /// Retrieves an entity of type T by its primary key, with optional navigation property includes.
+        /// Asynchronously retrieves a single entity matching the given specification.
         /// </summary>
-        /// <param name="id">The primary key value.</param>
-        /// <param name="includes">Navigation property expressions to include (optional).</param>
-        /// <returns>The entity if found, otherwise null.</returns>
-        /// <remarks>
-        /// <para>This method optimizes the query based on whether includes are provided:</para>
-        /// <list type="bullet">
-        /// <item><description>If no includes: Uses <see cref="DbSet{T}.FindAsync"/> for fast primary key lookup with change tracking.</description></item>
-        /// <item><description>If includes provided: Uses eager loading with <see cref="EntityFrameworkQueryableExtensions.AsNoTracking"/> for read-only scenarios.</description></item>
-        /// </list>
-        /// <para>The primary key property name is dynamically resolved using EF Core metadata, making this method robust to schema changes.</para>
-        /// </remarks>
-        public async Task<T?> GetByIdAsync(int id, params Expression<Func<T, object>>[] includes)
+        /// <param name="spec">The specification defining filtering and includes.</param>
+        /// <returns>The first entity matching the specification, or null if no match is found.</returns>
+        public async Task<T?> FirstOrDefaultAsync(ISpecification<T> spec)
         {
-            // Optimization: If no includes, use FindAsync for better performance
-            if (includes == null || includes.Length == 0)
+            var query = ApplySpecification(spec);
+            return await query.FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Asynchronously counts entities matching the given specification.
+        /// </summary>
+        /// <param name="spec">The specification defining filtering criteria.</param>
+        /// <returns>The count of entities matching the specification.</returns>
+        public async Task<int> CountAsync(ISpecification<T> spec)
+        {
+            var query = ApplySpecification(spec);
+            return await query.CountAsync();
+        }
+
+        /// <summary>
+        /// Applies a specification to the queryable, translating domain logic into EF Core queries.
+        /// </summary>
+        /// <param name="spec">The specification to apply.</param>
+        /// <returns>A queryable with the specification applied.</returns>
+        private IQueryable<T> ApplySpecification(ISpecification<T> spec)
+        {
+            IQueryable<T> query = _dbSet;
+
+            // Apply filtering criteria
+            if (spec.Criteria != null)
             {
-                return await _dbSet.FindAsync(id);
+                query = query.Where(spec.Criteria);
             }
 
-            // Build query with includes
-            IQueryable<T> query = _dbSet;
-            foreach (var include in includes)
+            // Apply includes (EF Core specific - this is where domain abstraction is translated)
+            query = spec.Includes.Aggregate(query, (current, include) => current.Include(include));
+            query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
+
+            // Apply ordering
+            if (spec.OrderBy != null)
             {
-                query = query.Include(include);
+                query = query.OrderBy(spec.OrderBy);
             }
-            
-            // Apply AsNoTracking once after all includes for read-only scenarios. This saves memory and improves performance.
+            else if (spec.OrderByDescending != null)
+            {
+                query = query.OrderByDescending(spec.OrderByDescending);
+            }
+
+            // Apply paging
+            if (spec.IsPagingEnabled)
+            {
+                if (spec.Skip.HasValue)
+                {
+                    query = query.Skip(spec.Skip.Value);
+                }
+                if (spec.Take.HasValue)
+                {
+                    query = query.Take(spec.Take.Value);
+                }
+            }
+
+            // Apply no-tracking for read-only queries (optimization)
             query = query.AsNoTracking();
 
-            // Resolve primary key name dynamically and execute query
-            var keyName = _context.Model.FindEntityType(typeof(T))?.FindPrimaryKey()?.Properties
-                .Select(x => x.Name).Single();
-            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, keyName!) == id);
-        }
-
-        /// <summary>
-        /// Retrieves all entities of type T from the database asynchronously (interface method).
-        /// </summary>
-        /// <returns>A list of all entities of type T.</returns>
-        /// <remarks>
-        /// This method does not include navigation properties. Use the overload with includes for eager loading.
-        /// </remarks>
-        async Task<IEnumerable<T>> IRepository<T>.GetAllAsync()
-        {
-            return await GetAllAsync();
-        }
-
-        /// <summary>
-        /// Retrieves an entity of type T by its primary key asynchronously (explicit interface implementation).
-        /// </summary>
-        /// <param name="id">The primary key value.</param>
-        /// <returns>The entity if found, otherwise null.</returns>
-        /// <remarks>
-        /// <para><strong>Note:</strong> This is an explicit interface implementation for <see cref="IRepository{T}.GetByIdAsync(int)"/>.</para>
-        /// <para>When using <see cref="IRepositoryWithIncludes{T}"/>, call the public <see cref="GetByIdAsync(int, Expression{Func{T, object}}[])"/> method instead, 
-        /// which supports optional includes and automatically uses <see cref="DbSet{T}.FindAsync"/> when no includes are provided.</para>
-        /// <para>This method uses <see cref="DbSet{T}.FindAsync"/> for efficient primary key lookup with change tracking.</para>
-        /// </remarks>
-        async Task<T?> IRepository<T>.GetByIdAsync(int id)
-        {
-            // Delegate to the public method without includes for consistency
-            return await GetByIdAsync(id);
+            return query;
         }
 
         /// <summary>
