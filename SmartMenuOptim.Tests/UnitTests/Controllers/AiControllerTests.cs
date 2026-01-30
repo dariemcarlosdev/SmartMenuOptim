@@ -4,7 +4,7 @@ using SmartMenuOptim.API.Controllers;
 using SmartMenuOptim.API.Controllers.v1;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Application.Common;
-using SmartMenuOptim.Application.Interfaces;
+using SmartMenuOptim.Domain.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
