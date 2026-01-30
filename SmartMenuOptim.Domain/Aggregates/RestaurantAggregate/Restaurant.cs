@@ -5,7 +5,7 @@ using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.ValueObjects;
 
 namespace SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;

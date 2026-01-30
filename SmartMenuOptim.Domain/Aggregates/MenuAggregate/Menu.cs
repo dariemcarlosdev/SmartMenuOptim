@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.ValueObjects;
 
 namespace SmartMenuOptim.Domain.Aggregates.MenuAggregate;

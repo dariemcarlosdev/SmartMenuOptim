@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 
-namespace SmartMenuOptim.Domain.Entities.TenantSpecificEntities
+namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
 {
     /// <summary>
     /// Represents a staff member's work schedule for a specific restaurant.

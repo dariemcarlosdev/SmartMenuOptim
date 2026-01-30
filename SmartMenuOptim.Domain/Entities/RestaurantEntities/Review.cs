@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 
-namespace SmartMenuOptim.Domain.Entities.TenantSpecificEntities
+namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
 {
     /// <summary>
     /// Represents a customer review for a dish in a specific restaurant, providing feedback through ratings and comments.

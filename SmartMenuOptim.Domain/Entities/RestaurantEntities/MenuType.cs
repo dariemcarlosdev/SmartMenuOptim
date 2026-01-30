@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SmartMenuOptim.Domain.Entities.TenantSpecificEntities
+namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
 {
     /// <summary>
     /// Represents a menu type category for organizing and scheduling menus within a restaurant's menu system.

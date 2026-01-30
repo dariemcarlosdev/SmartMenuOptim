@@ -2,7 +2,7 @@ using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SmartMenuOptim.Domain.Entities.TenantSpecificEntities
+namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
 {
     /// <summary>
     /// Represents a dish category for organizing menu items within a restaurant's menu system.

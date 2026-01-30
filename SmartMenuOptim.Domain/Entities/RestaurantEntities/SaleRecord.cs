@@ -4,7 +4,7 @@ using SmartMenuOptim.Domain.ValueObjects;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.ConstrainedExecution;
 
-namespace SmartMenuOptim.Domain.Entities.TenantSpecificEntities
+namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
 {
     /// <summary>
     /// Represents a sales transaction record for a dish in a specific restaurant, tracking quantity sold and revenue generated.

@@ -4,7 +4,7 @@ using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 
 namespace SmartMenuOptim.Domain.Entities.ProfileEntities
 {

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 
-namespace SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+namespace SmartMenuOptim.Domain.Entities.RestaurantEntities;
 
 /// <summary>
 /// Represents the status/state of an order in the restaurant's order management workflow.

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 
 namespace SmartMenuOptim.Domain.Entities.ProfileEntities
 {
