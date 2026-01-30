@@ -637,22 +637,22 @@ SmartMenuOptim.sln
 │       │   └── MenuEvents/
 │       │       ├── DishAddedToMenuEvent.cs
 │       │       └── DishRemovedFromMenuEvent.cs
-│       ├── Repositories/            # Repository interfaces (Domain contracts)
-│       │   ├── IRestaurantRepository.cs
-│       │   ├── IOrderRepository.cs
-│       │   ├── IDishRepository.cs
-│       │   ├── ICustomerRepository.cs
-│       │   └── IUnitOfWork.cs
+│       ├── Repositories/            # Repository interfaces (Domain contracts) (NEW)
+│       │   ├── IRestaurantRepository.cs # Domain contract for Restaurant repository (NEW)
+│       │   ├── IOrderRepository.cs   # Domain contract for Order repository (NEW)
+│       │   ├── IDishRepository.cs 	# Domain contract for Dish repository (NEW)
+│       │   ├── ICustomerRepository.cs # Domain contract for Customer repository (NEW)
+│       │   └── IUnitOfWork.cs 	 # Domain contract for Unit of Work (NEW), this can replace existing one in Shared
 │       ├── Specifications/          # 🆕 Business rule specifications (NEW)
 │       │   ├── ISpecification.cs
 │       │   └── DishSpecifications/
 │       │       ├── UnderperformingDishSpec.cs
 │       │       └── PopularDishSpec.cs
-│       ├── Exceptions/              # Domain-specific exceptions
+│       ├── Exceptions/              # Domain-specific exceptions (NEW)
 │       │   ├── DomainException.cs
 │       │   ├── OrderException.cs
 │       │   └── MenuException.cs
-│       └── Common/                  # Shared domain primitives
+│       └── Common/                  # Shared domain primitives and base classes
 │           ├── EntityBase.cs
 │           └── TenantEntityBase.cs
 │
