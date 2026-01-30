@@ -19,9 +19,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Application.Common;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Repositories;
 
 namespace SmartMenuOptim.API.Controllers.v1
 {

@@ -1,7 +1,7 @@
 ﻿using Azure;
 using Azure.AI.TextAnalytics;
 using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 
 namespace SmartMenuOptim.API.Services
 {

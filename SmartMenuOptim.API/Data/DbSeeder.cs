@@ -8,12 +8,12 @@ using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities; // For OrderStatus, Review, SaleRecord
 using SmartMenuOptim.Domain.ValueObjects;
 using System.Data.Common;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 using SmartMenuOptim.Shared;
 using SmartMenuOptim.Shared.Constants;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 
 namespace SmartMenuOptim.API.Data
 {

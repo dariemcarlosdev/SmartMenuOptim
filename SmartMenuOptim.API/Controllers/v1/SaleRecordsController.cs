@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Application.Common;
-using SmartMenuOptim.Application.Interfaces;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Repositories;
+using SmartMenuOptim.Domain.Specifications.SaleRecordSpecifications;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -48,20 +49,23 @@ namespace SmartMenuOptim.API.Controllers.v1
             _logger.LogInformation("GetAllSaleRecords method called at: {time}", DateTime.UtcNow);
             try
             {
-                var saleRecords = await _unityOfWork.SaleRecords.GetAllAsync(s => s.Dish, s => s.Dish.Category, s => s.Dish.Reviews, s => s.Dish.Restaurant);
-                var saleRecordsDtos = saleRecords.Select(s =>   new SaleRecordDTO
-                                {
+                // ✅ NEW: Use specification pattern for complex includes
+                var spec = new SaleRecordWithDetailsSpecification();
+                var saleRecords = await _unityOfWork.SaleRecords.FindAsync(spec);
+                
+                var saleRecordsDtos = saleRecords.Select(s => new SaleRecordDTO
+                {
                     Id = s.Id,
                     SaleDate = s.SaleDate,
                     QuantitySold = s.QuantitySold,
                     DishId = s.DishId,
-                    DishName = s.Dish?.Name, // Assuming Dish has a Name property
+                    DishName = s.Dish?.Name,
                     Category = s.Dish?.Category?.Name ?? "Unknown",
-                    Rating = s.Dish?.Reviews.Any() == true ? (int)s.Dish.Reviews.Average(r => r.Rating) : 0, // Assuming Dish has a Reviews collection with Rating property
-                    RestaurantName = s.Dish?.Restaurant?.Name ?? "Unknown", // Assuming Dish has a Restaurant property with Name
-                    DishPrice = s.Dish?.DishPrice ?? 0 // Assuming Dish has a DishPrice property
-
+                    Rating = s.Dish?.Reviews.Any() == true ? (int)s.Dish.Reviews.Average(r => r.Rating) : 0,
+                    RestaurantName = s.Dish?.Restaurant?.Name ?? "Unknown",
+                    DishPrice = s.Dish?.DishPrice ?? 0
                 }).ToList();
+                
                 return Ok(saleRecordsDtos);
             }
             catch (Exception ex)

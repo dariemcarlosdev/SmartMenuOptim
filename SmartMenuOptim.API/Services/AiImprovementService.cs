@@ -5,8 +5,8 @@ using OpenAI.Chat;
 using OpenAI;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Domain.Repositories;
 
 namespace SmartMenuOptim.API.Services
 {

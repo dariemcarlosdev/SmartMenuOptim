@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services;
 using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
+using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 using SmartMenuOptim.Infrastructure.Persistence.Repositories;
 using System.Threading.RateLimiting;
@@ -72,7 +72,6 @@ public static class ServiceCollectionExtensions
         // Register the Unit of Work and repository patterns for data access.
         services.AddScoped<IUnityOfWork, UnityOfWork>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-        services.AddScoped(typeof(IRepositoryWithIncludes<>), typeof(Repository<>));
 
         return services;
     }

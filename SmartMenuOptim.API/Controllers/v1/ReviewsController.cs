@@ -2,8 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Application.Common;
-using SmartMenuOptim.Application.Interfaces;
-using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Repositories;
+using SmartMenuOptim.Domain.Specifications.ReviewSpecifications;
 using static System.Net.Mime.MediaTypeNames;
 
 
@@ -50,34 +51,24 @@ namespace SmartMenuOptim.API.Controllers.v1
         {
             try
             {
-                var reviews = await _unityOfWork.Reviews.GetAllAsync(r => r.Customer, r => r.Dish);
-                if (!string.IsNullOrWhiteSpace(dishname))
-                {
-                    reviews = reviews.Where(r => r.Dish != null && r.Dish.Name != null && r.Dish.Name.Equals(dishname, StringComparison.OrdinalIgnoreCase)).ToList();
-                }
-                if (sentiment.HasValue)
-                {
-                    // Use a tolerance value to account for floating-point precision issues and to include reviews
-                    // with sentiment scores that are close to the specified value, not just exact matches.
-                    // This makes filtering more user-friendly and robust.
-                    double tolerance = 0.03; 
-                    reviews = reviews.Where(r => Math.Abs(r.SentimentScore - sentiment.Value) <= tolerance).ToList();
-                }
-                // Order reviews by SentimentScore descending before projecting to DTOs
-                var orderedReviews = reviews.OrderByDescending(r => r.SentimentScore);
-                var reviewsDtos = orderedReviews.Select(r => new ReviewDTO
+                // ✅ NEW: Use specification pattern for filtered, ordered query with includes
+                var spec = new FilteredReviewsSpecification(dishname, sentiment);
+                var reviews = await _unityOfWork.Reviews.FindAsync(spec);
+
+                // Project to DTOs
+                var reviewsDtos = reviews.Select(r => new ReviewDTO
                 {
                     Id = r.Id,
                     CustomerName = r.CustomerName,
                     Comment = r.Comment,
                     SentimentScore = r.SentimentScore,
                     DishId = r.DishId,
-                    DishName = r.Dish?.Name, // Assuming Dish has a Name property
+                    DishName = r.Dish?.Name,
                     DateCreated = r.DateCreated,
                     Rating = r.Rating,
                 }).ToList();
 
-                if (reviews == null || !reviews.Any())
+                if (!reviewsDtos.Any())
                 {
                     return NotFound("No reviews found.");
                 }
@@ -98,7 +89,10 @@ namespace SmartMenuOptim.API.Controllers.v1
         {
             try
             {
-                var review = await _unityOfWork.Reviews.GetByIdAsync(id, r => r.Customer, r => r.Dish);
+                // ✅ NEW: Use specification pattern
+                var spec = new ReviewWithDetailsSpecification(id);
+                var review = await _unityOfWork.Reviews.FirstOrDefaultAsync(spec);
+                
                 if (review == null)
                 {
                     return NotFound();

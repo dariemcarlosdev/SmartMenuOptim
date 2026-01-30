@@ -1,4 +1,4 @@
-﻿using SmartMenuOptim.Domain.Entities.TenantSpecificEntities;
+﻿using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 
 namespace SmartMenuOptim.API.Services.Interfaces
 {
