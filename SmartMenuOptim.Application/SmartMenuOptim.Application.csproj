@@ -16,12 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Behaviors\" />
     <Folder Include="Commands\" />
     <Folder Include="Handlers\" />
     <Folder Include="Mappings\" />
-    <Folder Include="Behaviors\" />
-    <Folder Include="Validators\" />
     <Folder Include="Queries\" />
+    <Folder Include="Validators\" />
   </ItemGroup>
 
 </Project>
