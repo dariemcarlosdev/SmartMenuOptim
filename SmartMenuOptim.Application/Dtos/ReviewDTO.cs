@@ -16,7 +16,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace SmartMenuOptim.Application.Common
+namespace SmartMenuOptim.Application.Dtos
 {
     /// <summary>
     /// Data Transfer Object for Review entity

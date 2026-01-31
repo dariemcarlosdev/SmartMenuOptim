@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartMenuOptim.Application.Common
+namespace SmartMenuOptim.Application.Dtos
 {
     // Create CategoryGroupDTOa DTO for category grouping
     public class CategoryGroupDTO

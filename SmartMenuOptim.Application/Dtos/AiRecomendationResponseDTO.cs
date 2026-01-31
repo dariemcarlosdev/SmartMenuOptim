@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartMenuOptim.Application.Common
+namespace SmartMenuOptim.Application.Dtos
 {
     public class AiRecomendationResponseDTO
     {

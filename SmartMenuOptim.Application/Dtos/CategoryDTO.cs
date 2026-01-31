@@ -1,4 +1,4 @@
-namespace SmartMenuOptim.Application.Common
+namespace SmartMenuOptim.Application.Dtos
 {
     /// <summary>
     /// DTO for transferring category data between layers and for CRUD operations in Blazor user interfaces.

@@ -14,7 +14,7 @@
  * - Maintains proper data isolation through tenant-specific collections
  */
 
-namespace SmartMenuOptim.Application.Common
+namespace SmartMenuOptim.Application.Dtos
 {
     /// <summary>
     /// Data Transfer Object for Restaurant entity

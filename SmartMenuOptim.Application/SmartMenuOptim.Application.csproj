@@ -17,10 +17,11 @@
 
   <ItemGroup>
     <Folder Include="Behaviors\" />
-    <Folder Include="Commands\" />
+    <Folder Include="CQRS\Commands\" />
     <Folder Include="Handlers\" />
     <Folder Include="Mappings\" />
-    <Folder Include="Queries\" />
+    <Folder Include="CQRS\" />
+    <Folder Include="CQRS\Queries\" />
     <Folder Include="Validators\" />
   </ItemGroup>
 
