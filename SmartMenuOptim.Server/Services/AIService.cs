@@ -1,4 +1,4 @@
-﻿using SmartMenuOptim.Application.Common;
+﻿using SmartMenuOptim.Application.Dtos;
 using SmartMenuOptim.Server.Services.Interfaces;
 
 namespace SmartMenuOptim.Server.Services

@@ -1,4 +1,4 @@
-﻿using SmartMenuOptim.Application.Common;
+﻿using SmartMenuOptim.Application.Dtos;
 
 internal class SaleRecordService : ISaleRecordService
 {

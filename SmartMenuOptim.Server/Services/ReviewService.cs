@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.WebUtilities;
-using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Dtos;
 
 internal class ReviewService : IReviewService
 {
