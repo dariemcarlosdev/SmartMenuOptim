@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 //using SmartMenuOptim.Server; // <-- Add this using statement
 using SmartMenuOptim.API;
 using SmartMenuOptim.Tests.IntegrationTests.Helpers;
-using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Dtos;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {
