@@ -17,8 +17,9 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.API.Services.Interfaces;
 using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Dtos;
+using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Repositories;
@@ -52,12 +53,12 @@ namespace SmartMenuOptim.API.Controllers.v1
     {
         private readonly IUnityOfWork _unityOfWork;
         //Inject IAiImprovementService _aiImprovementService into the controller
-        private readonly IAImprovementStrategyService _aiImprovementService;
+        private readonly IAImprovementStrategyService _aiService;
 
         public AiController(IUnityOfWork unityOfWork, IAImprovementStrategyService aiImprovementService)
         {
             _unityOfWork = unityOfWork ?? throw new ArgumentNullException(nameof(unityOfWork));
-            _aiImprovementService = aiImprovementService ?? throw new ArgumentNullException(nameof(aiImprovementService));
+            _aiService = aiImprovementService ?? throw new ArgumentNullException(nameof(aiImprovementService));
         }
 
 
@@ -527,7 +528,7 @@ namespace SmartMenuOptim.API.Controllers.v1
             {
                 return BadRequest("Underperforming dish cannot be null.");
             }
-            var GptStrategy = await _aiImprovementService.GetImprovementStrategyAsync(underperformingDish);
+            var GptStrategy = await _aiService.GetImprovementStrategyAsync(underperformingDish);
             return Ok(GptStrategy);
         }
     }

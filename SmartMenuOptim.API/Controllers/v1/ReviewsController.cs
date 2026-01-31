@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Dtos;
+using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.Specifications.ReviewSpecifications;

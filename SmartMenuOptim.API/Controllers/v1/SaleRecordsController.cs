@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Dtos;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.Specifications.SaleRecordSpecifications;
