@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 
 namespace SmartMenuOptim.Shared.Constants
 {
