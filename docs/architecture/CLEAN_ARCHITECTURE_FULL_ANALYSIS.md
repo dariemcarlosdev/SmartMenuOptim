@@ -387,96 +387,83 @@ Contains unit and integration tests for the application.
 ## 📐 Dependency Flow Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   PRESENTATION LAYER                        │
-│                                                             │
-│  ┌────────────────────────┐  ┌─────────────────────────┐  │
-│  │ SmartMenuOptim.Server  │  │  SmartMenuOptim.API     │  │
-│  │  (Blazor Server UI)    │  │   (REST API)            │  │
-│  │  .NET 9                │  │   .NET 8                │  │
-│  │                        │  │                         │  │
-│  │  • MudBlazor           │  │  • Controllers          │  │
-│  │  • Polly Resilience    │  │  • API Versioning       │  │
-│  │  • SignalR             │  │  • Swagger              │  │
-│  │  • Razor Components    │  │  • Azure AI Services    │  │
-│  └───────────┬────────────┘  └──────────┬──────────────┘  │
-└──────────────┼──────────────────────────┼─────────────────┘
-               │                          │
-               │                          │
-               └──────────┬───────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│               INFRASTRUCTURE LAYER                          │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │   SmartMenuOptim.Infrastructure (.NET 8)             │  │
-│  │                                                      │  │
-│  │   • ExceptionHandlingMiddleware                     │  │
-│  │   • RateLimitingMiddleware                          │  │
-│  │   • TenantResolverMiddleware                        │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-└─────────────────────────┼──────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│               APPLICATION LAYER                             │
-│   (Currently mixed with Persistence - needs refactoring)    │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │   SmartMenuOptim.Shared (.NET 8)                     │  │
-│  │                                                      │  │
-│  │   APPLICATION CONCERNS:                             │  │
-│  │   • DTOs (CategoryDTO, DishDTO, etc.)               │  │
-│  │   • Interfaces (IRepository, IUnitOfWork)           │  │
-│  │   • Constants (AuthConstants)                       │  │
-│  │   • Extensions (AdminPermissionExtensions)          │  │
-│  │                                                      │  │
-│  │   PERSISTENCE CONCERNS (should be separate):        │  │
-│  │   • AppDbContext (EF Core)                          │  │
-│  │   • Repository Implementations                      │  │
-│  │   • UnitOfWork Implementation                       │  │
-│  │   • EF Migrations                                   │  │
-│  │   • Value Converters                                │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-└─────────────────────────┼──────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   DOMAIN LAYER (CORE)                       │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │   SmartMenuOptim.Domain (.NET 8)                     │  │
-│  │                                                      │  │
-│  │   AGGREGATES:                                       │  │
-│  │   • CustomerLoyaltyAggregate                        │  │
-│  │   • DishAggregate                                   │  │
-│  │   • MenuAggregate                                   │  │
-│  │   • OrderAggregate                                  │  │
-│  │   • PromotionAggregate                              │  │
-│  │   • RestaurantAggregate                             │  │
-│  │   • TableAggregate                                  │  │
-│  │                                                      │  │
-│  │   VALUE OBJECTS:                                    │  │
-│  │   • Address, Email, PhoneNumber                     │  │
-│  │   • Money, Percentage                               │  │
-│  │                                                      │  │
-│  │   ENTITIES:                                         │  │
-│  │   • Restaurant, Dish, Order, Menu                   │  │
-│  │   • Customer, StaffMember, AdminUser                │  │
-│  │   • Review, Reservation, Promotion                  │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER                           │
+│                                                                 │
+│ ┌─────────────────────────┐ ┌─────────────────────────────────┐ │
+│ │ SmartMenuOptim.Server   │ │ SmartMenuOptim.API              │ │
+│ │ (Blazor Server UI)      │ │ (REST API)                      │ │
+│ └─────────────────────────┘ └─────────────────────────────────┘ │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                  INFRASTRUCTURE LAYER                           │
+│                                                                 │
+│ ┌─────────────────────────┐ ┌─────────────────────────────────┐ │
+│ │ SmartMenuOptim.         │ │ SmartMenuOptim.Persistence      │ │
+│ │ Infrastructure          │ │ (EF Core, Repositories,         │ │
+│ │ (Middlewares, Services) │ │ DbContext, Migrations)  (*NEW)  │ │
+│ └─────────────────────────┘ └─────────────────────────────────┘ │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                   APPLICATION LAYER                             │
+│                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ SmartMenuOptim.Application                                  │ │
+│ │ (CQRS Commands/Queries, DTOs, Handlers, Validators)        │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      DOMAIN LAYER                               │
+│                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ SmartMenuOptim.Domain                                       │ │
+│ │ (Entities, Aggregates, Value Objects, Domain Services)     │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────┐
-│                       TEST LAYER                            │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │   SmartMenuOptim.Tests (.NET 9)                      │  │
-│  │                                                      │  │
-│  │   • xUnit + Moq + FluentAssertions                  │  │
-│  │   • Integration Tests                               │  │
-│  │   • References: API + Server                        │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                       TEST LAYER                                │
+│                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ SmartMenuOptim.Tests (+ Future: Domain.Tests,               │ │
+│ │ Application.Tests, Infrastructure.Tests)                    │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    SHARED/CROSS-CUTTING                         │
+│                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ SmartMenuOptim.Shared                                       │ │
+│ │ (Constants, Extensions, Common Utilities)                   │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+**Current Project Mapping:**
+- **Presentation Layer**: `SmartMenuOptim.Server` (.NET 9) + `SmartMenuOptim.API` (.NET 8)
+- **Infrastructure Layer**: `SmartMenuOptim.Infrastructure` (.NET 8) + **[Future]** `SmartMenuOptim.Persistence` 
+- **Application Layer**: **[Future]** `SmartMenuOptim.Application` (Currently mixed in `Shared`)
+- **Domain Layer**: `SmartMenuOptim.Domain` (.NET 8)
+- **Test Layer**: `SmartMenuOptim.Tests` (.NET 9)
+- **Cross-Cutting**: `SmartMenuOptim.Shared` (.NET 8) - *Scope to be reduced*
+
+**Dependency Flow:**
+- **Presentation** → **Infrastructure** → **Application** → **Domain**
+- **Tests** → **All Layers** (for testing purposes)
+- **Domain** has no dependencies (core business logic)
+- **Shared/Cross-Cutting** → Can be referenced by any layer for utilities
+- Each layer only depends on layers below it
+
+**Infrastructure Layer Separation Strategy:**
+- **SmartMenuOptim.Infrastructure**: Cross-cutting concerns (middlewares, caching, external services)
+- **SmartMenuOptim.Persistence**: Data access layer (EF Core, repositories, migrations)
 
 ---
 
@@ -554,7 +541,7 @@ SmartMenuOptim.sln
 │   │   │   └── UtcDateTimeValueConverter.cs
 │   │   └── Interfaces/
 │   │       ├── IRepository.cs       # ✅ Should be in Application layer
-│   │       └── IUnityOfWork.cs      # ✅ Should be in Application layer
+│   │       └── IUnitOfWork.cs      # ✅ Should be in Application layer
 │   ├── Migrations/                  # 🔴 Should be in Persistence layer
 │   ├── Constants/
 │   │   └── AuthConstants.cs         # ✅ OK - Cross-cutting
@@ -1639,14 +1626,19 @@ The **SmartMenuOptimizer** solution demonstrates a **strong foundation** in both
    - Proper dependency inversion with interface abstractions
    - Multi-tenancy properly implemented at domain level
 
-3. **Modern Technology Stack**
+3. **Dual Presentation Layers**
+   - API for programmatic access
+   - Blazor Server UI for interactive web experience
+   - Both share same application logic
+
+4. **Modern Technology Stack**
    - .NET 8/9 with latest language features
    - Azure AI integration for smart recommendations
    - PostgreSQL for robust data storage
    - Comprehensive testing infrastructure
    - Production-ready monitoring (Sentry)
 
-4. **Production-Ready Features**
+5. **Production-Ready Features**
    - Multi-tenancy support built-in
    - API versioning for backward compatibility
    - Rate limiting and security middleware
