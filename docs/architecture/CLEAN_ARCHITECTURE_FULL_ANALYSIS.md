@@ -11,6 +11,47 @@ This document provides a comprehensive analysis of the SmartMenuOptimizer soluti
 
 ---
 
+## 📄 Document Information
+
+**Document Title:** SmartMenuOptimizer - Clean Architecture & Domain-Driven Design Analysis  
+**Version:** 2.0 (Consolidated & Enhanced)  
+**Created:** 2024  
+**Last Updated:** 2024  
+**Author:** AI Architecture Analysis  
+**Status:** Comprehensive Analysis - Ready for Implementation  
+
+**Change History:**
+- v1.0 - Initial DDD analysis in separate document
+- v2.0 - Consolidated analysis with Clean Architecture, added detailed DDD section, implementation roadmap, and benefits analysis
+
+---
+
+## 📋 Table of Contents
+
+### Part I: Architectural Fundamentals
+1. [Clean Architecture Layer Mapping](#-clean-architecture-layer-mapping)
+2. [Dependency Flow Diagram](#-dependency-flow-diagram)
+3. [Understanding Dependency Direction](#-understanding-dependency-direction-interfaces-vs-implementations)
+4. [SOLID Principles in Practice](#️-solid-principles-in-practice)
+
+### Part II: Current State Analysis
+5. [Detailed Layer Analysis](#-detailed-layer-analysis)
+6. [Domain-Driven Design (DDD) Analysis](#️-domain-driven-design-ddd-analysis)
+7. [Architectural Observations](#️-architectural-observations)
+
+### Part III: Recommended Improvements
+8. [Current vs. Recommended Architecture](#-current-vs-recommended-architecture)
+9. [Benefits of Implementation](#-benefits-of-implementation)
+10. [Implementation Roadmap](#-implementation-roadmap)
+
+### Part IV: Conclusion & Resources
+11. [Conclusion](#-conclusion)
+12. [Additional Resources](#-additional-resources)
+
+---
+
+# Part I: Architectural Fundamentals
+
 ## 📊 Clean Architecture Layer Mapping
 
 | Project | Clean Architecture Layer | Purpose | Dependencies | Framework |
@@ -24,7 +65,54 @@ This document provides a comprehensive analysis of the SmartMenuOptimizer soluti
 
 ---
 
-## 🔍 Detailed Layer Analysis
+## 🎯 Layer Responsibilities Summary
+
+Understanding what each layer is responsible for is crucial to maintaining Clean Architecture principles. Here's a quick reference:
+
+### Core Principle: **Dependencies flow inward** (Outer layers depend on inner layers, never the reverse)
+
+| Layer | Responsibilities | What It Should Do | What It Should NOT Do |
+|-------|------------------|-------------------|----------------------|
+| **🟦 Domain Layer** | • Business logic and domain services<br>• Entities, aggregates, value objects<br>• Domain events<br>• Business rules and invariants<br>• Repository interfaces (contracts) | • Define business entities<br>• Enforce business rules<br>• Define domain service contracts<br>• Emit domain events | • Access databases<br>• Call external APIs<br>• Reference infrastructure<br>• Know about HTTP/UI |
+| **🟩 Application Layer** | • Use cases and orchestration services<br>• Application-specific business logic<br>• DTOs for data transfer<br>• Command/Query handlers (CQRS)<br>• Input validation | • Coordinate domain operations<br>• Transform data (DTOs)<br>• Implement use cases<br>• Orchestrate workflows | • Contain core business logic<br>• Access databases directly<br>• Know about HTTP/UI<br>• Reference infrastructure details |
+| **🟨 Infrastructure Layer** | • Data access (EF Core, repositories)<br>• External services integration<br>• Third-party APIs<br>• Caching, logging, email<br>• File storage, messaging | • Implement repository interfaces<br>• Integrate external services<br>• Handle data persistence<br>• Provide technical services | • Contain business logic<br>• Define domain entities<br>• Make business decisions<br>• Define use cases |
+| **🟥 API/Presentation Layer** | • HTTP concerns (controllers, routing)<br>• Authentication & authorization<br>• CORS policy<br>• Rate limiting<br>• API documentation (Swagger)<br>• Request/response mapping | • Handle HTTP requests/responses<br>• Implement API endpoints<br>• Configure security<br>• Document API | • Contain business logic<br>• Access databases directly<br>• Define domain entities<br>• Implement use cases |
+
+### 📋 Decision Guide: Where Does This Code Belong?
+
+**Ask yourself:**
+
+1. **"Is this a business rule?"** → Domain Layer
+   - Example: "An order must have at least one item"
+   - Example: "Loyalty points expire after 1 year"
+
+2. **"Is this a use case or workflow?"** → Application Layer
+   - Example: "Process an order and send confirmation email"
+   - Example: "Analyze restaurant performance and generate report"
+
+3. **"Is this about how we store/retrieve data or call external services?"** → Infrastructure Layer
+   - Example: "Save order to PostgreSQL database"
+   - Example: "Call Azure AI for sentiment analysis"
+
+4. **"Is this about HTTP, authentication, or API concerns?"** → API/Presentation Layer
+   - Example: "Validate JWT token"
+   - Example: "Configure CORS for frontend"
+   - Example: "Rate limit API endpoints"
+
+### 🔍 Real-World Examples from SmartMenuOptim
+
+| Code | Correct Layer | Why |
+|------|---------------|-----|
+| `Order.CalculateTotal()` | Domain | Business rule: How to calculate order total |
+| `ReviewSentimentAnalysisService` | Domain | Business logic: Categorizing sentiment |
+| `CreateOrderHandler` | Application | Use case: Orchestrating order creation |
+| `OrderDTO`, `DishDTO` | Application | Data transfer between layers |
+| `SentimentService` (Azure AI) | Infrastructure | External service integration |
+| `Repository<T>`, `AppDbContext` | Infrastructure | Data access implementation |
+| `OrdersController` | API | HTTP endpoint for orders |
+| `AddNetCoreIdentity()` | API | Authentication configuration |
+
+---
 
 ### 1. Domain Layer - `SmartMenuOptim.Domain`
 
@@ -467,6 +555,173 @@ Contains unit and integration tests for the application.
 
 ---
 
+## 🔀 Understanding Dependency Direction: Interfaces vs. Implementations
+
+### ⚠️ Common Misconception
+
+**INCORRECT Understanding (Dependency Flow):**
+```
+Domain.Services.Abstraction (Interface/PORT)
+         ↑ depends on
+Application.Services (uses the interface)
+         ↑ depends on  
+Infrastructure.Services.Azure (Implementation/ADAPTER)
+```
+
+This is **WRONG** because it suggests Infrastructure depends on Application, which violates the Dependency Inversion Principle.
+
+### ✅ Correct Understanding
+
+#### Compile-Time Dependencies (The Dependency Rule)
+
+**All dependencies point INWARD toward the Domain:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│               DOMAIN LAYER (Core)                       │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Domain.Services.Abstraction                      │  │
+│  │ (Interfaces/Ports - Define WHAT we need)         │  │
+│  │                                                  │  │
+│  │ ✅ Example: IAiTextGenerator.cs                  │  │
+│  │ ✅ Example: IAdminAuthorizationService.cs        │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  - NO dependencies on outer layers                      │
+│  - Defines contracts for external services             │
+└─────────────────────────────────────────────────────────┘
+                    ▲                        ▲
+                    │                        │
+          implements│              depends on│
+                    │                        │
+┌───────────────────┴────────┐  ┌────────────┴─────────────┐
+│   INFRASTRUCTURE LAYER     │  │   APPLICATION LAYER      │
+│                            │  │                          │
+│  ┌──────────────────────┐ │  │  ┌────────────────────┐  │
+│  │ Infrastructure       │ │  │  │ Application        │  │
+│  │ .Services.Azure      │ │  │  │ .Services          │  │
+│  │                      │ │  │  │                    │  │
+│  │ IMPLEMENTS ↓         │ │  │  │ USES ↓             │  │
+│  │ IAiTextGenerator     │ │  │  │ IAiTextGenerator   │  │
+│  │                      │ │  │  │ (via DI)           │  │
+│  └──────────────────────┘ │  │  └────────────────────┘  │
+│                            │  │                          │
+│  ✅ Depends on Domain      │  │  ✅ Depends on Domain    │
+│  ✅ Implements interfaces  │  │  ✅ Uses interfaces      │
+└────────────────────────────┘  └──────────────────────────┘
+```
+
+#### Key Principle: Dependency Inversion
+
+**The rule is simple:**
+1. **Domain** defines interfaces (ports) but has NO dependencies
+2. **Infrastructure** implements those interfaces (adapters) AND depends on Domain
+3. **Application** uses those interfaces AND depends on Domain
+4. At **runtime**, DI container wires Application to Infrastructure implementations
+
+### 📋 Real Example from SmartMenuOptim
+
+**Domain Layer** (Defines the contract):
+```csharp
+// Domain/Services/Abstraction/IAiTextGenerator.cs
+namespace SmartMenuOptim.Domain.Services.Abstraction
+{
+    public interface IAiTextGenerator  // ← PORT
+    {
+        Task<string> GenerateTextAsync(string prompt);
+    }
+}
+
+// ✅ Domain has NO dependencies - this interface lives here
+```
+
+**Infrastructure Layer** (Implements the contract):
+```csharp
+// Infrastructure/Services/Azure/AzureOpenAIService.cs
+using SmartMenuOptim.Domain.Services.Abstraction;  // ← Depends on Domain
+
+namespace SmartMenuOptim.Infrastructure.Services.Azure
+{
+    public class AzureOpenAIService : IAiTextGenerator  // ← ADAPTER
+    {
+        public async Task<string> GenerateTextAsync(string prompt)
+        {
+            // Azure-specific implementation
+        }
+    }
+}
+
+// ✅ Infrastructure depends on Domain (implements its interfaces)
+```
+
+**Application Layer** (Uses the contract):
+```csharp
+// Application/Services/MenuOptimizationService.cs
+using SmartMenuOptim.Domain.Services.Abstraction;  // ← Depends on Domain
+
+namespace SmartMenuOptim.Application.Services
+{
+    public class MenuOptimizationService
+    {
+        private readonly IAiTextGenerator _aiTextGenerator;  // ← Uses PORT
+        
+        public MenuOptimizationService(IAiTextGenerator aiTextGenerator)
+        {
+            _aiTextGenerator = aiTextGenerator;  // ← DI provides ADAPTER
+        }
+        
+        public async Task OptimizeMenuDescriptionsAsync()
+        {
+            // Uses interface - doesn't know about Azure implementation
+            var optimizedText = await _aiTextGenerator.GenerateTextAsync("...");
+        }
+    }
+}
+
+// ✅ Application depends on Domain (uses its interfaces)
+```
+
+**Dependency Injection** (Wires everything together):
+```csharp
+// API/Program.cs or Startup.cs
+services.AddScoped<IAiTextGenerator, AzureOpenAIService>();
+//                 ↑                  ↑
+//                PORT                ADAPTER
+
+// At runtime: Application gets Azure implementation
+// But Application code only knows about the interface
+```
+
+### 🎯 Summary: The Three Key Relationships
+
+| Layer | Relationship to Domain | Dependency Direction |
+|-------|------------------------|----------------------|
+| **Domain** | Defines interfaces (Ports) | ➡️ NO dependencies |
+| **Infrastructure** | Implements interfaces (Adapters) | ⬆️ Depends on Domain |
+| **Application** | Uses interfaces (via DI) | ⬆️ Depends on Domain |
+
+**Compile-time:** Infrastructure → Domain ← Application  
+**Runtime:** Application → (DI) → Infrastructure (implementation)
+
+### ✅ Benefits of This Approach
+
+1. **Domain stays pure** - No external dependencies
+2. **Easy testing** - Application can use mock implementations
+3. **Flexible** - Swap Infrastructure implementations without changing Application
+4. **Clear contracts** - Interfaces define what's needed, not how it's done
+
+### 🔍 Where Interfaces Should Live
+
+| Interface Type | Location | Example | Reason |
+|----------------|----------|---------|--------|
+| **Domain Services** | `Domain.Services.Abstraction` | `IAiTextGenerator` | Business capability contract |
+| **Repository Contracts** | `Domain.Repositories` | `IRestaurantRepository` | Data access contract for domain |
+| **Application Services** | `Application.Interfaces` | `IEmailService` | Application-specific service |
+
+**Rule of thumb:** If it's a **business capability** that the domain needs, the interface lives in **Domain**. If it's an **application-level** service (like sending emails as a result of business action), it can live in **Application**.
+
+---
+
 ## 🔄 Current vs. Recommended Architecture
 
 ### Current Solution Structure
@@ -608,9 +863,9 @@ SmartMenuOptim.sln
 │       │   ├── Rating.cs            # 🆕 New
 │       │   └── DishName.cs          # 🆕 New
 │       ├── Services/                # 🆕 Domain Services (NEW)
-│       │   ├── IMenuOptimizationService.cs
-│       │   ├── IOrderProcessingService.cs
-│       │   ├── IPricingService.cs
+│       │   ├── IMenuOptimizationService.cs # Domain service for menu optimization (NEW)
+│       │   ├── IOrderProcessingService.cs # Domain service for order processing (NEW)
+│       │   ├── IPricingService.cs   # Domain service for pricing logic (NEW)
 │       │   └── ILoyaltyCalculationService.cs
 │       ├── Events/                  # 🆕 Domain Events (NEW)
 │       │   ├── IDomainEvent.cs
@@ -1317,6 +1572,619 @@ public class OrderPlacedEvent : IDomainEvent
     public DateTime OccurredOn { get; init; }
 }
 ```
+
+---
+
+## 🏗️ SOLID Principles in Practice
+
+This section demonstrates how SOLID principles are applied throughout the SmartMenuOptimizer architecture, using `ReviewSentimentAnalysisService` as a real-world example.
+
+### What are SOLID Principles?
+
+SOLID is an acronym for five design principles that make software more understandable, flexible, and maintainable:
+
+- **S**ingle Responsibility Principle
+- **O**pen/Closed Principle
+- **L**iskov Substitution Principle
+- **I**nterface Segregation Principle
+- **D**ependency Inversion Principle
+
+---
+
+### Principle 1: Single Responsibility Principle (SRP)
+
+> **Simple Explanation:** A class should have only one reason to change. Think of it like job roles in a restaurant - the chef cooks, the server serves, and the accountant handles finances. Each person has one clear responsibility.
+
+#### ✅ How It's Applied in SmartMenuOptim
+
+**Separation of Concerns:**
+- **Domain Service (Business Logic)** ≠ **Infrastructure Service (External Integration)**
+- Each service has exactly ONE reason to change
+
+#### 📦 Services, Classes & Interfaces Involved
+
+**Domain Layer (Business Logic ONLY):**
+```csharp
+// SmartMenuOptim.Domain/Services/ReviewSentimentAnalysisService.cs
+public class ReviewSentimentAnalysisService
+{
+    // ✅ Single Responsibility: Sentiment analysis business logic
+    // - Categorize sentiment (Positive/Negative/Neutral)
+    // - Calculate aggregate metrics
+    // - Identify anomalous reviews
+    // - Apply business rules (thresholds, validation)
+    
+    // ❌ Does NOT:
+    // - Call Azure APIs
+    // - Access database
+    // - Send HTTP requests
+    // - Handle infrastructure concerns
+}
+```
+
+**Infrastructure Layer (External Services ONLY):**
+```csharp
+// SmartMenuOptim.Infrastructure/Services/Azure/SentimentService.cs
+public class SentimentService : ISentimentAnalyzer
+{
+    // ✅ Single Responsibility: Azure AI Text Analytics integration
+    // - Call Azure API
+    // - Handle HTTP communication
+    // - Parse API responses
+    // - Handle external service errors
+    
+    // ❌ Does NOT:
+    // - Contain business rules
+    // - Categorize sentiment
+    // - Calculate metrics
+}
+```
+
+#### 🎯 Real-World Benefits
+
+| Scenario | Without SRP | With SRP |
+|----------|-------------|----------|
+| **Azure API changes** | Must modify business logic class | Only modify `SentimentService` |
+| **Business rule change** | Mixed with API code | Only modify `ReviewSentimentAnalysisService` |
+| **Testing** | Must mock Azure SDK | Test business logic independently |
+| **Developer focus** | One class does everything | Clear separation of concerns |
+
+---
+
+### Principle 2: Open/Closed Principle (OCP)
+
+> **Simple Explanation:** Software should be open for extension but closed for modification. Like a power outlet - you can plug in different devices (extension) without rewiring the house (modification).
+
+#### ✅ How It's Applied in SmartMenuOptim
+
+**You can swap sentiment providers WITHOUT changing domain code:**
+- Azure AI Text Analytics ✅ (Current)
+- Google Cloud Natural Language ✅ (Future)
+- AWS Comprehend ✅ (Future)
+- Local ML Model ✅ (Future)
+
+#### 📦 Services, Classes & Interfaces Involved
+
+**Extension Point (Interface):**
+```csharp
+// SmartMenuOptim.Domain/Services/Abstraction/ISentimentAnalyzer.cs
+public interface ISentimentAnalyzer
+{
+    Task<double> AnalyzePositiveSentimentAsync(string[] texts);
+    Task<double> AnalyzeAverageSentimentAsync(string text);
+}
+```
+
+**Current Implementation:**
+```csharp
+// SmartMenuOptim.Infrastructure/Services/Azure/SentimentService.cs
+public class SentimentService : ISentimentAnalyzer
+{
+    // Azure-specific implementation
+}
+```
+
+**Future Extensions (No domain changes needed):**
+```csharp
+// Future implementations - just implement the interface!
+public class GoogleSentimentService : ISentimentAnalyzer { ... }
+public class AmazonComprehendService : ISentimentAnalyzer { ... }
+public class LocalMLSentimentService : ISentimentAnalyzer { ... }
+public class MockSentimentAnalyzer : ISentimentAnalyzer { ... } // For testing
+```
+
+**Unchanged Components:**
+```csharp
+// SmartMenuOptim.Domain/Services/ReviewSentimentAnalysisService.cs
+// ✅ NEVER needs to change when switching providers!
+public class ReviewSentimentAnalysisService
+{
+    private readonly ISentimentAnalyzer _sentimentAnalyzer; // Works with ANY implementation
+}
+```
+
+#### 🎯 Real-World Benefits
+
+| Scenario | Impact |
+|----------|--------|
+| **Switch to Google Cloud** | Change DI registration only - domain unchanged |
+| **A/B test providers** | Register different implementations per environment |
+| **Add fallback provider** | Implement decorator pattern without domain changes |
+| **Cost optimization** | Switch providers based on pricing without code changes |
+
+#### 🔧 Configuration Example
+
+```csharp
+// Program.cs - Just change ONE line to switch providers
+// Current: Azure
+builder.Services.AddScoped<ISentimentAnalyzer, SentimentService>();
+
+// Future: Google
+builder.Services.AddScoped<ISentimentAnalyzer, GoogleSentimentService>();
+
+// Testing: Mock
+builder.Services.AddScoped<ISentimentAnalyzer, MockSentimentAnalyzer>();
+```
+
+---
+
+### Principle 3: Liskov Substitution Principle (LSP)
+
+> **Simple Explanation:** Objects of a superclass should be replaceable with objects of a subclass without breaking the application. Like car parts - any certified brake pad should work, regardless of manufacturer.
+
+#### ✅ How It's Applied in SmartMenuOptim
+
+**Any `ISentimentAnalyzer` implementation can replace another without breaking functionality.**
+
+#### 📦 Services, Classes & Interfaces Involved
+
+**Base Contract:**
+```csharp
+// SmartMenuOptim.Domain/Services/Abstraction/ISentimentAnalyzer.cs
+public interface ISentimentAnalyzer
+{
+    // Contract: Return sentiment score between 0.0 and 1.0
+    Task<double> AnalyzePositiveSentimentAsync(string[] texts);
+    Task<double> AnalyzeAverageSentimentAsync(string text);
+}
+```
+
+**Implementations (All Substitutable):**
+```csharp
+// All follow the same contract - return values between 0.0 and 1.0
+// Domain service doesn't care WHICH implementation is used
+
+// Azure implementation
+public class SentimentService : ISentimentAnalyzer
+{
+    public async Task<double> AnalyzePositiveSentimentAsync(string[] texts)
+        => // Returns 0.0 to 1.0 ✅
+}
+
+// Google implementation (future)
+public class GoogleSentimentService : ISentimentAnalyzer
+{
+    public async Task<double> AnalyzePositiveSentimentAsync(string[] texts)
+        => // Returns 0.0 to 1.0 ✅
+}
+
+// Mock implementation (testing)
+public class MockSentimentAnalyzer : ISentimentAnalyzer
+{
+    public async Task<double> AnalyzePositiveSentimentAsync(string[] texts)
+        => // Returns 0.0 to 1.0 ✅
+}
+```
+
+**Consumer (Polymorphic Usage):**
+```csharp
+// SmartMenuOptim.Domain/Services/ReviewSentimentAnalysisService.cs
+public class ReviewSentimentAnalysisService
+{
+    private readonly ISentimentAnalyzer _sentimentAnalyzer;
+    
+    public async Task<ReviewSentimentResult> AnalyzeReviewSentimentAsync(Review review)
+    {
+        // ✅ Works with ANY ISentimentAnalyzer implementation
+        var score = await _sentimentAnalyzer.AnalyzePositiveSentimentAsync(
+            new[] { review.Comment }
+        );
+        
+        // ✅ No runtime type checking needed!
+        // ❌ NO: if (_sentimentAnalyzer is AzureSentiment) { ... }
+        
+        return new ReviewSentimentResult
+        {
+            SentimentScore = score,
+            SentimentCategory = CategorizeSentiment(score) // Always works!
+        };
+    }
+}
+```
+
+#### 🎯 Real-World Benefits
+
+| Scenario | Without LSP | With LSP |
+|----------|-------------|----------|
+| **Testing** | Must use real Azure service | Use mock that returns predictable values |
+| **Provider switch** | Breaks if return values differ | All implementations follow contract |
+| **Development** | Need Azure credentials | Use mock for local development |
+| **CI/CD** | Slow integration tests | Fast unit tests with mocks |
+
+---
+
+### Principle 4: Interface Segregation Principle (ISP)
+
+> **Simple Explanation:** Clients shouldn't be forced to depend on methods they don't use. Like a TV remote - you don't need all 50 buttons, just power, volume, and channel. Keep interfaces focused.
+
+#### ✅ How It's Applied in SmartMenuOptim
+
+**`ISentimentAnalyzer` is focused and minimal - only 2 methods, both used.**
+
+#### 📦 Services, Classes & Interfaces Involved
+
+**Focused Interface:**
+```csharp
+// SmartMenuOptim.Domain/Services/Abstraction/ISentimentAnalyzer.cs
+public interface ISentimentAnalyzer
+{
+    // ✅ Method 1: Analyze sentiment for multiple texts
+    Task<double> AnalyzePositiveSentimentAsync(string[] texts);
+    
+    // ✅ Method 2: Analyze average sentiment for combined text
+    Task<double> AnalyzeAverageSentimentAsync(string text);
+    
+    // ✅ Total: 2 methods - both are actually used!
+}
+```
+
+**Consumer Uses BOTH Methods:**
+```csharp
+// SmartMenuOptim.Domain/Services/ReviewSentimentAnalysisService.cs
+public class ReviewSentimentAnalysisService
+{
+    private readonly ISentimentAnalyzer _sentimentAnalyzer;
+    
+    // ✅ Uses Method 1
+    public async Task<ReviewSentimentResult> AnalyzeReviewSentimentAsync(Review review)
+    {
+        var score = await _sentimentAnalyzer.AnalyzePositiveSentimentAsync(
+            new[] { review.Comment }
+        );
+        // ...
+    }
+    
+    // ✅ Uses Method 2
+    public async Task<AggregateReviewSentiment> AnalyzeMultipleReviewsAsync(
+        IEnumerable<Review> reviews)
+    {
+        var averageSentiment = await _sentimentAnalyzer.AnalyzeAverageSentimentAsync(
+            string.Join(" ", commentsToAnalyze)
+        );
+        // ...
+    }
+}
+```
+
+#### ❌ Anti-Pattern: Fat Interface (What We're Avoiding)
+
+```csharp
+// ❌ BAD: "Fat" interface with unused methods
+public interface ITextAnalyzer // DON'T DO THIS!
+{
+    Task<double> AnalyzeSentimentAsync(string text);
+    Task<string[]> ExtractKeywordsAsync(string text); // Unused!
+    Task<string> DetectLanguageAsync(string text);    // Unused!
+    Task<string> TranslateAsync(string text);         // Unused!
+    Task<string> SummarizeAsync(string text);         // Unused!
+    // ... 20 more methods ReviewSentimentAnalysisService doesn't need
+}
+
+// Consumer forced to depend on many unused methods
+public class ReviewSentimentAnalysisService
+{
+    private readonly ITextAnalyzer _analyzer; // Only uses 1 of 20 methods!
+}
+```
+
+#### ✅ Better Approach: Focused Interfaces
+
+```csharp
+// ✅ GOOD: Separate focused interfaces
+public interface ISentimentAnalyzer      // ← We use this
+{
+    Task<double> AnalyzeSentimentAsync(string text);
+}
+
+public interface IKeywordExtractor       // ← Other services use this
+{
+    Task<string[]> ExtractKeywordsAsync(string text);
+}
+
+public interface ILanguageDetector       // ← Other services use this
+{
+    Task<string> DetectLanguageAsync(string text);
+}
+```
+
+#### 🎯 Real-World Benefits
+
+| Aspect | Fat Interface | Focused Interface (ISP) |
+|--------|---------------|-------------------------|
+| **Easy to mock** | Must implement 20+ methods | Only implement 2 methods |
+| **Easy to test** | Complex test setup | Simple test setup |
+| **Clear contract** | What do we actually use? | Obvious purpose |
+| **Implementation** | Forced to implement unused methods | Only implement what's needed |
+
+---
+
+### Principle 5: Dependency Inversion Principle (DIP)
+
+> **Simple Explanation:** High-level modules shouldn't depend on low-level modules. Both should depend on abstractions. Like a lamp and outlet - the lamp doesn't depend on the power plant, both depend on the electrical standard.
+
+#### ✅ How It's Applied in SmartMenuOptim
+
+**Domain layer depends on abstractions (interfaces), NOT concrete Azure implementations.**
+
+#### 📦 Services, Classes & Interfaces Involved
+
+**Dependency Flow:**
+```
+┌─────────────────────────────────────────────────────────┐
+│               DOMAIN LAYER (High-level)                 │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │   ReviewSentimentAnalysisService                 │  │
+│  │   (Business Logic - Core)                        │  │
+│  └────────────────┬─────────────────────────────────┘  │
+│                   │ depends on ↓                        │
+│                   ▼                                      │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │   ISentimentAnalyzer (Abstraction/Port)          │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                    ▲ implements
+                    │
+┌─────────────────────────────────────────────────────────┐
+│           INFRASTRUCTURE LAYER (Low-level)              │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │   SentimentService                               │  │
+│  │   (Azure AI Text Analytics - Concrete)           │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+**High-Level Module (Domain):**
+```csharp
+// SmartMenuOptim.Domain/Services/ReviewSentimentAnalysisService.cs
+// ✅ Depends on abstraction (ISentimentAnalyzer)
+// ❌ Does NOT depend on SentimentService (concrete Azure implementation)
+public class ReviewSentimentAnalysisService
+{
+    private readonly ISentimentAnalyzer _sentimentAnalyzer; // ← Abstraction
+    
+    public ReviewSentimentAnalysisService(ISentimentAnalyzer sentimentAnalyzer)
+    {
+        _sentimentAnalyzer = sentimentAnalyzer;
+    }
+}
+```
+
+**Abstraction (Port):**
+```csharp
+// SmartMenuOptim.Domain/Services/Abstraction/ISentimentAnalyzer.cs
+// ✅ Lives in Domain layer (defines WHAT we need, not HOW)
+public interface ISentimentAnalyzer
+{
+    Task<double> AnalyzePositiveSentimentAsync(string[] texts);
+    Task<double> AnalyzeAverageSentimentAsync(string text);
+}
+```
+
+**Low-Level Module (Infrastructure):**
+```csharp
+// SmartMenuOptim.Infrastructure/Services/Azure/SentimentService.cs
+// ✅ Implements abstraction defined by Domain
+// ✅ Infrastructure depends on Domain, NOT vice versa
+public class SentimentService : ISentimentAnalyzer
+{
+    private readonly TextAnalyticsClient _client; // Azure SDK
+    
+    public async Task<double> AnalyzePositiveSentimentAsync(string[] texts)
+    {
+        // Azure-specific implementation details
+    }
+}
+```
+
+#### ❌ Anti-Pattern: Direct Dependency (What We're Avoiding)
+
+```csharp
+// ❌ BAD: Domain directly depends on infrastructure
+public class ReviewSentimentAnalysisService
+{
+    private readonly SentimentService _azureService; // ← Concrete dependency!
+    
+    public ReviewSentimentAnalysisService(SentimentService azureService)
+    {
+        _azureService = azureService; // Now we're locked to Azure!
+    }
+}
+```
+
+#### 🎯 Real-World Benefits
+
+| Scenario | Without DIP | With DIP |
+|----------|-------------|----------|
+| **Testing** | Must use real Azure | Mock interface easily |
+| **Provider switch** | Must change domain code | Just change DI registration |
+| **Development** | Need Azure credentials | Use mock implementation |
+| **Cost** | Locked to one vendor | Compare providers freely |
+| **Deployment** | One option only | Different providers per environment |
+
+#### 🔧 Dependency Injection Configuration
+
+```csharp
+// SmartMenuOptim.API/Extensions/ServiceCollectionExtensions.cs
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddDomainServices(
+        this IServiceCollection services)
+    {
+        // ✅ Domain service (always same)
+        services.AddScoped<ReviewSentimentAnalysisService>();
+        
+        return services;
+    }
+    
+    public static IServiceCollection AddInfrastructureServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // ✅ Swap implementation based on configuration
+        var provider = configuration["SentimentProvider"];
+        
+        switch (provider)
+        {
+            case "Azure":
+                services.AddScoped<ISentimentAnalyzer, SentimentService>();
+                break;
+            case "Google":
+                services.AddScoped<ISentimentAnalyzer, GoogleSentimentService>();
+                break;
+            case "Mock":
+                services.AddScoped<ISentimentAnalyzer, MockSentimentAnalyzer>();
+                break;
+        }
+        
+        return services;
+    }
+}
+```
+
+---
+
+## 📊 SOLID Principles Summary Table
+
+| Principle | How It's Applied | Key Components | Real-World Benefit |
+|-----------|------------------|----------------|-------------------|
+| **Single Responsibility (SRP)** | Business logic separated from infrastructure | • `ReviewSentimentAnalysisService` (business)<br>• `SentimentService` (infrastructure) | Azure API changes don't affect business logic |
+| **Open/Closed (OCP)** | Open for extension via implementations, closed for modification | • `ISentimentAnalyzer` (extension point)<br>• Multiple implementations possible | Switch providers without domain changes |
+| **Liskov Substitution (LSP)** | Any implementation works interchangeably | • All `ISentimentAnalyzer` implementations<br>• Consistent contracts | Testing with mocks, production with Azure |
+| **Interface Segregation (ISP)** | Focused interfaces with minimal methods | • `ISentimentAnalyzer` (2 methods, both used)<br>• No "fat" interfaces | Easy to implement and test |
+| **Dependency Inversion (DIP)** | Domain depends on abstractions, not concretions | • `ISentimentAnalyzer` (abstraction in Domain)<br>• `SentimentService` (concrete in Infrastructure) | Flexible, testable, vendor-independent |
+
+---
+
+## 🌟 Hexagonal Architecture (Ports & Adapters)
+
+The SOLID principles enable the **Hexagonal Architecture** pattern in SmartMenuOptim:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    DOMAIN CORE (Center)                     │
+│                                                             │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  Domain Services                                   │    │
+│  │  • ReviewSentimentAnalysisService ← Business Logic │    │
+│  │  • AdvancedPricingService                          │    │
+│  │  • MenuOptimizationService                         │    │
+│  └─────────────────┬──────────────────────────────────┘    │
+│                    │ depends on                             │
+│                    ▼                                         │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  Ports (Abstractions)                              │    │
+│  │  • ISentimentAnalyzer ← Interface                  │    │
+│  │  • IRepository<T>                                  │    │
+│  │  • IPricingStrategy                                │    │
+│  └────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                     ▲ implements
+                     │
+┌─────────────────────────────────────────────────────────────┐
+│              ADAPTERS (Infrastructure)                      │
+│                                                             │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  Infrastructure Adapters                           │    │
+│  │  • SentimentService ← Azure AI Text Analytics      │    │
+│  │  • EF Core Repositories                            │    │
+│  │  • External Service Integrations                   │    │
+│  └────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Benefits:**
+- ✅ **Core business logic** is protected and isolated
+- ✅ **Ports** define contracts (interfaces)
+- ✅ **Adapters** implement technical details
+- ✅ **Plug-and-play** architecture - swap adapters without changing core
+
+---
+
+## 🎯 SOLID Principles Applied to Other Domain Services
+
+These principles apply **consistently across ALL domain services**, not just `ReviewSentimentAnalysisService`:
+
+### Pattern Applied to Other Services
+
+| Domain Service | Port (Abstraction) | Adapter (Implementation) |
+|----------------|-------------------|--------------------------|
+| `ReviewSentimentAnalysisService` | `ISentimentAnalyzer` | `SentimentService` (Azure AI) |
+| `AdvancedPricingService` | `IPricingRepository`<br>`IMenuItemRepository` | EF Core Repository implementations |
+| `MenuOptimizationService` | `IOptimizationAlgorithm`<br>`ISalesRepository` | Algorithm implementations<br>Data access implementations |
+| `[Future Domain Services]` | `[Corresponding Interfaces]` | `[Infrastructure Adapters]` |
+
+---
+
+## 💡 Key Architectural Benefits
+
+### ✅ **Testability**
+- Domain services can be unit tested with mocks
+- No dependency on external services during testing
+- Fast, isolated test execution
+- Example: Test pricing logic without database or Azure
+
+### ✅ **Flexibility**
+- Swap Azure for AWS/Google Cloud without changing business logic
+- Switch databases (SQL Server → PostgreSQL → MongoDB) without domain changes
+- A/B test different algorithm implementations
+- Example: Use Azure in production, Google in staging, mocks in development
+
+### ✅ **Maintainability**
+- Business rules centralized in domain layer
+- Infrastructure concerns isolated
+- Clear separation of "what" (domain) vs "how" (infrastructure)
+- Example: New developer knows exactly where to find business logic
+
+### ✅ **Blazor Integration**
+```csharp
+// In Blazor component - domain service injected, infrastructure configured elsewhere
+@inject ReviewSentimentAnalysisService SentimentService
+
+@code {
+    private async Task AnalyzeReviews()
+    {
+        // ✅ Component doesn't know about Azure, Google, or any provider
+        var result = await SentimentService.AnalyzeReviewSentimentAsync(review);
+    }
+}
+```
+
+---
+
+## 📚 Further Reading
+
+**SOLID Principles:**
+- [SOLID Principles by Uncle Bob](https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html)
+- [Principles of OOD by Robert C. Martin](http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod)
+
+**Hexagonal Architecture:**
+- [Hexagonal Architecture by Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/)
+- [Ports and Adapters Pattern](https://herbertograca.com/2017/09/14/ports-adapters-architecture/)
+
+**Dependency Inversion:**
+- [Dependency Injection in .NET](https://docs.microsoft.com/en-us/dotnet/core/extensions/dependency-injection)
 
 ---
 
