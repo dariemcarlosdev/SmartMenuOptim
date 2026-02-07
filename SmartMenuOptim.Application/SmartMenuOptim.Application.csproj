@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SmartMenuOptim.Domain\SmartMenuOptim.Domain.csproj" />
+    <ProjectReference Include="..\SmartMenuOptim.Infrastructure\SmartMenuOptim.Infrastructure.csproj" />
+    <ProjectReference Include="..\SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
