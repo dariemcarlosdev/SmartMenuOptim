@@ -1,29 +1,72 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.API.Services;
-using SmartMenuOptim.Application.Interfaces;
-using SmartMenuOptim.Application.Services;
+using SmartMenuOptim.Application.Extensions;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
-using SmartMenuOptim.Domain.Repositories;
-using SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure;
+using SmartMenuOptim.Domain.Extensions;
+using SmartMenuOptim.Infrastructure.Extensions;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
-using SmartMenuOptim.Infrastructure.Persistence.Repositories;
 using System.Threading.RateLimiting;
 
 namespace SmartMenuOptim.API.Extensions;
 
 /// <summary>
-/// Provides extension methods for setting up services in the IServiceCollection.
+/// Provides extension methods for setting up API-specific services in the IServiceCollection.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds and configures API versioning services.
+    /// Configures all API services including controllers, infrastructure, application, domain, CORS, Swagger, and rate limiting.
+    /// This unified method sets up the complete service configuration for the Web API application.
     /// </summary>
-    /// <param name="services">The IServiceCollection to add services to.</param>
-    /// <returns>The configured IServiceCollection.</returns>
+    /// <param name="builder">The WebApplicationBuilder to configure.</param>
+    /// <returns>The configured WebApplicationBuilder.</returns>
+    public static WebApplicationBuilder ApiServiceCollection(this WebApplicationBuilder builder)
+    {
+        // 1. Add Controllers
+        builder.Services.AddControllers();
+        
+        // 2. Add API versioning (currently commented out, but available for future use)
+        // builder.Services.AddApiVersioningServices();
+        
+        // 3. Add Infrastructure layer services (data access, external services)
+        builder.Services.AddInfrastructureServices(builder.Configuration);
+        
+        // 4. Add Identity services (ASP.NET Core specific)
+        builder.Services.AddNetCoreIdentity();
+        
+        // 5. Add Application layer services (use cases and orchestration)
+        builder.Services.AddApplicationServices();
+        
+        // 6. Add Domain layer services (business logic)
+        builder.Services.AddDomainServices();
+        
+        // 7. Add CORS policy (API-specific concern)
+        builder.Services.AddCustomCorsPolicy(builder.Configuration);
+        
+        // 8. Add API documentation services
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+        
+        // 9. Add rate limiting services (API-level protection)
+        builder.Services.AddRateLimiting();
+        
+        // 10. Add health check services
+        builder.Services.AddHealthChecks();
+        
+        return builder;
+    }
+
+    /// <summary>
+    /// Adds API versioning and API explorer services to the specified service collection, enabling support for
+    /// versioned APIs and version discovery in documentation tools.
+    /// </summary>
+    /// <remarks>This method configures default API versioning behavior, including setting a default API
+    /// version, supporting versioning via headers, query strings, and URL segments, and enabling API version reporting
+    /// in responses. It also configures the API explorer to support versioned documentation, such as with
+    /// Swagger.</remarks>
+    /// <param name="services">The service collection to which the API versioning and explorer services will be added. Cannot be null.</param>
+    /// <returns>The same instance of <see cref="IServiceCollection"/> that was provided, to support method chaining.</returns>
     public static IServiceCollection AddApiVersioningServices(this IServiceCollection services)
     {
         services.AddApiVersioning(options =>
@@ -51,33 +94,16 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+
+
     /// <summary>
-    /// Adds data-related services, including the DbContext and repositories.
+    /// Adds ASP.NET Core Identity services with custom configuration to the specified service collection.
     /// </summary>
-    /// <param name="services">The IServiceCollection to add services to.</param>
-    /// <param name="configuration">The application configuration for accessing connection strings.</param>
-    /// <returns>The configured IServiceCollection.</returns>
-    public static IServiceCollection AddDataServices(this IServiceCollection services, IConfiguration configuration)
-    {
-        // Configure the DbContext to use PostgreSQL with the connection string from configuration.
-        services.AddDbContext<AppDbContext>(options =>
-        {
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection") ?? 
-                throw new InvalidOperationException("DefaultConnection string is missing!"));
-            
-            // Suppress pending model changes warning
-            // The model configuration has been reorganized for value objects, but the database schema is correct
-            // This warning can be safely ignored as no actual schema changes are required
-            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-        });
-
-        // Register the Unit of Work and repository patterns for data access.
-        services.AddScoped<IUnityOfWork, UnityOfWork>();
-        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-
-        return services;
-    }
-
+    /// <remarks>This method configures Identity with specific password, user, and lockout settings, and
+    /// registers Entity Framework stores and default token providers. This is kept in the API layer as it's
+    /// an ASP.NET Core-specific concern that requires web framework dependencies.</remarks>
+    /// <param name="services">The service collection to which the Identity services will be added.</param>
+    /// <returns>The same service collection instance, enabling further configuration.</returns>
     public static IServiceCollection AddNetCoreIdentity(this IServiceCollection services)
     {
         // Register Identity services with custom configurations.
@@ -98,35 +124,18 @@ public static class ServiceCollectionExtensions
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
 
-        // Identity services can be configured here in the future.
         return services;
     }
 
     /// <summary>
-    /// Adds custom application services to the dependency injection container.
+    /// Adds a custom CORS policy to the service collection using origins specified in the configuration.
     /// </summary>
-    /// <param name="services">The IServiceCollection to add services to.</param>
-    /// <returns>The configured IServiceCollection.</returns>
-    public static IServiceCollection AddCustomServices(this IServiceCollection services)
-    {
-        // Register custom services for business logic.
-        services.AddScoped<ISentimentService, SentimentService>();
-        services.AddScoped<IAImprovementStrategyService, AiImprovementService>();
-        services.AddScoped<IOpenIAGptService, OpenIaGptService>();
-        services.AddScoped<IAdminAuthorizationService, AdminAuthorizationService>();
-
-        // Add health check services.
-        services.AddHealthChecks();
-        
-        return services;
-    }
-
-    /// <summary>
-    /// Adds and configures Cross-Origin Resource Sharing (CORS) services.
-    /// </summary>
-    /// <param name="services">The IServiceCollection to add services to.</param>
-    /// <param name="configuration">The application configuration for accessing CORS settings.</param>
-    /// <returns>The configured IServiceCollection.</returns>
+    /// <remarks>The policy allows requests from the specified origins with any HTTP method and header, and
+    /// caches preflight responses for 10 minutes. The allowed origins must be defined in the configuration; if not
+    /// specified, no origins will be allowed by this policy.</remarks>
+    /// <param name="services">The service collection to which the CORS policy will be added.</param>
+    /// <param name="configuration">The application configuration containing the allowed CORS origins under the 'Cors:AllowedOrigins' section.</param>
+    /// <returns>The same service collection instance, enabling method chaining.</returns>
     public static IServiceCollection AddCustomCorsPolicy(this IServiceCollection services, IConfiguration configuration)
     {
         const string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -161,14 +170,14 @@ public static class ServiceCollectionExtensions
      */
 
     /// <summary>
-    /// Adds a fixed window rate limiting policy to the application's service collection.The API can now properly rate limit ALL incoming requests, regardless of their source
+    /// Adds fixed window rate limiting services to the application's dependency injection container.
     /// </summary>
-    /// <remarks>This method configures a fixed window rate limiter named "FixedPolicy" that allows up to 100
-    /// requests per minute, with a queue limit of 10 requests. Requests exceeding these limits may be rejected or
-    /// queued according to the policy. Register this method during application startup to enable rate limiting for
-    /// incoming requests.</remarks>
-    /// <param name="services">The service collection to which the rate limiting services are added.</param>
-    /// <returns>The same instance of <see cref="IServiceCollection"/> that was provided, to support method chaining.</returns>
+    /// <remarks>This method configures a fixed window rate limiter that restricts clients to a maximum number
+    /// of requests per minute, helping to protect the API from excessive or abusive traffic. Rate limiting should be
+    /// applied at the API level to ensure all clients are subject to the same restrictions.</remarks>
+    /// <param name="services">The service collection to which the rate limiting services will be added.</param>
+    /// <returns>The original <see cref="IServiceCollection"/> instance with rate limiting services registered. This enables
+    /// method chaining.</returns>
     public static IServiceCollection AddRateLimiting(this IServiceCollection services)
     {
         // Rate Limiting This is a server-side concern that should be implemented at the API level to protect the API from being overwhelmed by requests from any client, not just the Blazor server.

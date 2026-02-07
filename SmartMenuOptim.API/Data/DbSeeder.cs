@@ -405,10 +405,10 @@ namespace SmartMenuOptim.API.Data
 
                     var categories = new[]
                     {
-                        new Category(restaurant.Id, "Appetizers", "Start your meal with our delicious starters", 1),
-                        new Category(restaurant.Id, "Main Courses", "Signature entrees and hearty meals", 2),
-                        new Category(restaurant.Id, "Desserts", "Sweet treats to complete your dining experience", 3),
-                        new Category(restaurant.Id, "Beverages", "Refreshing drinks and specialty beverages", 4)
+                        new DishCategory(restaurant.Id, "Appetizers", "Start your meal with our delicious starters", 1),
+                        new DishCategory(restaurant.Id, "Main Courses", "Signature entrees and hearty meals", 2),
+                        new DishCategory(restaurant.Id, "Desserts", "Sweet treats to complete your dining experience", 3),
+                        new DishCategory(restaurant.Id, "Beverages", "Refreshing drinks and specialty beverages", 4)
                     };
                     await context.Categories.AddRangeAsync(categories);
                     await context.SaveChangesAsync();
@@ -458,9 +458,9 @@ namespace SmartMenuOptim.API.Data
                     {
                         var dishes = new[]
                         {
-        new Dish
-        {
-            Name = "Bruschetta al Pomodoro",
+                        new Dish
+                        {
+                            Name = new DishName("Bruschetta al Pomodoro"),
             Description = "Fresh tomatoes, garlic, and basil on toasted bread",
             DishPrice = 8.99m,
             CategoryId = categories[0].Id, // Appetizers
@@ -474,7 +474,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Calamari Fritti",
+            Name = new DishName("Calamari Fritti"),
             Description = "Crispy fried calamari with marinara sauce",
             DishPrice = 12.99m,
             CategoryId = categories[0].Id,
@@ -488,7 +488,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Spaghetti Carbonara",
+            Name = new DishName("Spaghetti Carbonara"),
             Description = "Classic pasta with eggs, pecorino, and guanciale",
             DishPrice = 16.99m,
             CategoryId = categories[1].Id, // Main Courses
@@ -502,7 +502,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Osso Buco",
+            Name = new DishName("Osso Buco"),
             Description = "Braised veal shanks with gremolata and saffron risotto",
             DishPrice = 32.99m,
             CategoryId = categories[1].Id,
@@ -516,7 +516,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Penne Arrabbiata",
+            Name = new DishName("Penne Arrabbiata"),
             Description = "Spicy tomato sauce with garlic and red chilies",
             DishPrice = 14.99m,
             CategoryId = categories[1].Id,
@@ -530,7 +530,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Tiramisu",
+            Name = new DishName("Tiramisu"),
             Description = "Classic coffee-flavored Italian dessert",
             DishPrice = 8.99m,
             CategoryId = categories[2].Id, // Desserts
@@ -544,7 +544,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Panna Cotta",
+            Name = new DishName("Panna Cotta"),
             Description = "Silky vanilla cream dessert with berry compote",
             DishPrice = 7.99m,
             CategoryId = categories[2].Id,
@@ -558,7 +558,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Chianti Classico",
+            Name = new DishName("Chianti Classico"),
             Description = "Premium Tuscan red wine",
             DishPrice = 9.99m,
             CategoryId = categories[3].Id, // Beverages
@@ -572,7 +572,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Margherita Pizza",
+            Name = new DishName("Margherita Pizza"),
             Description = "Classic Neapolitan pizza with tomatoes and mozzarella",
             DishPrice = 14.99m,
             CategoryId = categories[1].Id,
@@ -586,7 +586,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Risotto ai Funghi",
+            Name = new DishName("Risotto ai Funghi"),
             Description = "Creamy mushroom risotto with truffle oil",
             DishPrice = 19.99m,
             CategoryId = categories[1].Id,
@@ -610,7 +610,7 @@ namespace SmartMenuOptim.API.Data
                         {
         new Dish
         {
-            Name = "Edamame",
+            Name = new DishName("Edamame"),
             Description = "Steamed young soybeans with sea salt",
             DishPrice = 5.99m,
             CategoryId = categories[0].Id, // Appetizers
@@ -624,7 +624,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Miso Soup",
+            Name = new DishName("Miso Soup"),
             Description = "Traditional Japanese soup with tofu and seaweed",
             DishPrice = 4.99m,
             CategoryId = categories[0].Id,
@@ -638,7 +638,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Dragon Roll",
+            Name = new DishName("Dragon Roll"),
             Description = "Eel and cucumber roll topped with avocado",
             DishPrice = 16.99m,
             CategoryId = categories[1].Id, // Main Courses
@@ -652,7 +652,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Spicy Tuna Roll",
+            Name = new DishName("Spicy Tuna Roll"),
             Description = "Fresh tuna with spicy mayo and cucumber",
             DishPrice = 14.99m,
             CategoryId = categories[1].Id,
@@ -666,7 +666,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Tempura Udon",
+            Name = new DishName("Tempura Udon"),
             Description = "Thick noodles in hot broth with tempura shrimp",
             DishPrice = 17.99m,
             CategoryId = categories[1].Id,
@@ -680,7 +680,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Salmon Nigiri",
+            Name = new DishName("Salmon Nigiri"),
             Description = "Fresh salmon over hand-pressed rice",
             DishPrice = 6.99m,
             CategoryId = categories[1].Id,
@@ -694,7 +694,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Mochi Ice Cream",
+            Name = new DishName("Mochi Ice Cream"),
             Description = "Japanese rice cake filled with ice cream",
             DishPrice = 6.99m,
             CategoryId = categories[2].Id, // Desserts
@@ -708,7 +708,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Green Tea",
+            Name = new DishName("Green Tea"),
             Description = "Premium Japanese green tea",
             DishPrice = 3.99m,
             CategoryId = categories[3].Id, // Beverages
@@ -722,7 +722,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Chicken Katsu Curry",
+            Name = new DishName("Chicken Katsu Curry"),
             Description = "Crispy chicken cutlet with Japanese curry",
             DishPrice = 18.99m,
             CategoryId = categories[1].Id,
@@ -736,7 +736,7 @@ namespace SmartMenuOptim.API.Data
         },
         new Dish
         {
-            Name = "Gyoza",
+            Name = new DishName("Gyoza"),
             Description = "Pan-fried pork and vegetable dumplings",
             DishPrice = 7.99m,
             CategoryId = categories[0].Id,
@@ -1132,14 +1132,14 @@ private static async Task SeedRestaurantReviews(
         var adjustedSentiment = Math.Min(1.0, Math.Max(0.0, 
             sentiment + (random.NextDouble() - 0.5) * 0.1));
 
-        var review = new Review(
-            restaurantId: restaurant.Id,
-            dishId: dish.Id,
-            rating: rating,
-            comment: comment,
-            customerId: customer.Id,
-            sentimentScore: adjustedSentiment
-        );
+                        var review = new Review(
+                            restaurantId: restaurant.Id,
+                            dishId: dish.Id,
+                            rating: rating,
+                            comment: comment,
+                            customerId: customer.Id,
+                            sentimentScore: adjustedSentiment
+                        );
         reviews.Add(review);
     }
 
@@ -1223,18 +1223,18 @@ private static async Task SeedRestaurantReviews(
         /// Determines the loyalty tier based on the specified total lifetime points.
         /// </summary>
         /// <param name="lifetimePoints">The total number of points accumulated by a customer over their lifetime. Must be zero or greater.</param>
-        /// <returns>A <see cref="LoyaltyTier"/> value representing the customer's loyalty tier. Returns <see
-        /// cref="LoyaltyTier.Platinum"/> for 2,000 or more points, <see cref="LoyaltyTier.Gold"/> for 1,000 to 1,999
-        /// points, <see cref="LoyaltyTier.Silver"/> for 500 to 999 points, and <see cref="LoyaltyTier.Bronze"/> for
+        /// <returns>A <see cref="CustomerLoyaltyTier"/> value representing the customer's loyalty tier. Returns <see
+        /// cref="CustomerLoyaltyTier.Platinum"/> for 2,000 or more points, <see cref="CustomerLoyaltyTier.Gold"/> for 1,000 to 1,999
+        /// points, <see cref="CustomerLoyaltyTier.Silver"/> for 500 to 999 points, and <see cref="CustomerLoyaltyTier.Bronze"/> for
         /// fewer than 500 points.</returns>
-        private static LoyaltyTier DetermineTier( int lifetimePoints)
+        private static CustomerLoyaltyTier DetermineTier( int lifetimePoints)
         {
             return lifetimePoints switch
             {
-                >= 2000 => LoyaltyTier.Platinum,
-                >= 1000 => LoyaltyTier.Gold,
-                >= 500 => LoyaltyTier.Silver,
-                _ => LoyaltyTier.Bronze
+                >= 2000 => CustomerLoyaltyTier.Platinum,
+                >= 1000 => CustomerLoyaltyTier.Gold,
+                >= 500 => CustomerLoyaltyTier.Silver,
+                _ => CustomerLoyaltyTier.Bronze
             };
         }
         

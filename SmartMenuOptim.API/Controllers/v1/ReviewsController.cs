@@ -4,6 +4,7 @@ using SmartMenuOptim.Application.Dtos;
 using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Repositories;
+using SmartMenuOptim.Domain.Services.Abstraction;
 using SmartMenuOptim.Domain.Specifications.ReviewSpecifications;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -24,9 +25,9 @@ namespace SmartMenuOptim.API.Controllers.v1
     {
         private readonly ILogger<ReviewsController> _logger;
         private readonly IUnityOfWork _unityOfWork;
-        private readonly ISentimentService _sentimentService;
+        private readonly ISentimentAnalyzer _sentimentService;
 
-        public ReviewsController(ILogger<ReviewsController> logger, IUnityOfWork unityOfWork, ISentimentService sentimentService)
+        public ReviewsController(ILogger<ReviewsController> logger, IUnityOfWork unityOfWork, ISentimentAnalyzer sentimentService)
         {
             _sentimentService = sentimentService ?? throw new ArgumentNullException(nameof(sentimentService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -154,7 +155,7 @@ namespace SmartMenuOptim.API.Controllers.v1
                 {
                     return StatusCode(500, "Database context is not initialized.");
                 }
-                var sentimentScore = await _sentimentService.AnalyzeSentimentAsync(review.Comment); // call the sentiment analysis service and get the sentiment score for sentiment analysis of the review comment.
+                var sentimentScore = await _sentimentService.AnalyzeAverageSentimentAsync(review.Comment); // call the sentiment analysis service and get the sentiment score for sentiment analysis of the review comment.
                 review.UpdateSentiment(sentimentScore ?? 0.5); // Default to neutral sentiment if analysis fails
 
                 await _unityOfWork.Reviews.AddAsync(review);

@@ -1,30 +1,35 @@
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Application.Interfaces;
-using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
+using SmartMenuOptim.Domain.Entities.ProfileEntities;
+
 namespace SmartMenuOptim.API.Services;
 
 /// <summary>
-/// Provides authorization services for admin users, enabling permission checks for managing schedules and internal
-/// operations of restaurants.
+/// Implementation of admin authorization business rules.
 /// </summary>
-/// <remarks>This service offers methods to verify whether an admin user has the necessary permissions to perform
-/// management tasks for a specific restaurant. It is typically used to enforce access control in administrative
-/// workflows.</remarks>
+/// <remarks>
+/// ⚠️ NOTE: This service is currently in the API layer but should be moved to Domain.Services
+/// as it contains business logic for authorization rules.
+/// 
+/// Current location violates Clean Architecture:
+/// - Business rules should be in Domain layer
+/// - This service directly depends on AppDbContext (Infrastructure)
+/// 
+/// Recommended refactoring:
+/// 1. Move to Domain.Services as a proper domain service
+/// 2. Use IRepository<AdminUser> instead of AppDbContext
+/// 3. Keep this class in API only if it needs HttpContext for claims
+/// 
+/// For now, this implements the domain interface to maintain DIP.
+/// </remarks>
 public class AdminAuthorizationService : IAdminAuthorizationService
 {
     readonly AppDbContext _db;
     public AdminAuthorizationService(AppDbContext db) => _db = db;
     
-    /// <summary>
-    /// Determines asynchronously whether the specified admin user has permission to manage the schedule for a given
-    /// restaurant.
-    /// </summary>
-    /// <param name="adminUserId">The unique identifier of the admin user whose permissions are being checked. Must correspond to a valid admin
-    /// user.</param>
-    /// <param name="restaurantId">The unique identifier of the restaurant for which schedule management permissions are being verified.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result is <see langword="true"/> if the admin user
-    /// can manage the schedule for the specified restaurant; otherwise, <see langword="false"/>.</returns>
+    /// <inheritdoc/>
     public async Task<bool> CanManageScheduleAsync(int adminUserId, int restaurantId)
     {
         var admin = await _db.AdminUsers

@@ -64,16 +64,9 @@ public class Program
                 .AddEnvironmentVariables();
         }
 
-        // Add services in the correct order
-        builder.Services.AddControllers();
-        //builder.Services.AddApiVersioningServices();
-        builder.Services.AddDataServices(builder.Configuration);
-        builder.Services.AddNetCoreIdentity();
-        builder.Services.AddCustomServices();
-        builder.Services.AddCustomCorsPolicy(builder.Configuration);
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        builder.Services.AddRateLimiting(); // Add rate limiting services
+        // Configure all API services in one unified method
+        // This includes controllers, data services, identity, custom services, CORS, Swagger, and rate limiting
+        builder.ApiServiceCollection();
 
         var app = builder.Build();
 
