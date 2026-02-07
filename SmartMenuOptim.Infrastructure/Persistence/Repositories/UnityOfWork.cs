@@ -22,7 +22,7 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
         public IRepository<SaleRecord> SaleRecords { get; }
         public IRepository<Review> Reviews { get; }
         public IRepository<Dish> Dishes { get; }
-        public IRepository<Category> Categories { get; }
+        public IRepository<DishCategory> Categories { get; }
         public IRepository<Customer> Customers { get; }
         public IRepository<AdminUser> AdminUsers { get; }
         public IRepository<Restaurant> Restaurants { get; }
@@ -42,7 +42,7 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
             SaleRecords = new Repository<SaleRecord>(_context);
             Reviews = new Repository<Review>(_context);
             Dishes = new Repository<Dish>(_context);
-            Categories = new Repository<Category>(_context);
+            Categories = new Repository<DishCategory>(_context);
             Customers = new Repository<Customer>(_context);
             AdminUsers = new Repository<AdminUser>(_context);
             Restaurants = new Repository<Restaurant>(_context);

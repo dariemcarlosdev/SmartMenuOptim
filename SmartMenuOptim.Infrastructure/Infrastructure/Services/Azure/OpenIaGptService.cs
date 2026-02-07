@@ -3,24 +3,27 @@ using Azure.AI.OpenAI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
-using SmartMenuOptim.Application.Interfaces;
+using SmartMenuOptim.Domain.Services.Abstraction;
 
 namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
 {
     /// <summary>
-    /// Provides methods to interact with the OpenAI GPT service using Azure's OpenAI client.
+    /// Azure OpenAI implementation of IAiTextGenerator.
+    /// This is an ADAPTER in Hexagonal Architecture implementing the PORT defined in the Domain Layer.
     /// </summary>
-    /// <remarks>This service is configured using the provided <see cref="IConfiguration"/> instance, which
-    /// must contain the necessary Azure OpenAI endpoint, key, and deployment name. It logs operations and errors using
-    /// the provided <see cref="ILogger{OpenIaGptService}"/>.
-    /// With OpenAiGptService, you can now reuse this for:
-    /// Chat-like user flows
-    /// Dynamic report generation
-    /// Strategy suggestions
-    /// Social media content writing
-    /// Automatic customer feedback summaries
-    ///</remarks>
-    public class OpenIaGptService : IOpenIAGptService
+    /// <remarks>
+    /// This service is configured using the provided <see cref="IConfiguration"/> instance, which
+    /// must contain the necessary Azure OpenAI endpoint, key, and deployment name. 
+    /// It logs operations and errors using the provided <see cref="ILogger{OpenIaGptService}"/>.
+    /// 
+    /// Use cases:
+    /// - Chat-like user flows
+    /// - Dynamic report generation
+    /// - Strategy suggestions
+    /// - Social media content writing
+    /// - Automatic customer feedback summaries
+    /// </remarks>
+    public class OpenIaGptService : IAiTextGenerator
     {
         private readonly AzureOpenAIClient _openAIClient;
         private readonly string _deploymentName;
@@ -52,7 +55,13 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
         /// <param name="deploymentName"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public async Task<string> GenerateAsync(string userPrompt, string? systemPrompt = null, float? temperature = null, int? maxTokens = null, string? deploymentName = null)
+        public async Task<string> GenerateAsync(
+            string userPrompt,
+            string? systemPrompt = null,
+            float? temperature = null,
+            string? deploymentName = null,
+            int? maxTokens = null
+            )
         {
             try
             {
@@ -82,5 +91,7 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
                 return "An error occurred while generating a response from the AI service. Please try again later.";
             }
         }
+
+
     }
 }

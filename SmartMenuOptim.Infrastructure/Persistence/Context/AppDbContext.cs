@@ -72,7 +72,7 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
         // Tenant Specific Entities - Using Domain Aggregates for DDD
         public DbSet<Restaurant> Restaurants { get; set; }
         public DbSet<BusinessHours> BusinessHours { get; set; } // Child entity of Restaurant aggregate
-        public DbSet<Category> Categories { get; set; }
+        public DbSet<DishCategory> Categories { get; set; }
         public DbSet<Dish> Dishes { get; set; }
         public DbSet<Menu> Menus { get; set; }
         public DbSet<MenuDish> MenuDishes { get; set; }
@@ -533,7 +533,7 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
 
 
             /// ----------Category Relationships configuration and Indexes
-            modelBuilder.Entity<Category>(entity =>
+            modelBuilder.Entity<DishCategory>(entity =>
             {
                 entity.HasOne(c => c.Restaurant)
                .WithMany(r => r.Categories)
@@ -828,6 +828,13 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
                     .HasForeignKey(r => r.CustomerId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                // Configure ReservationStatus enum to be stored as integer
+                entity.Property(r => r.Status)
+                    .HasConversion<int>()
+                    .IsRequired()
+                    .HasDefaultValue(ReservationStatus.Pending)
+                    .HasComment("0=Pending, 1=Confirmed, 2=Seated, 3=Completed, 4=Cancelled, 5=NoShow");
+
                 // Update index for reservation queries to use ReservationTime instead of non-existent ReservationDate
                 entity.HasIndex(r => new { r.RestaurantId, r.ReservationTime })
                     .HasDatabaseName("IX_Reservations_Restaurant_Time");
@@ -835,6 +842,14 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
                 // Add additional index for reservation queries by table
                 entity.HasIndex(r => new { r.TableId, r.ReservationTime })
                     .HasDatabaseName("IX_Reservations_Table_Time");
+
+                // Add index for filtering reservations by status (e.g., finding active reservations)
+                entity.HasIndex(r => new { r.RestaurantId, r.Status, r.ReservationTime })
+                    .HasDatabaseName("IX_Reservations_Restaurant_Status_Time");
+
+                // Add index for table availability checks (filtering out cancelled/completed reservations)
+                entity.HasIndex(r => new { r.TableId, r.Status, r.ReservationTime })
+                    .HasDatabaseName("IX_Reservations_Table_Status_Time");
 
                 // Multi-tenant boundaries
                 entity.HasQueryFilter(e => !e.IsDeleted);  // Global query filter for soft delete
@@ -1155,7 +1170,14 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
                 entity.HasQueryFilter(mt => !mt.IsDeleted);  // Global query filter for soft delete
             });
 
-
+            // Configure value conversions for value objects
+            ConfigureEmailValueConversion(modelBuilder);
+            ConfigureAddressValueConversion(modelBuilder);
+            ConfigurePhoneNumberValueConversion(modelBuilder);
+            ConfigureMoneyValueConversion(modelBuilder);
+            ConfigurePercentageValueConversion(modelBuilder);
+            ConfigureDishNameValueConversion(modelBuilder);
+            ConfigureRatingValueConversion(modelBuilder);
         }
 
         /// <summary>
@@ -1295,6 +1317,62 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
             {
                 property.SetValueConverter(converter);
                 // Decimal precision is handled by the database provider (typically DECIMAL(18,4))
+            }
+        }
+
+        /// <summary>
+        /// Configures value conversion for DishName value objects across all entities.
+        /// This allows DishName to be stored as a string in the database while maintaining
+        /// type safety and domain validation in the application.
+        /// </summary>
+        /// <param name="modelBuilder">The model builder used to configure the context.</param>
+        /// <remarks>
+        /// Uses the <see cref="DishNameValueConverter"/> to handle bidirectional conversion
+        /// between DishName value objects and their string database representation.
+        /// </remarks>
+        private void ConfigureDishNameValueConversion(ModelBuilder modelBuilder)
+        {
+            // Create a single converter instance to be reused across all DishName properties
+            var converter = new DishNameValueConverter();
+
+            // Find all DishName properties across all entity types
+            var dishNameProperties = modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(DishName));
+
+            // Configure each DishName property with the converter and constraints
+            foreach (var property in dishNameProperties)
+            {
+                property.SetValueConverter(converter);
+                property.SetMaxLength(100); // Match DishName validation constraint
+            }
+        }
+
+        /// <summary>
+        /// Configures value conversion for Rating value objects across all entities.
+        /// This allows Rating to be stored as an integer in the database while maintaining
+        /// type safety and domain validation in the application.
+        /// </summary>
+        /// <param name="modelBuilder">The model builder used to configure the context.</param>
+        /// <remarks>
+        /// Uses the <see cref="RatingValueConverter"/> to handle bidirectional conversion
+        /// between Rating value objects and their integer database representation.
+        /// </remarks>
+        private void ConfigureRatingValueConversion(ModelBuilder modelBuilder)
+        {
+            // Create a single converter instance to be reused across all Rating properties
+            var converter = new RatingValueConverter();
+
+            // Find all Rating properties across all entity types
+            var ratingProperties = modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(Rating));
+
+            // Configure each Rating property with the converter
+            foreach (var property in ratingProperties)
+            {
+                property.SetValueConverter(converter);
+                // No additional length constraint needed for integers
             }
         }
 
