@@ -18,26 +18,11 @@ public class Program
         // services, and logging.
         var builder = WebApplication.CreateBuilder(args);
 
-        // 2. Configure Azure Key Vault as a configuration source.
-        // This extension method loads secrets from Azure Key Vault, making them available
-        // throughout the application's configuration.
-        builder.AddKeyVaultConfiguration();
-        
-        // 3. Register all necessary services with the dependency injection container
-        // using custom extension methods for better organization.
-        
-        // Registers UI-specific services like MudBlazor and Razor Components.
-        builder.Services.AddUiServices();
-        
-        // Registers custom application services (e.g., AIService, ReviewService).
-        builder.Services.AddAppServices();
-        
-        // Configures HttpClients, including resilience policies like retries and circuit breakers,
-        // for communicating with the backend API.
-        builder.Services.AddHttpClients();
+        // 2. Configure all Blazor Server services in one unified method
+        // This includes Azure Key Vault, UI services, application services, and HTTP clients
+        builder.BlazorServerServiceCollection();
 
-
-       // 4. Add console logging to the application's logging providers.
+        // 3. Add console logging to the application's logging providers.
         builder.Logging.AddConsole();
         
         // 5. Build the WebApplication instance. This composes the services and middleware pipeline.
