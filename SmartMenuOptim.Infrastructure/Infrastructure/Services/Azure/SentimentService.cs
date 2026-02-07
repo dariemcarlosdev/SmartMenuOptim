@@ -16,7 +16,7 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
     /// content moderation. Thread safety is ensured for concurrent calls to the service methods.</remarks>
     public class SentimentService : ISentimentAnalyzer
     {
-        private readonly TextAnalyticsClient _textAnalyticsClient;
+        private readonly TextAnalyticsClient _azureAiTextAnalyticsClient;
         private readonly ILogger<SentimentService> _logger;
 
 
@@ -33,7 +33,7 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
             
             var credential = new AzureKeyCredential(key);
             
-            _textAnalyticsClient = new TextAnalyticsClient(new Uri(endpoint), credential);
+            _azureAiTextAnalyticsClient = new TextAnalyticsClient(new Uri(endpoint), credential);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
             }
             try
             {
-                var response = await _textAnalyticsClient.AnalyzeSentimentAsync(text);
+                var response = await _azureAiTextAnalyticsClient.AnalyzeSentimentAsync(text);
                 if (response.Value == null)
                 {
                     _logger.LogError("Sentiment analysis response is null for text: {Text}", text);
@@ -104,7 +104,7 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
                 for (int i = 0; i < textList.Count; i += batchSize)
                 {
                     var batch = textList.Skip(i).Take(batchSize).ToList();
-                    var response = await _textAnalyticsClient.AnalyzeSentimentBatchAsync(batch);
+                    var response = await _azureAiTextAnalyticsClient.AnalyzeSentimentBatchAsync(batch);
 
                     foreach (var result in response.Value)
                     {
