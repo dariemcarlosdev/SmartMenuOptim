@@ -20,7 +20,7 @@ namespace SmartMenuOptim.Domain.Specifications.ReviewSpecifications
             : base(r => 
                 // Filter by dish name if provided
                 (string.IsNullOrWhiteSpace(dishName) || 
-                 (r.Dish != null && r.Dish.Name != null && r.Dish.Name.ToLower() == dishName.ToLower())) &&
+                 (r.Dish != null && r.Dish.Name != null && r.Dish.Name.NormalizedValue.Contains(dishName.ToLowerInvariant()))) &&
                 // Filter by sentiment if provided
                 (!targetSentiment.HasValue || 
                  Math.Abs(r.SentimentScore - targetSentiment.Value) <= sentimentTolerance))

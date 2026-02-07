@@ -134,7 +134,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
         /// - Vacation: Scheduled time off
         /// - NeedsCoverage: Requires replacement staff
         /// </remarks>
-        public ScheduleStatus Status { get; set; } = ScheduleStatus.Pending;
+        public ScheduleStatus Status { get; set; } = ScheduleStatus.Pending; // Default to Pending. The Status property will be automatically set to Pending in the constructors, so no changes are needed in DbSeeder.cs. 
 
         /// <summary>
         /// Gets or sets optional notes or comments associated with the schedule.

@@ -1,6 +1,7 @@
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.ValueObjects;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -193,9 +194,7 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
         /// Name of the dish.
         /// </summary>
         [Required(ErrorMessage = "Dish name is required")]
-        [MaxLength(100, ErrorMessage = "Dish name cannot exceed 100 characters")]
-        [MinLength(3, ErrorMessage = "Dish name must be at least 3 characters")]
-        public string Name { get; set; } = string.Empty;
+        public DishName Name { get; set; } = new("Default Dish");
 
         /// <summary>
         /// Optional description of the dish
@@ -257,7 +256,7 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
         /// <summary>
         /// Navigation property to the Category this dish belongs to.
         /// </summary>
-        public virtual Category Category { get; set; } = null!;
+        public virtual DishCategory Category { get; set; } = null!;
 
         /// <summary>
         /// Collection of MenuDish entries associated with this dish.

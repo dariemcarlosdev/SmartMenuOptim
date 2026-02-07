@@ -134,7 +134,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
     /// </list>
     /// </remarks>
     [Table("Categories")]
-    public class Category : TenantEntityBase, IValidatableObject
+    public class DishCategory : TenantEntityBase, IValidatableObject
     {
         // ===================================================================
         // PROPERTIES WITH ENCAPSULATION (Private Setters)
@@ -266,7 +266,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
         /// Not intended for direct use in application code.
         /// EF Core uses reflection to populate properties after instantiation.
         /// </remarks>
-        protected Category() { }
+        protected DishCategory() { }
         
         /// <summary>
         /// Creates a new category with validation.
@@ -300,7 +300,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
         /// - Database seeding operations
         /// - Menu template applications
         /// </remarks>
-        public Category(int restaurantId, string name, string? description = null, int displayOrder = 0)
+        public DishCategory(int restaurantId, string name, string? description = null, int displayOrder = 0)
         {
             if (restaurantId <= 0)
                 throw new ArgumentException("Valid restaurant ID is required.", nameof(restaurantId));

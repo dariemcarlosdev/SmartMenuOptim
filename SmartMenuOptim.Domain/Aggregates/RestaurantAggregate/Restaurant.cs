@@ -667,7 +667,7 @@ public class Restaurant : EntityBase
     /// Category is a lookup aggregate. Access categories via:
     /// await _categoryRepository.GetByRestaurantIdAsync(restaurantId)
     /// </remarks>
-    public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
+    public virtual ICollection<DishCategory> Categories { get; set; } = new List<DishCategory>();
     
     /// <summary>
     /// Navigation property for all reviews in this restaurant.

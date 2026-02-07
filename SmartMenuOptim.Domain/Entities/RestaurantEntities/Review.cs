@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.ValueObjects;
 
 namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
 {
@@ -177,7 +178,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
         public DateTime DateCreated { get; private set; }
 
         /// <summary>
-        /// Rating out of 5 stars for the dish (1-5 inclusive).
+        /// Rating out of 5 stars for the dish.
         /// </summary>
         /// <remarks>
         /// Industry-standard 5-star rating system:
@@ -188,8 +189,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
         /// - 5 stars: Excellent
         /// </remarks>
         [Required]
-        [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
-        public int Rating { get; private set; }
+        public Rating Rating { get; private set; } = new(3);
 
         // === Relationship Properties (Foreign Keys) ===
 
@@ -279,7 +279,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
             RestaurantId = restaurantId;
             DishId = dishId;
             CustomerId = customerId;
-            Rating = rating;
+            Rating = new Rating(rating);
             Comment = comment?.Trim() ?? string.Empty;
             SentimentScore = sentimentScore;
             CustomerName = string.Empty;
@@ -325,7 +325,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
             RestaurantId = restaurantId;
             DishId = dishId;
             CustomerId = null;
-            Rating = rating;
+            Rating = new Rating(rating);
             Comment = comment?.Trim() ?? string.Empty;
             SentimentScore = sentimentScore;
             CustomerName = customerName?.Trim() ?? string.Empty;
@@ -354,7 +354,7 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
             ValidateRating(rating);
             ValidateComment(comment);
 
-            Rating = rating;
+            Rating = new Rating(rating);
             Comment = comment?.Trim() ?? string.Empty;
             UpdatedAt = DateTime.UtcNow;
         }
@@ -466,8 +466,8 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
         /// <exception cref="ArgumentException">Thrown when rating is not between 1 and 5.</exception>
         private static void ValidateRating(int rating)
         {
-            if (rating < 1 || rating > 5)
-                throw new ArgumentException("Rating must be between 1 and 5 stars.", nameof(rating));
+            if (rating < Rating.MinValue || rating > Rating.MaxValue)
+                throw new ArgumentException($"Rating must be between {Rating.MinValue} and {Rating.MaxValue} stars.", nameof(rating));
         }
 
         /// <summary>

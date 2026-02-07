@@ -157,7 +157,7 @@ public class CustomerLoyalty : TenantEntityBase
     // === Private Setters (Encapsulated State) ===
     public int CustomerId { get; private set; }
     public int Points { get; private set; }
-    public LoyaltyTier Tier { get; private set; }
+    public CustomerLoyaltyTier Tier { get; private set; }
     public DateTime LastActivity { get; private set; }
     public int LifetimePoints { get; private set; }
     
@@ -269,7 +269,7 @@ public class CustomerLoyalty : TenantEntityBase
         RestaurantId = restaurantId;
         CustomerId = customerId;
         Points = 0;
-        Tier = LoyaltyTier.Bronze;
+        Tier = CustomerLoyaltyTier.Bronze;
         LastActivity = DateTime.UtcNow;
         LifetimePoints = 0;
     }
@@ -451,10 +451,10 @@ public class CustomerLoyalty : TenantEntityBase
     {
         Tier = Points switch
         {
-            >= 1000 => LoyaltyTier.Platinum,
-            >= 500 => LoyaltyTier.Gold,
-            >= 100 => LoyaltyTier.Silver,
-            _ => LoyaltyTier.Bronze
+            >= 1000 => CustomerLoyaltyTier.Platinum,
+            >= 500 => CustomerLoyaltyTier.Gold,
+            >= 100 => CustomerLoyaltyTier.Silver,
+            _ => CustomerLoyaltyTier.Bronze
         };
     }
     
@@ -538,7 +538,8 @@ public class CustomerLoyalty : TenantEntityBase
 
 
 /// <summary>
-/// Represents the tier levels in a customer loyalty program, based on accumulated points.
+/// Represents the tier levels in a customer loyalty program, based on accumulated points. You can earn and redeem points to move between tiers.
+/// Access the enum via CustomerLoyalty.Tier property.
 /// </summary>
 /// <remarks>
 /// <para>Tier levels are automatically calculated based on the customer's current point balance:</para>
@@ -550,4 +551,10 @@ public class CustomerLoyalty : TenantEntityBase
 /// </list>
 /// <para>Tiers can both increase and decrease based on point accumulation and redemption activities.</para>
 /// </remarks>
-public enum LoyaltyTier { Bronze, Silver, Gold, Platinum }
+public enum CustomerLoyaltyTier 
+{ 
+    Bronze, // 0-99 points
+    Silver, // 100-499 points
+    Gold, // 500-999 points
+    Platinum    // 1000+ points
+}

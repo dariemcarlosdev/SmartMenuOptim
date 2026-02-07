@@ -34,7 +34,7 @@ namespace SmartMenuOptim.Domain.Specifications.ReviewSpecifications
         /// <param name="caseSensitive">Whether the search should be case sensitive.</param>
         public ReviewWithDetailsSpecification(string dishName, bool caseSensitive = false)
             : base(r => r.Dish != null && r.Dish.Name != null && 
-                       (caseSensitive ? r.Dish.Name == dishName : r.Dish.Name.ToLower() == dishName.ToLower()))
+                       (caseSensitive ? r.Dish.Name.Value == dishName : r.Dish.Name.NormalizedValue == dishName.ToLowerInvariant()))
         {
             AddInclude(r => r.Customer);
             AddInclude(r => r.Dish);

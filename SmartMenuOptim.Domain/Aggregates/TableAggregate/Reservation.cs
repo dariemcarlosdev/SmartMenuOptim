@@ -4,6 +4,79 @@ using SmartMenuOptim.Domain.Entities.ProfileEntities;
 namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
 {
     /// <summary>
+    /// Represents the lifecycle status of a reservation.
+    /// </summary>
+    /// <remarks>
+    /// <para><strong>DDD Design Decision - Enum Co-location with Aggregate</strong></para>
+    /// 
+    /// <para>This enum is intentionally placed within Reservation.cs rather than in a separate file because:</para>
+    /// <list type="number">
+    ///   <item><description><strong>High Cohesion:</strong> The enum is tightly coupled to the Reservation aggregate and represents its core state machine</description></item>
+    ///   <item><description><strong>Single Responsibility:</strong> Only the Reservation entity uses this status - it's not shared across multiple aggregates</description></item>
+    ///   <item><description><strong>Encapsulation:</strong> The enum is an integral part of Reservation's invariants and business rules</description></item>
+    ///   <item><description><strong>Discoverability:</strong> Developers find everything related to Reservation lifecycle in one place</description></item>
+    /// </list>
+    /// 
+    /// <para><strong>DDD Best Practice:</strong> Keep enums WITH their aggregate when they represent aggregate-specific state.</para>
+    /// 
+    /// <para><strong>Alternative Considered:</strong> Moving to separate file would only be justified if:</para>
+    /// <list type="bullet">
+    ///   <item><description>The enum grows beyond 20 values</description></item>
+    ///   <item><description>Multiple classes in the same aggregate need this enum (e.g., ReservationHistory)</description></item>
+    ///   <item><description>The Reservation.cs file exceeds 1000 lines</description></item>
+    /// </list>
+    /// 
+    /// <para><strong>State Transitions:</strong></para>
+    /// <code>
+    ///        Pending
+    ///       /       \
+    ///  Confirmed   Cancelled
+    ///    /  |  \
+    /// Seated  |  NoShow
+    ///    |    |
+    /// Completed Cancelled
+    /// </code>
+    /// </remarks>
+    public enum ReservationStatus
+    {
+        /// <summary>
+        /// Reservation has been created but not yet confirmed.
+        /// Awaiting confirmation from customer or restaurant.
+        /// </summary>
+        Pending = 0,
+
+        /// <summary>
+        /// Reservation has been confirmed by the restaurant.
+        /// Customer is expected to arrive at the scheduled time.
+        /// </summary>
+        Confirmed = 1,
+
+        /// <summary>
+        /// Customer has arrived and been seated at the table.
+        /// Reservation is currently active.
+        /// </summary>
+        Seated = 2,
+
+        /// <summary>
+        /// Reservation has been fulfilled and customers have left.
+        /// Table is available for new reservations.
+        /// </summary>
+        Completed = 3,
+
+        /// <summary>
+        /// Reservation was cancelled by customer or restaurant.
+        /// Table is available for other reservations.
+        /// </summary>
+        Cancelled = 4,
+
+        /// <summary>
+        /// Customer did not show up for their reservation.
+        /// Table remained empty during the reserved time slot.
+        /// </summary>
+        NoShow = 5
+    }
+
+    /// <summary>
     /// Time-based table booking linking customers to tables with reservation details.
     /// Child entity of Table aggregate - semi-mutable with complex cross-aggregate references.
     /// </summary>
@@ -144,6 +217,25 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         /// </remarks>
         public string? Notes { get; private set; }
 
+        /// <summary>
+        /// Current status of the reservation in its lifecycle.
+        /// </summary>
+        /// <remarks>
+        /// Status Lifecycle:
+        /// - Pending → Confirmed → Seated → Completed (normal flow)
+        /// - Pending → Cancelled (customer/restaurant cancellation)
+        /// - Confirmed → Cancelled (late cancellation)
+        /// - Confirmed → NoShow (customer didn't arrive)
+        /// - Confirmed → Seated → Completed (arrived and completed)
+        /// 
+        /// State Transitions:
+        /// - Pending can transition to: Confirmed, Cancelled
+        /// - Confirmed can transition to: Seated, Cancelled, NoShow
+        /// - Seated can transition to: Completed
+        /// - Cancelled, NoShow, Completed are terminal states
+        /// </remarks>
+        public ReservationStatus Status { get; private set; }
+
         // ===================================================================
         // NAVIGATION PROPERTIES
         // ===================================================================
@@ -222,6 +314,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
             CustomerId = customerId;
             PartySize = partySize;
             Notes = notes;
+            Status = ReservationStatus.Pending; // New reservations start as Pending
         }
 
         /// <summary>
@@ -269,6 +362,150 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
             CustomerPhone = customerPhone;
             PartySize = partySize;
             Notes = notes;
+            Status = ReservationStatus.Pending; // New reservations start as Pending
+        }
+
+        // ===================================================================
+        // BEHAVIORAL METHODS - STATUS TRANSITIONS
+        // ===================================================================
+
+        /// <summary>
+        /// Confirms the reservation, transitioning from Pending to Confirmed status.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Pending status.</exception>
+        /// <remarks>
+        /// This method should be called when the restaurant confirms the reservation.
+        /// Only pending reservations can be confirmed.
+        /// </remarks>
+        public void Confirm()
+        {
+            if (Status != ReservationStatus.Pending)
+            {
+                throw new InvalidOperationException(
+                    $"Can only confirm pending reservations. Current status: {Status}");
+            }
+
+            Status = ReservationStatus.Confirmed;
+        }
+
+        /// <summary>
+        /// Marks the customer as seated, transitioning from Confirmed to Seated status.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Confirmed status.</exception>
+        /// <remarks>
+        /// This method should be called when the customer arrives and is seated at the table.
+        /// Only confirmed reservations can be marked as seated.
+        /// </remarks>
+        public void MarkSeated()
+        {
+            if (Status != ReservationStatus.Confirmed)
+            {
+                throw new InvalidOperationException(
+                    $"Can only seat confirmed reservations. Current status: {Status}");
+            }
+
+            Status = ReservationStatus.Seated;
+        }
+
+        /// <summary>
+        /// Completes the reservation, transitioning from Seated to Completed status.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Seated status.</exception>
+        /// <remarks>
+        /// This method should be called when the customers finish their meal and leave.
+        /// Only seated reservations can be completed.
+        /// After completion, the table becomes available for new reservations.
+        /// </remarks>
+        public void Complete()
+        {
+            if (Status != ReservationStatus.Seated)
+            {
+                throw new InvalidOperationException(
+                    $"Can only complete seated reservations. Current status: {Status}");
+            }
+
+            Status = ReservationStatus.Completed;
+        }
+
+        /// <summary>
+        /// Cancels the reservation, transitioning to Cancelled status.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if reservation is already in a terminal state.</exception>
+        /// <remarks>
+        /// This method can be called by either the customer or restaurant to cancel the reservation.
+        /// Can only cancel reservations in Pending or Confirmed status.
+        /// Cannot cancel reservations that are already Seated, Completed, NoShow, or Cancelled.
+        /// </remarks>
+        public void Cancel()
+        {
+            if (Status == ReservationStatus.Seated)
+            {
+                throw new InvalidOperationException(
+                    "Cannot cancel a reservation where customers are already seated.");
+            }
+
+            if (Status == ReservationStatus.Completed)
+            {
+                throw new InvalidOperationException(
+                    "Cannot cancel an already completed reservation.");
+            }
+
+            if (Status == ReservationStatus.NoShow)
+            {
+                throw new InvalidOperationException(
+                    "Cannot cancel a no-show reservation.");
+            }
+
+            if (Status == ReservationStatus.Cancelled)
+            {
+                throw new InvalidOperationException(
+                    "Reservation is already cancelled.");
+            }
+
+            Status = ReservationStatus.Cancelled;
+        }
+
+        /// <summary>
+        /// Marks the reservation as a no-show, indicating the customer did not arrive.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Confirmed status.</exception>
+        /// <remarks>
+        /// This method should be called when the customer fails to arrive within a reasonable time
+        /// after their reservation time (e.g., 15-30 minutes).
+        /// Only confirmed reservations can be marked as no-show.
+        /// After marking as no-show, the table becomes available for walk-in customers.
+        /// </remarks>
+        public void MarkNoShow()
+        {
+            if (Status != ReservationStatus.Confirmed)
+            {
+                throw new InvalidOperationException(
+                    $"Can only mark confirmed reservations as no-show. Current status: {Status}");
+            }
+
+            Status = ReservationStatus.NoShow;
+        }
+
+        /// <summary>
+        /// Checks if the reservation is in an active state (not cancelled, completed, or no-show).
+        /// </summary>
+        /// <returns>True if the reservation is active (Pending, Confirmed, or Seated), false otherwise.</returns>
+        public bool IsActive()
+        {
+            return Status == ReservationStatus.Pending ||
+                   Status == ReservationStatus.Confirmed ||
+                   Status == ReservationStatus.Seated;
+        }
+
+        /// <summary>
+        /// Checks if the reservation is in a terminal state (cannot be modified further).
+        /// </summary>
+        /// <returns>True if the reservation is in Completed, Cancelled, or NoShow status.</returns>
+        public bool IsTerminal()
+        {
+            return Status == ReservationStatus.Completed ||
+                   Status == ReservationStatus.Cancelled ||
+                   Status == ReservationStatus.NoShow;
         }
 
         // ===================================================================

@@ -31,7 +31,7 @@ namespace SmartMenuOptim.Domain.Repositories
         /// <summary>
         /// Repository for dish categories.
         /// </summary>
-        IRepository<Category> Categories { get; }
+        IRepository<DishCategory> Categories { get; }
 
         /// <summary>
         /// Repository for customer profiles.

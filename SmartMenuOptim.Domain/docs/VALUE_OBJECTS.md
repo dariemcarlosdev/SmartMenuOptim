@@ -3,6 +3,7 @@
 ## Table of Contents
 - [What are Value Objects?](#what-are-value-objects)
 - [Characteristics of Value Objects](#characteristics-of-value-objects)
+- [When Should You Create a Value Object?](#when-should-you-create-a-value-object)
 - [DDD Best Practices](#ddd-best-practices)
 - [Value Objects vs Entities](#value-objects-vs-entities)
 - [Implementation in C# 12 / .NET 8](#implementation-in-c-12--net-8)
@@ -11,82 +12,250 @@
 - [Benefits](#benefits)
 - [Common Patterns](#common-patterns)
 - [Testing Value Objects](#testing-value-objects)
+- [Best Practices Summary](#best-practices-summary)
+- [Further Reading](#further-reading)
+- [Conclusion](#conclusion)
+- [Implementation Pattern for New Value Objects](#implementation-pattern-for-new-value-objects)
 
 ---
 
 ## What are Value Objects?
 
-**Value Objects** are a fundamental building block in Domain-Driven Design (DDD). They represent concepts in your domain that are defined by their attributes rather than a unique identity. Unlike entities, two value objects with the same values are considered equal and interchangeable.
+**Value Objects** are a way to represent important concepts in your business domain that don't need a unique identity. Think of them as "smart containers" that hold related data and behavior together.
+
+### Simple Explanation
+
+Imagine you're working with **money** in your application. Instead of using separate variables for amount and currency:
+
+```csharp
+// ❌ Primitive approach - easy to make mistakes
+decimal amount = 25.99m;
+string currency = "USD";
+// What happens if you mix up the order? Pass amount where currency expected?
+```
+
+You create a **Value Object** that bundles them together with built-in rules:
+
+```csharp
+// ✅ Value Object approach - safe and expressive
+Money price = new Money(25.99m, "USD");
+// Can't mix up the parts, includes validation, has useful operations
+```
+
+### Real-World Analogy
+
+Think of Value Objects like **coins or bills**:
+- Two $20 bills are **exactly the same** - you don't care which specific bill you have
+- What matters is the **value** ($20), not the individual bill's serial number
+- If you lose one $20 bill and find another $20 bill, you have the same thing
+
+This is different from something like your **driver's license**:
+- Each license has a unique ID number
+- You can't just swap your license with someone else's (even with same info)
+- The **identity** matters, not just the values
 
 ### Key Concept
-> "An object that represents a descriptive aspect of the domain with no conceptual identity is called a VALUE OBJECT."
-> — Eric Evans, Domain-Driven Design
+> **Value Objects** represent concepts that matter because of **what they are** (their values), not **which one they are** (their identity).
+
+### Common Examples in Restaurant Apps
+
+| Concept | Why it's a Value Object | What it Contains |
+|---------|------------------------|------------------|
+| **Email Address** | `"chef@restaurant.com"` = `"chef@restaurant.com"` | Validation rules, normalization |
+| **Money/Price** | `$15.99 USD` = `$15.99 USD` | Amount, currency, calculations |
+| **Phone Number** | `"(555) 123-4567"` = `"(555) 123-4567"` | Formatting, validation |
+| **Address** | Same street + city + zip = Same address | Complete location info |
+| **Rating** | 4 stars = 4 stars | Star value, percentage, descriptions |
 
 ---
 
 ## Characteristics of Value Objects
 
-### 1. **Immutability**
-Once created, a value object cannot be modified. Any change requires creating a new instance.
+Value Objects follow 5 simple rules that make them powerful and safe to use:
+
+### 1. **They Never Change (Immutability)**
+Once you create a value object, you can't modify it. To "change" it, you create a new one.
+
+**Why?** Just like you can't change a $20 bill into a $50 bill - you need a different bill.
 
 ```csharp
-// ✅ CORRECT: Immutable value object
-var originalEmail = new Email("user@example.com");
-var newEmail = new Email("newuser@example.com"); // Create new instance
+// ✅ CORRECT: Create new instances for changes
+var originalPrice = new Money(10.50m, "USD");
+var salePrice = new Money(8.50m, "USD"); // New instance for sale price
 
-// ❌ WRONG: Mutable value object
-originalEmail.Value = "changed@example.com"; // Not possible - no setter
+// ❌ IMPOSSIBLE: Can't modify existing value objects
+// originalPrice.Amount = 8.50m; // No setter exists!
 ```
 
-### 2. **Value Equality**
-Two value objects are equal if all their properties have the same values.
+**Real benefit:** Prevents accidental changes that could break your app.
+
+### 2. **Same Values = Same Object (Value Equality)**
+Two value objects with identical content are considered exactly the same.
+
+**Think:** Two identical business cards represent the same contact information.
 
 ```csharp
-var money1 = new Money(10.50m, "USD");
-var money2 = new Money(10.50m, "USD");
-var money3 = new Money(10.50m, "EUR");
+var price1 = new Money(10.50m, "USD");
+var price2 = new Money(10.50m, "USD");
+var price3 = new Money(10.50m, "EUR");
 
-Assert.True(money1 == money2);  // ✅ Equal - same amount and currency
-Assert.False(money1 == money3); // ❌ Not equal - different currency
+Console.WriteLine(price1 == price2); // ✅ TRUE - same amount and currency
+Console.WriteLine(price1 == price3); // ❌ FALSE - different currency
+
+// This is automatic with value objects - no need to write comparison logic!
 ```
 
-### 3. **Self-Validation**
-Value objects validate themselves upon creation, ensuring they're always in a valid state.
+### 3. **They Validate Themselves (Self-Validation)**
+Value objects check their own data when created, so invalid objects can't exist.
+
+**Think:** Like a smart form that won't submit with invalid data.
 
 ```csharp
-// ✅ Valid email
-var validEmail = new Email("user@example.com");
+// ✅ Valid email creates successfully
+var validEmail = new Email("chef@restaurant.com");
 
-// ❌ Throws ArgumentException - invalid format
-var invalidEmail = new Email("not-an-email"); 
+// ❌ Invalid email throws error immediately - can't create broken objects
+try 
+{
+    var invalidEmail = new Email("not-an-email");
+}
+catch (ArgumentException ex)
+{
+    Console.WriteLine("Caught invalid email!"); // Will execute
+}
+
+// This means: If you have an Email object, you KNOW it's valid!
 ```
 
-### 4. **No Identity**
-Value objects don't have a unique identifier. They're identified by their values.
+### 4. **No Unique Identity (No ID Required)**
+Value objects don't need ID numbers because their values identify them.
+
+**Think:** You don't need a serial number on each "medium coffee order" - the description is enough.
 
 ```csharp
-// Both addresses are the same if all properties match
-var address1 = new Address("123 Main St", "Springfield", "IL", "62701", "US");
-var address2 = new Address("123 Main St", "Springfield", "IL", "62701", "US");
+// Value objects are identified by their content
+var address1 = new Address("123 Main St", "Springfield", "IL", "62701");
+var address2 = new Address("123 Main St", "Springfield", "IL", "62701");
 
-Assert.True(address1 == address2); // No need for ID comparison
+// No ID needed - if all parts match, they represent the same address
+Console.WriteLine(address1 == address2); // ✅ TRUE
+
+// Compare to entities that NEED IDs:
+var customer1 = new Customer { Id = 1, Name = "John" };
+var customer2 = new Customer { Id = 2, Name = "John" };
+// Same name, different people! IDs make them unique.
 ```
 
-### 5. **Conceptual Whole**
-A value object represents a complete concept, not just a primitive wrapper.
+### 5. **Complete Concepts (Not Just Data Containers)**
+Value objects represent whole business concepts with behavior, not just data storage.
+
+**Think:** A "Money" object doesn't just hold numbers - it knows how to add, subtract, format, etc.
 
 ```csharp
-// ❌ Primitive obsession
-string email = "user@example.com";
-string phone = "123-456-7890";
+// ❌ Primitive obsession - just data, no behavior
 decimal amount = 10.50m;
 string currency = "USD";
+// How do you add? Convert currency? Format for display? Code scattered everywhere!
 
-// ✅ Rich domain model with value objects
-Email email = new Email("user@example.com");
-PhoneNumber phone = new PhoneNumber("123-456-7890");
+// ✅ Rich value object - data + behavior in one place
 Money price = new Money(10.50m, "USD");
+Money tax = new Money(0.84m, "USD");
+
+Money total = price + tax;                    // Addition built-in
+string formatted = price.ToString("$0.00");  // Formatting built-in  
+bool isPositive = price.IsPositive;           // Business logic built-in
+
+// All money-related logic lives with the Money concept!
 ```
+
+### Quick Mental Model
+
+Think of Value Objects like **LEGO blocks**:
+- **Immutable**: You can't bend a LEGO block into a different shape
+- **Value Equality**: Two identical red 2x4 blocks are the same
+- **Self-Validating**: LEGO blocks only connect in valid ways
+- **No Identity**: You don't care which specific red block you grab
+- **Complete Concept**: A "red 2x4 block" is a complete, useful thing
+
+This makes your code like a well-designed LEGO set - all pieces fit together correctly!
+
+---
+
+## When Should You Create a Value Object?
+
+### The "Primitive Smell" Test
+
+If you find yourself writing code like this, you probably need a Value Object:
+
+```csharp
+// 🚨 RED FLAGS - Primitive Obsession Smells
+public class MenuItem
+{
+    public decimal Price { get; set; }
+    public string Currency { get; set; }          // Always goes with Price
+    public string Email { get; set; }             // Needs validation 
+    public int Rating { get; set; }               // Must be 1-5, but int allows 999
+    public string Phone { get; set; }             // Needs formatting
+    
+    // Validation scattered everywhere!
+    public bool IsValidEmail() => /* regex here */;
+    public bool IsValidRating() => Rating >= 1 && Rating <= 5;
+    public string FormatPrice() => $"{Price:C} {Currency}";
+}
+```
+
+### The Value Object Solution
+
+```csharp
+// ✅ CLEAN - Using Value Objects  
+public class MenuItem
+{
+    public Money Price { get; set; }              // Handles amount + currency + formatting
+    public Email ContactEmail { get; set; }       // Handles validation + normalization
+    public Rating CustomerRating { get; set; }    // Handles 1-5 range + descriptions
+    public PhoneNumber Phone { get; set; }        // Handles formatting + validation
+    
+    // No validation methods needed - value objects handle it!
+}
+```
+
+### Simple Decision Tree
+
+Ask yourself these questions:
+
+1. **"Does this data need validation?"** 
+   - Email format ✅ → Value Object
+   - Person's age ✅ → Value Object  
+   - Random text ❌ → Keep as string
+
+2. **"Do these pieces of data always go together?"**
+   - Amount + Currency ✅ → Money Value Object
+   - Street + City + Zip ✅ → Address Value Object
+   - Separate unrelated fields ❌ → Keep separate
+
+3. **"Do I keep writing the same validation/formatting code?"**
+   - Email validation everywhere ✅ → Email Value Object
+   - Phone formatting in multiple places ✅ → PhoneNumber Value Object
+   - One-off validation ❌ → Maybe just a property
+
+4. **"Is this a concept my business users understand?"**
+   - "Price", "Email", "Address" ✅ → Great Value Objects
+   - "Configuration flag XYZ" ❌ → Technical detail, not domain concept
+
+### Common Value Object Candidates
+
+| If you have this... | Consider this Value Object | ✅ Implemented |
+|---------------------|---------------------------|-------------|
+| `decimal amount, string currency` | `Money` | ✅ |
+| `string email` (with validation) | `Email` | ✅ |
+| `string phone` (with formatting) | `PhoneNumber` | ✅ |
+| `int rating` (must be 1-5) | `Rating` | ✅ Recently Added |
+| `string street, city, state, zip` | `Address` | ✅ |
+| `decimal percent` (0.0-1.0) | `Percentage` | ✅ |
+| `string name` (with business rules) | `DishName`, `CustomerName` | ✅ `DishName` Recently Added |
+| `DateTime start, DateTime end` | `TimeRange`, `BusinessHours` | 🔄 Planned |
+| `string description` (with length rules) | `Description`, `Notes` | 🔄 Consider |
+| `string code` (with format rules) | `ProductCode`, `DiscountCode` | 🔄 Consider |
 
 ---
 
@@ -201,42 +370,71 @@ public sealed record Money
 
 ## Value Objects vs Entities
 
-| Aspect | Value Object | Entity |
-|--------|-------------|--------|
-| **Identity** | No unique identifier | Has unique identifier (ID) |
-| **Equality** | Based on all property values | Based on ID only |
-| **Mutability** | Immutable | Mutable |
-| **Lifespan** | Can be created/discarded freely | Has a lifecycle |
-| **Example** | Email, Money, Address | Customer, Restaurant, Order |
+Understanding the difference is crucial for good domain design:
+
+### The Golden Question: "Is this thing unique, or just valuable?"
+
+**Value Objects** → **"What matters is WHAT it is"**
+- Two $10 bills are the same
+- Two email addresses "chef@place.com" are identical
+- Two 5-star ratings mean exactly the same thing
+
+**Entities** → **"What matters is WHICH ONE it is"**
+- Two customers named "John Smith" are different people
+- Two restaurants at the same address are different businesses
+- Two orders for $25 are separate transactions
+
+### Quick Comparison
+
+| Aspect | Value Object | Entity | Example |
+|--------|-------------|--------|---------|
+| **What makes it unique?** | Its values | Its ID | Money vs Customer |
+| **Can you swap identical ones?** | ✅ Yes | ❌ No | Two $5 bills vs Two people |
+| **Does it change?** | ❌ Create new one | ✅ Update properties | New price vs Update customer info |
+| **Identity over time?** | No identity | Same person/thing | Email stays same meaning vs Person grows older |
+
+### Real Examples from Our Restaurant App
 
 ```csharp
-// Entity - has identity and lifecycle
-public class Restaurant : EntityBase
-{
-    public int Id { get; set; } // Identity
-    public string Name { get; set; }
-    public Address Location { get; set; } // Value Object
-    public PhoneNumber Phone { get; set; } // Value Object
-    
-    // Entities are mutable
-    public void UpdateLocation(Address newAddress)
-    {
-        Location = newAddress; // Replace entire value object
-    }
-}
+// 🏷️ VALUE OBJECTS - Defined by their content
+var restaurantEmail = new Email("contact@restaurant.com");
+var menuItemPrice = new Money(12.99m, "USD"); 
+var customerRating = new Rating(5); // 5 stars
+var deliveryAddress = new Address("123 Main St", "Springfield", "IL");
 
-// Value Object - no identity, immutable
-public sealed record Address
-{
-    public string Street { get; }
-    public string City { get; }
-    // ... more properties
-    
-    // Immutable - create new instance for changes
-    public Address WithStreet(string newStreet) =>
-        new Address(newStreet, City, State, PostalCode, CountryCode, Street2);
-}
+// If you create the same values again, they're identical:
+var sameEmail = new Email("contact@restaurant.com");
+// restaurantEmail == sameEmail ✅ TRUE
+
+// 🆔 ENTITIES - Defined by their unique identity  
+var customer1 = new Customer { Id = 1, Name = "John", Email = restaurantEmail };
+var customer2 = new Customer { Id = 2, Name = "John", Email = restaurantEmail };
+
+// Even with same name and email, they're different people:
+// customer1 == customer2 ❌ FALSE (different IDs)
+
+// 🔄 HOW THEY CHANGE
+// Value Object: Create a new one
+var newPrice = new Money(15.99m, "USD"); // Create new
+menuItem.Price = newPrice; // Replace entire object
+
+// Entity: Modify the existing one
+customer1.Name = "Johnny"; // Update property
+customer1.Email = new Email("johnny@email.com"); // Replace value object property
+// customer1 is still the same customer (same ID), just updated
 ```
+
+### Memory Aid: The "Business Card" Test
+
+Think of **Value Objects** like information **ON** a business card:
+- Email, phone, address are value objects
+- If two cards have identical info, they represent the same contact details
+- You don't care which physical card you have
+
+Think of **Entities** like the **PERSON** the business card represents:
+- Each person is unique, regardless of their contact info
+- Two people can have identical business cards but still be different people
+- The person has an identity beyond their contact details
 
 ---
 
@@ -313,7 +511,7 @@ public sealed class Address : IEquatable<Address>
 
 ## Value Objects in This Project
 
-This project includes the following value objects:
+This project includes the following value objects, all following a consistent implementation pattern:
 
 ### 1. **Email**
 ```csharp
@@ -389,6 +587,67 @@ var oneLine = restaurantAddress.ToSingleLine();
 - Billing addresses
 - Corporate addresses
 
+### 6. **DishName** ⭐ *Recently Added*
+```csharp
+var dishName = new DishName("Margherita Pizza");
+
+// Access properties
+string display = dishName.Value;           // "Margherita Pizza"
+string normalized = dishName.NormalizedValue; // "margherita pizza"
+string searchable = dishName.SearchValue;     // "margherita pizza"
+
+// Utility methods
+bool isSpecial = dishName.IsSpecialtyDish(); // false
+string abbreviated = dishName.GetAbbreviated(15); // "Margherita..."
+```
+
+**Features:**
+- Validates dish names (3-100 characters, valid characters only)
+- Provides normalized and search-friendly versions
+- Includes utility methods like `IsSpecialtyDish()` and `GetAbbreviated()`
+- Immutable record with implicit conversion to string
+
+**Usage:**
+- Menu item names
+- Recipe titles
+- Search functionality
+- Display formatting
+
+### 7. **Rating** ⭐ *Recently Added*
+```csharp
+var rating = new Rating(4);
+
+// Access properties
+int value = rating.Value;           // 4
+string desc = rating.Description;   // "Very Good"
+bool positive = rating.IsPositive;  // true
+double percentage = rating.Percentage; // 0.75
+
+// Conversion methods
+var fromPercent = Rating.FromPercentage(0.8); // 4 stars
+var fromDecimal = Rating.FromDecimal(4.2);    // 4 stars
+
+// Visualization
+string stars = rating.ToStarString(); // "★★★★☆"
+
+// Calculations
+var averageRating = Rating.CalculateAverage(reviewRatings);
+```
+
+**Features:**
+- Enforces 1-5 star rating range
+- Provides utility properties (`IsPositive`, `IsNegative`, `IsNeutral`)
+- Includes conversion methods (`FromPercentage`, `FromDecimal`)
+- Star visualization with `ToStarString()` method
+- Static methods for calculating averages
+- Comparison operators
+
+**Usage:**
+- Customer reviews and feedback
+- Menu item ratings
+- Service quality scores
+- Performance metrics
+
 ---
 
 ## Usage in Domain Entities
@@ -418,16 +677,16 @@ public class Restaurant : EntityBase
 }
 ```
 
-### Example 2: MenuItem Entity
+### Example 2: MenuItem/Dish Entity
 
 ```csharp
-public class MenuItem : EntityBase
+public class Dish : EntityBase
 {
     public int Id { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
     
-    // Value Objects for pricing
+    // Value Objects for naming and pricing
+    public DishName Name { get; set; }
+    public string? Description { get; set; }
     public Money BasePrice { get; set; }
     public Percentage? Discount { get; set; }
     public Percentage TaxRate { get; set; }
@@ -447,6 +706,13 @@ public class MenuItem : EntityBase
         }
     }
     
+    // Domain operations with value objects
+    public void UpdateName(string newName)
+    {
+        Name = new DishName(newName); // Automatic validation
+        UpdatedAt = DateTime.UtcNow;
+    }
+    
     public void ApplyDiscount(Percentage discount)
     {
         if (discount.Value > 0.5m) // Max 50% discount
@@ -455,6 +721,64 @@ public class MenuItem : EntityBase
         Discount = discount;
         UpdatedAt = DateTime.UtcNow;
     }
+    
+    // Search-friendly methods
+    public bool MatchesSearch(string searchTerm)
+    {
+        return Name.SearchValue.Contains(searchTerm.ToLowerInvariant()) ||
+               Name.NormalizedValue.Contains(searchTerm.ToLowerInvariant());
+    }
+    
+    public bool IsSpecialtyItem() => Name.IsSpecialtyDish();
+}
+```
+
+### Example 2.1: Review Entity with Rating Value Object
+
+```csharp
+public class Review : EntityBase
+{
+    public int Id { get; set; }
+    public int DishId { get; set; }
+    public int? CustomerId { get; set; }
+    
+    // Value Objects for rating and feedback
+    public Rating Rating { get; private set; }
+    public string Comment { get; private set; }
+    public double SentimentScore { get; private set; }
+    public string CustomerName { get; private set; }
+    
+    // Constructor with Rating value object
+    public Review(
+        int restaurantId,
+        int dishId,
+        int rating,
+        string comment,
+        int customerId,
+        double sentimentScore = 0.5)
+    {
+        // ... validation
+        Rating = new Rating(rating); // Automatic validation
+        Comment = comment?.Trim() ?? string.Empty;
+        // ... other properties
+    }
+    
+    // Update methods using value objects
+    public void UpdateReview(int rating, string comment)
+    {
+        if (IsDeleted)
+            throw new InvalidOperationException("Cannot update a deleted review.");
+
+        Rating = new Rating(rating); // Type-safe validation
+        Comment = comment?.Trim() ?? string.Empty;
+        UpdatedAt = DateTime.UtcNow;
+    }
+    
+    // Domain queries using Rating behavior
+    public bool IsPositiveReview() => Rating.IsPositive;
+    public bool IsNegativeReview() => Rating.IsNegative;
+    public string GetStarDisplay() => Rating.ToStarString();
+    public string GetRatingDescription() => Rating.Description;
 }
 ```
 
@@ -779,3 +1103,276 @@ Value Objects are a powerful tool for creating a rich, expressive domain model. 
 - Create a ubiquitous language in code
 
 Start identifying primitives in your entities that could be value objects, and gradually refactor them to create a more robust domain model.
+
+---
+
+## Implementation Pattern for New Value Objects
+
+**⚠️ IMPORTANT: When adding new value objects to this project, follow this established pattern to maintain consistency and quality.**
+
+### 1. **Value Object Implementation Checklist**
+
+✅ **Core Structure:**
+- Use `sealed record` for immutability and value equality
+- Include parameterless constructor for EF Core
+- Add comprehensive validation in primary constructor
+- Implement `ToString()` and implicit conversions where appropriate
+
+✅ **Properties:**
+- `Value` property for the main value
+- `NormalizedValue` property for search/comparison (if applicable)
+- Additional computed properties for domain behavior
+
+✅ **Methods:**
+- Domain-specific utility methods
+- Static factory methods for common scenarios
+- Validation helper methods (static or instance)
+
+✅ **Validation:**
+- Validate in constructor with descriptive error messages
+- Use constants for validation limits
+- Include business rules and constraints
+
+### 2. **Standard Implementation Template**
+
+```csharp
+using System.Text.RegularExpressions;
+
+namespace SmartMenuOptim.Domain.ValueObjects;
+
+/// <summary>
+/// Represents a [concept name] value object with validation and [specific behavior].
+/// </summary>
+/// <remarks>
+/// This value object ensures that [concept] are always valid, normalized, and conform to business rules.
+/// It is immutable and defined by its value rather than identity.
+/// [Additional behavior description]
+/// </remarks>
+public sealed record YourValueObject
+{
+    // Constants for validation
+    public const int MinLength = X;
+    public const int MaxLength = Y;
+    
+    // Static validation patterns (if needed)
+    private static readonly Regex ValidationRegex = new(
+        @"[your-pattern]",
+        RegexOptions.Compiled);
+
+    /// <summary>
+    /// Gets the primary value.
+    /// </summary>
+    public string Value { get; init; }
+
+    /// <summary>
+    /// Gets the normalized version for searching/comparison.
+    /// </summary>
+    public string NormalizedValue { get; init; }
+
+    /// <summary>
+    /// Additional computed properties for domain behavior.
+    /// </summary>
+    public bool SomeDomainProperty => /* logic */;
+
+    /// <summary>
+    /// Parameterless constructor for EF Core.
+    /// </summary>
+    private YourValueObject()
+    {
+        Value = string.Empty;
+        NormalizedValue = string.Empty;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="YourValueObject"/> class.
+    /// </summary>
+    /// <param name="Value">The value to validate and store.</param>
+    /// <exception cref="ArgumentException">Thrown when the value is invalid.</exception>
+    public YourValueObject(string Value)
+    {
+        // Standard validation pattern
+        if (string.IsNullOrWhiteSpace(Value))
+            throw new ArgumentException("[concept] cannot be empty.", nameof(Value));
+
+        if (Value.Length < MinLength)
+            throw new ArgumentException($"[concept] must be at least {MinLength} characters long.", nameof(Value));
+
+        if (Value.Length > MaxLength)
+            throw new ArgumentException($"[concept] cannot exceed {MaxLength} characters.", nameof(Value));
+
+        var trimmedValue = Value.Trim();
+        
+        // Additional validation (format, business rules, etc.)
+        if (!ValidationRegex.IsMatch(trimmedValue))
+            throw new ArgumentException("Invalid [concept] format.", nameof(Value));
+
+        // Set properties
+        this.Value = trimmedValue;
+        NormalizedValue = trimmedValue.ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Domain-specific behavior method.
+    /// </summary>
+    public bool SomeDomainMethod()
+    {
+        // Implementation
+        return true;
+    }
+
+    /// <summary>
+    /// Static factory method for common scenarios.
+    /// </summary>
+    public static YourValueObject FromSomething(string input)
+    {
+        // Transform and create
+        return new YourValueObject(input);
+    }
+
+    public override string ToString() => Value;
+
+    public static implicit operator string(YourValueObject valueObject) => valueObject.Value;
+
+    public static explicit operator YourValueObject(string value) => new(value);
+}
+```
+
+### 3. **EF Core Value Converter Template**
+
+Create a corresponding value converter:
+
+```csharp
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using SmartMenuOptim.Domain.ValueObjects;
+
+namespace SmartMenuOptim.Infrastructure.Persistence.Context.Converters;
+
+/// <summary>
+/// Provides a value converter for mapping <see cref="YourValueObject"/> objects to their string representations and vice versa
+/// for use with Entity Framework Core.
+/// </summary>
+public sealed class YourValueObjectValueConverter : ValueConverter<YourValueObject, string>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="YourValueObjectValueConverter"/> class.
+    /// </summary>
+    public YourValueObjectValueConverter() 
+        : base(
+            // Convert to database type
+            valueObject => valueObject != null ? valueObject.Value : null,
+            // Convert from database type
+            value => value != null ? new YourValueObject(value) : null)
+    {
+    }
+}
+```
+
+### 4. **AppDbContext Configuration Template**
+
+Add configuration method in `AppDbContext`:
+
+```csharp
+/// <summary>
+/// Configures value conversion for YourValueObject across all entities.
+/// </summary>
+private void ConfigureYourValueObjectConversion(ModelBuilder modelBuilder)
+{
+    var converter = new YourValueObjectValueConverter();
+
+    var properties = modelBuilder.Model.GetEntityTypes()
+        .SelectMany(t => t.GetProperties())
+        .Where(p => p.ClrType == typeof(YourValueObject));
+
+    foreach (var property in properties)
+    {
+        property.SetValueConverter(converter);
+        property.SetMaxLength(YourValueObject.MaxLength); // Match validation constraint
+    }
+}
+```
+
+Don't forget to call it in `OnModelCreating()`:
+
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // ... existing configurations
+    ConfigureYourValueObjectConversion(modelBuilder);
+}
+```
+
+### 5. **Testing Template**
+
+Create comprehensive unit tests:
+
+```csharp
+[TestClass]
+public class YourValueObjectTests
+{
+    [TestMethod]
+    public void Constructor_WithValidValue_ShouldCreate()
+    {
+        var valueObject = new YourValueObject("valid-value");
+        
+        Assert.AreEqual("valid-value", valueObject.Value);
+    }
+    
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentException))]
+    public void Constructor_WithInvalidValue_ShouldThrow()
+    {
+        var valueObject = new YourValueObject("invalid");
+    }
+    
+    [TestMethod]
+    public void Equality_WithSameValues_ShouldBeEqual()
+    {
+        var value1 = new YourValueObject("test");
+        var value2 = new YourValueObject("test");
+        
+        Assert.AreEqual(value1, value2);
+    }
+    
+    // Add tests for all domain methods and edge cases
+}
+```
+
+### 6. **Integration Steps**
+
+When implementing a new value object:
+
+1. ✅ **Create the value object** following the template
+2. ✅ **Create the value converter** for EF Core
+3. ✅ **Update AppDbContext** configuration
+4. ✅ **Update entities** to use the value object
+5. ✅ **Update specifications** and queries if needed
+6. ✅ **Update seeders** to use the value object
+7. ✅ **Write unit tests** for validation and behavior
+8. ✅ **Update documentation** with new examples
+
+### 7. **Real Examples to Follow**
+
+**Study these implemented Value Objects for consistency:**
+- **`DishName`** - String validation with search optimization
+- **`Rating`** - Integer validation with domain behavior  
+- **`Email`** - Format validation with normalization
+- **`Money`** - Multi-property object with operations
+- **`Address`** - Complex object with formatting
+
+### 8. **Implementation Success Stories**
+
+**✅ Recently Implemented:**
+
+**`DishName` Value Object:**
+- **Before:** `public string Name { get; set; }` (primitive obsession)
+- **After:** `public DishName Name { get; set; }` (rich domain model)
+- **Benefits:** Automatic validation, search optimization, specialty dish detection
+- **Database Impact:** None (seamless value conversion)
+
+**`Rating` Value Object:**
+- **Before:** `public int Rating { get; set; }` (no validation)
+- **After:** `public Rating Rating { get; set; }` (type-safe, rich behavior)
+- **Benefits:** Guaranteed 1-5 range, star visualization, utility methods
+- **Database Impact:** None (seamless value conversion)
+
+**Follow this same pattern for all new value objects to maintain consistency and quality across the domain model!**

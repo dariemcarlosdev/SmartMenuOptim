@@ -1,7 +1,10 @@
 # Domain Services - Clean Architecture Guide
 
 ## Overview
-This folder contains **Domain Services** that encapsulate domain logic which doesn't naturally fit within a single entity or value object. Domain services are essential when business operations span multiple aggregates or require specialized domain expertise.
+
+This folder contains **Domain Services** that encapsulate pure domain logic which doesn't naturally fit within a single aggregate or value object. 
+Domain services are essential when business operations span multiple aggregates or require specialized domain expertise.
+This is a core domain knowledge area for SmartMenuOptim, focusing on menu optimization, pricing strategies, inventory forecasting, and customer insights - no application or infrastructure concerns.
 
 ---
 
@@ -18,14 +21,41 @@ This folder contains **Domain Services** that encapsulate domain logic which doe
 
 ---
 
+## Domain Service Characteristics
+
+### ✅ **What makes it a Domain Service:**
+- **Stateless**: Contains no internal state, operates purely on input parameters
+- **Pure Domain Logic**: Handles complex pricing calculations that don't naturally belong to a single entity (like Dish or Menu)
+- **Complex Calculations**: Business algorithms too complex for entities - sophisticated pricing strategies, forecasting models, optimization algorithms
+- **Cross-Aggregate Operations**: Works with multiple domain objects (Dish, Menu, SaleRecord)
+- **Business Rules**: Implements complex pricing strategies and business calculations
+- **Domain Language**: Uses ubiquitous language (Money, Dish, Menu, etc.)
+- **No Infrastructure Dependencies**: Contains only business logic, no database access or external API calls
+
+### **Purpose**
+
+This service encapsulates complex domain logic that would be inappropriate to put in:
+- **Entities** (too complex for a single Dish or Menu entity)
+- **Value Objects** (involves multiple aggregates)
+- **Application Services** (this is pure business logic, not workflow orchestration)
+
+### **Domain Service vs Other Types**
+
+| Type | Purpose | Dependencies | State |
+|------|---------|--------------|-------|
+| **Domain Service** ← This one | Pure business logic | Domain objects only | Stateless |
+| **Application Service** | Workflow orchestration | Repositories, infrastructure | Can have transaction state |
+| **Infrastructure Service** | Technical concerns | External systems, databases | Can be stateful |
+
+---
+
 ## When to Use Domain Services
 
 ### ✅ **Use Domain Services When:**
 1. **Cross-Aggregate Operations** - Logic spans multiple aggregates
-2. **Complex Calculations** - Business algorithms too complex for entities
-3. **Domain Policies** - Business rules that don't fit in entities
-4. **Stateless Operations** - Pure functions operating on domain objects
-5. **Domain Expertise** - Specialized knowledge (pricing, inventory, analytics)
+2. **Domain Policies** - Business rules that don't fit in entities
+3. **Stateless Operations** - Pure functions operating on domain objects
+4. **Domain Expertise** - Specialized knowledge (pricing, inventory, analytics)
 
 ### ❌ **Do NOT Use Domain Services For:**
 - **Database Access** - Use repositories (Infrastructure layer)
@@ -637,23 +667,36 @@ public void CalculateOptimalPrice_WithHighDemand_AppliesPremium()
 
 ---
 
+## Location in Clean Architecture
+
+1. Keep interfaces and implementations of domain services in the Domain layer.
+2. Avoid any references to infrastructure or application layers.
+3.Choose implementation details location based on dependency direction (infrastructure depends on domain, not vice versa; application depends on domain, not vice vers; presentation depends on application, not vice versa).
+  - if pure domain logic, keep in domain layer - Domain Services folder. Never put application or infrastructure code here.
+  - if needing infrastructure (e.g., email sending), define interface in domain layer, implement in infrastructure layer.(`SmartMenuOptim/Infrastructure/Services/AdvancedPricingService.cs`) Never put infrastructure code in domain layer.
+  - if needing application logic (e.g., workflow, transactions, events, orchestration), implement in application layer. Never call application services from domain layer.
+  - if needing presentation logic (e.g., UI concerns) access, implement in presentation layer. Never call domain services directly from presentation layer.
+
 ## Integration with Other Layers
 
 **Domain Layer (this folder):**
 - Define domain services with pure business logic
 
 **Application Layer:**
-- Call domain services from application services
+- Call domain services from application services, such as use cases that orchestrate domain operations.
 - Provide data from repositories
 - Coordinate transactions
 
 **Infrastructure Layer:**
 - Register domain services in DI container
 - No direct interaction needed
+- When needed, use factories or adapters to provide dependencies
+- Implementations that may need external resources should be in infrastructure services, not domain services, such as email sending or data access, API calls, Azure services, etc.
 
 **Presentation Layer:**
 - Never call domain services directly
-- Always go through application services
+- Always go through application services by instance: call application services that in turn call domain services.
+
 
 ---
 
@@ -709,12 +752,59 @@ public class MenuService
 
 ---
 
+## SOLID Principles & Domain Services
+
+Domain services in SmartMenuOptim follow **SOLID principles** to ensure clean, maintainable, and testable code:
+
+### Real-World Example: `ReviewSentimentAnalysisService`
+
+This service demonstrates all five SOLID principles in practice:
+
+**🔹 Single Responsibility (SRP)**
+- `ReviewSentimentAnalysisService` = Business logic ONLY (categorization, metrics, anomaly detection)
+- `SentimentService` = Infrastructure ONLY (Azure AI integration)
+- Each class has ONE reason to change
+
+**🔹 Open/Closed (OCP)**
+- Can swap Azure AI for Google/AWS/Local ML without changing domain code
+- Extension via new `ISentimentAnalyzer` implementations
+
+**🔹 Liskov Substitution (LSP)**
+- Any `ISentimentAnalyzer` implementation works interchangeably
+- Mock for testing, Azure for production - domain service doesn't care
+
+**🔹 Interface Segregation (ISP)**
+- `ISentimentAnalyzer` has only 2 focused methods
+- No "fat" interfaces with unused dependencies
+
+**🔹 Dependency Inversion (DIP)**
+- Domain depends on `ISentimentAnalyzer` (abstraction)
+- Infrastructure implements `ISentimentAnalyzer` (concrete)
+- High-level modules don't depend on low-level modules
+
+### 📚 Comprehensive SOLID Analysis
+
+For a detailed explanation of SOLID principles with real code examples, diagrams, and implementation guidance, see:
+
+**→ [SOLID Principles in Practice - Full Analysis](/docs/architecture/CLEAN_ARCHITECTURE_FULL_ANALYSIS.md#-solid-principles-in-practice)**
+
+This comprehensive guide includes:
+- ✅ Plain-language explanations of each principle
+- ✅ Real-world analogies and examples
+- ✅ Code samples from actual SmartMenuOptim services
+- ✅ Architecture diagrams and dependency flows
+- ✅ Benefits, anti-patterns, and best practices
+- ✅ Hexagonal Architecture (Ports & Adapters) pattern
+
+---
+
 ## References
 
 - **Domain-Driven Design** by Eric Evans (Chapter 5: A Model Expressed in Software)
 - **Implementing Domain-Driven Design** by Vaughn Vernon
 - **Clean Architecture** by Robert C. Martin
 - **Microsoft Architecture Guide**: [Domain Services](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice)
+- **SOLID Principles**: [Clean Architecture Full Analysis](/docs/architecture/CLEAN_ARCHITECTURE_FULL_ANALYSIS.md#-solid-principles-in-practice)
 
 ---
 
