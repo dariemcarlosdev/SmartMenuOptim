@@ -242,7 +242,8 @@ public class TableAvailabilityService
 }
 ```
 
-#### **MenuCompositionValidator**
+#### **MenuCompositionValidator**. 
+This service validates that a menu meets certain business rules and standards, such as having a balanced variety of dishes, appropriate price points, and no duplicate items. It ensures that the menu is well-structured and appealing to customers while adhering to the restaurant's strategic goals.
 ```csharp
 /// <summary>
 /// Validates menu composition against business rules.

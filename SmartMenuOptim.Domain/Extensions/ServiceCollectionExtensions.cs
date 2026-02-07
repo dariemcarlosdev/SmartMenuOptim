@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ReviewSentimentAnalysisService>();
         
         // Menu & Dish Management Services
+        services.AddSingleton<MenuCompositionValidatorService>(); // Stateless validator - Singleton
         services.AddScoped<MenuPricingService>();
         services.AddScoped<MenuOptimizationService>();
         services.AddScoped<DishPopularityRankingService>();
