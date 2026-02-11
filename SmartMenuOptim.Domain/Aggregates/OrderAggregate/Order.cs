@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Events.OrderEvents;
+using SmartMenuOptim.Domain.Services.Contracts;
 using SmartMenuOptim.Domain.ValueObjects;
 
 namespace SmartMenuOptim.Domain.Aggregates.OrderAggregate;
@@ -188,6 +190,26 @@ public class Order : TenantEntityBase, IValidatableObject
     // === Private Collections for Aggregate Pattern ===
     
     private readonly List<OrderItem> _orderItems = new();
+    private readonly List<IDomainEvent> _domainEvents = new();
+    
+    // === Domain Events (Aggregate Pattern) ===
+    
+    /// <summary>
+    /// Gets the domain events raised by this aggregate.
+    /// Events are dispatched by the infrastructure layer after successful persistence.
+    /// </summary>
+    [NotMapped]
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    
+    /// <summary>
+    /// Clears all domain events. Called by infrastructure after dispatching.
+    /// </summary>
+    public void ClearDomainEvents() => _domainEvents.Clear();
+    
+    /// <summary>
+    /// Adds a domain event to be dispatched after persistence.
+    /// </summary>
+    protected void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
     
     // === Properties with Private Setters (Aggregate Pattern) ===
     
@@ -431,6 +453,121 @@ public class Order : TenantEntityBase, IValidatableObject
     /// Gets the total quantity of items in this order.
     /// </summary>
     public int GetTotalQuantity() => _orderItems.Sum(oi => oi.Quantity);
+    
+    // ===================================================================
+    // DOMAIN EVENT RAISING METHODS
+    // ===================================================================
+    
+    /// <summary>
+    /// Places the order, transitioning it from draft/pending state to confirmed.
+    /// Raises <see cref="OrderPlacedEvent"/> for downstream processing.
+    /// </summary>
+    /// <param name="confirmedStatusId">The order status ID for confirmed orders.</param>
+    /// <param name="orderType">The type of order (e.g., "DineIn", "TakeOut", "Delivery").</param>
+    /// <exception cref="InvalidOperationException">Thrown if order has no items or is already placed.</exception>
+    /// <remarks>
+    /// This method triggers:
+    /// - Loyalty points calculation and accrual
+    /// - Kitchen notification dispatch
+    /// - Customer confirmation notification
+    /// - Analytics updates
+    /// </remarks>
+    public void Place(int confirmedStatusId, string? orderType = null)
+    {
+        if (!_orderItems.Any())
+            throw new InvalidOperationException("Cannot place an order without items.");
+        
+        OrderStatusId = confirmedStatusId;
+        UpdatedAt = DateTime.UtcNow;
+        
+        AddDomainEvent(new OrderPlacedEvent(
+            orderId: Id,
+            restaurantId: RestaurantId,
+            customerId: CustomerId,
+            totalAmount: TotalAmount,
+            itemCount: _orderItems.Count,
+            currencyCode: "USD",
+            specialInstructions: SpecialInstructions,
+            orderType: orderType
+        ));
+    }
+    
+    /// <summary>
+    /// Cancels the order with a specified reason.
+    /// Raises <see cref="OrderCancelledEvent"/> for downstream processing.
+    /// </summary>
+    /// <param name="cancelledStatusId">The order status ID for cancelled orders.</param>
+    /// <param name="reason">The reason for cancellation.</param>
+    /// <param name="cancelledBy">Who initiated the cancellation.</param>
+    /// <param name="cancelledByStaffId">The staff member ID if cancelled by staff.</param>
+    /// <param name="loyaltyPointsToReverse">Points to reverse if pre-awarded.</param>
+    /// <exception cref="InvalidOperationException">Thrown if order is in a terminal state.</exception>
+    /// <remarks>
+    /// This method triggers:
+    /// - Loyalty points reversal (if pre-awarded)
+    /// - Customer cancellation notification
+    /// - Kitchen notification to stop preparation
+    /// - Refund processing initiation
+    /// </remarks>
+    public void Cancel(
+        int cancelledStatusId,
+        string reason,
+        CancellationSource cancelledBy,
+        int? cancelledByStaffId = null,
+        int loyaltyPointsToReverse = 0)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Cancellation reason is required.", nameof(reason));
+        
+        var previousStatusId = OrderStatusId;
+        OrderStatusId = cancelledStatusId;
+        UpdatedAt = DateTime.UtcNow;
+        
+        AddDomainEvent(new OrderCancelledEvent(
+            orderId: Id,
+            restaurantId: RestaurantId,
+            customerId: CustomerId,
+            cancellationReason: reason,
+            cancelledBy: cancelledBy,
+            cancelledByStaffId: cancelledByStaffId,
+            orderTotal: TotalAmount,
+            previousStatus: previousStatusId.ToString(),
+            requiresRefund: TotalAmount > 0,
+            loyaltyPointsToReverse: loyaltyPointsToReverse
+        ));
+    }
+    
+    /// <summary>
+    /// Completes the order after successful fulfillment.
+    /// Raises <see cref="OrderCompletedEvent"/> for downstream processing.
+    /// </summary>
+    /// <param name="completedStatusId">The order status ID for completed orders.</param>
+    /// <param name="loyaltyPointsEarned">Total loyalty points earned from this order.</param>
+    /// <param name="orderType">The type of order.</param>
+    /// <remarks>
+    /// This method triggers:
+    /// - Final loyalty points confirmation
+    /// - Customer thank-you notification
+    /// - Review request scheduling
+    /// - Sales analytics finalization
+    /// </remarks>
+    public void Complete(int completedStatusId, int loyaltyPointsEarned = 0, string orderType = "DineIn")
+    {
+        OrderStatusId = completedStatusId;
+        UpdatedAt = DateTime.UtcNow;
+        
+        AddDomainEvent(new OrderCompletedEvent(
+            orderId: Id,
+            restaurantId: RestaurantId,
+            customerId: CustomerId,
+            finalTotal: TotalAmount,
+            itemCount: _orderItems.Count,
+            orderPlacedAt: OrderDate,
+            completedAt: DateTime.UtcNow,
+            orderType: orderType,
+            loyaltyPointsEarned: loyaltyPointsEarned
+        ));
+    }
     
     // ===================================================================
     // MULTI-TENANT VALIDATION

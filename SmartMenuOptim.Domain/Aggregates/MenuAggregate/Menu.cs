@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Events.MenuEvents;
+using SmartMenuOptim.Domain.Services.Contracts;
 using SmartMenuOptim.Domain.ValueObjects;
 
 namespace SmartMenuOptim.Domain.Aggregates.MenuAggregate;
@@ -210,6 +212,26 @@ public class Menu : TenantEntityBase, IValidatableObject
     // === Private Collections for Aggregate Pattern ===
     
     private readonly List<MenuDish> _menuDishes = new();
+    private readonly List<IDomainEvent> _domainEvents = new();
+    
+    // === Domain Events (Aggregate Pattern) ===
+    
+    /// <summary>
+    /// Gets the domain events raised by this aggregate.
+    /// Events are dispatched by the infrastructure layer after successful persistence.
+    /// </summary>
+    [NotMapped]
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    
+    /// <summary>
+    /// Clears all domain events. Called by infrastructure after dispatching.
+    /// </summary>
+    public void ClearDomainEvents() => _domainEvents.Clear();
+    
+    /// <summary>
+    /// Adds a domain event to be dispatched after persistence.
+    /// </summary>
+    protected void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
     
     // === Properties with Private Setters (Aggregate Pattern) ===
 
@@ -349,6 +371,11 @@ public class Menu : TenantEntityBase, IValidatableObject
     /// AGGREGATE BEHAVIOR: This method maintains the aggregate boundary by being the only
     /// way to add MenuDish child entities. Direct manipulation of the collection
     /// is prevented through encapsulation.
+    /// 
+    /// This method raises <see cref="DishAddedToMenuEvent"/> for downstream processing including:
+    /// - Cache invalidation
+    /// - Search index updates
+    /// - AI recommendation model updates
     /// </remarks>
     public void AddDish(Dish dish, int displayOrder = 0, decimal? specialPrice = null, string? notes = null)
     {
@@ -378,18 +405,58 @@ public class Menu : TenantEntityBase, IValidatableObject
         
         _menuDishes.Add(menuDish);
         UpdatedAt = DateTime.UtcNow;
+        
+        // Raise DishAddedToMenuEvent
+        AddDomainEvent(new DishAddedToMenuEvent(
+            menuId: Id,
+            dishId: dish.Id,
+            restaurantId: RestaurantId,
+            dishName: dish.Name,
+            price: specialPrice ?? dish.DishPrice,
+            categoryId: dish.CategoryId,
+            categoryName: dish.Category?.Name ?? "Unknown",
+            menuType: MenuType?.Name ?? "Standard",
+            menuName: Name,
+            dishDescription: dish.Description,
+            displayOrder: displayOrder
+        ));
     }
     
     /// <summary>
     /// Removes a dish from the menu.
     /// </summary>
-    public void RemoveDish(int dishId)
+    /// <remarks>
+    /// This method raises <see cref="DishRemovedFromMenuEvent"/> for downstream processing including:
+    /// - Cache invalidation
+    /// - Search index updates
+    /// - Performance data archival
+    /// </remarks>
+    public void RemoveDish(int dishId, DishRemovalReason reason = DishRemovalReason.Other, int? removedByStaffId = null)
     {
         var menuDish = _menuDishes.FirstOrDefault(md => md.DishId == dishId);
         if (menuDish != null)
         {
+            var dish = menuDish.Dish;
+            
             _menuDishes.Remove(menuDish);
             UpdatedAt = DateTime.UtcNow;
+            
+            // Raise DishRemovedFromMenuEvent if dish info is available
+            if (dish != null)
+            {
+                AddDomainEvent(new DishRemovedFromMenuEvent(
+                    menuId: Id,
+                    dishId: dishId,
+                    restaurantId: RestaurantId,
+                    dishName: dish.Name,
+                    menuName: Name,
+                    removalReason: reason,
+                    isPermanent: reason == DishRemovalReason.Discontinued,
+                    lastPrice: menuDish.SpecialPrice ?? dish.DishPrice,
+                    categoryName: dish.Category?.Name ?? "Unknown",
+                    removedByStaffId: removedByStaffId
+                ));
+            }
         }
     }
     

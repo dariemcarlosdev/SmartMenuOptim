@@ -1,5 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Events.LoyaltyEvents;
+using SmartMenuOptim.Domain.Services.Contracts;
 
 namespace SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 
@@ -153,6 +156,26 @@ public class CustomerLoyalty : TenantEntityBase
 {
     // === Private Collections ===
     private readonly List<LoyaltyTransaction> _transactions = new();
+    private readonly List<IDomainEvent> _domainEvents = new();
+    
+    // === Domain Events (Aggregate Pattern) ===
+    
+    /// <summary>
+    /// Gets the domain events raised by this aggregate.
+    /// Events are dispatched by the infrastructure layer after successful persistence.
+    /// </summary>
+    [NotMapped]
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    
+    /// <summary>
+    /// Clears all domain events. Called by infrastructure after dispatching.
+    /// </summary>
+    public void ClearDomainEvents() => _domainEvents.Clear();
+    
+    /// <summary>
+    /// Adds a domain event to be dispatched after persistence.
+    /// </summary>
+    protected void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
     
     // === Private Setters (Encapsulated State) ===
     public int CustomerId { get; private set; }
@@ -303,10 +326,15 @@ public class CustomerLoyalty : TenantEntityBase
         int points, 
         string description, 
         LoyaltyTransactionType transactionType = LoyaltyTransactionType.OrderEarning,
-        int? orderId = null)
+        int? orderId = null,
+        decimal? orderAmount = null,
+        decimal pointsMultiplier = 1.0m)
     {
         if (points <= 0)
             throw new ArgumentException("Points must be positive.", nameof(points));
+        
+        var previousBalance = Points;
+        var previousTier = Tier;
         
         Points += points;
         LifetimePoints += points;
@@ -324,6 +352,119 @@ public class CustomerLoyalty : TenantEntityBase
         
         _transactions.Add(transaction);
         UpdateTier();
+        
+        // Raise LoyaltyPointsEarnedEvent
+        AddDomainEvent(new LoyaltyPointsEarnedEvent(
+            customerLoyaltyId: Id,
+            customerId: CustomerId,
+            restaurantId: RestaurantId,
+            pointsEarned: points,
+            newTotalBalance: Points,
+            previousBalance: previousBalance,
+            earningSource: MapTransactionTypeToEarningSource(transactionType),
+            relatedOrderId: orderId,
+            orderAmount: orderAmount,
+            pointsMultiplier: pointsMultiplier,
+            currentTier: Tier.ToString()
+        ));
+        
+        // Raise LoyaltyTierChangedEvent if tier changed
+        if (Tier != previousTier)
+        {
+            RaiseTierChangedEvent(previousTier, Tier, TierChangeReason.PointsAccumulation);
+        }
+    }
+    
+    /// <summary>
+    /// Maps a transaction type to a point earning source for events.
+    /// </summary>
+    private static PointEarningSource MapTransactionTypeToEarningSource(LoyaltyTransactionType transactionType)
+    {
+        return transactionType switch
+        {
+            LoyaltyTransactionType.OrderEarning => PointEarningSource.Purchase,
+            LoyaltyTransactionType.Bonus => PointEarningSource.Bonus,
+            LoyaltyTransactionType.Referral => PointEarningSource.Referral,
+            LoyaltyTransactionType.Adjustment => PointEarningSource.Adjustment,
+            _ => PointEarningSource.Purchase
+        };
+    }
+    
+    /// <summary>
+    /// Raises a tier changed event with full details.
+    /// </summary>
+    private void RaiseTierChangedEvent(
+        CustomerLoyaltyTier previousTier,
+        CustomerLoyaltyTier newTier,
+        TierChangeReason reason)
+    {
+        var isUpgrade = newTier > previousTier;
+        var benefitsChanged = GetBenefitsForTierChange(previousTier, newTier, isUpgrade);
+        
+        AddDomainEvent(new LoyaltyTierChangedEvent(
+            customerLoyaltyId: Id,
+            customerId: CustomerId,
+            restaurantId: RestaurantId,
+            previousTier: previousTier.ToString(),
+            newTier: newTier.ToString(),
+            currentPointBalance: Points,
+            changeReason: reason,
+            previousTierDiscountPercent: GetTierDiscount(previousTier),
+            newTierDiscountPercent: GetTierDiscount(newTier),
+            benefitsChanged: benefitsChanged
+        ));
+    }
+    
+    /// <summary>
+    /// Gets the discount percentage for a tier.
+    /// </summary>
+    private static decimal GetTierDiscount(CustomerLoyaltyTier tier)
+    {
+        return tier switch
+        {
+            CustomerLoyaltyTier.Bronze => 0m,
+            CustomerLoyaltyTier.Silver => 10m,
+            CustomerLoyaltyTier.Gold => 15m,
+            CustomerLoyaltyTier.Platinum => 20m,
+            _ => 0m
+        };
+    }
+    
+    /// <summary>
+    /// Gets the list of benefits changed for a tier transition.
+    /// </summary>
+    private static List<string> GetBenefitsForTierChange(
+        CustomerLoyaltyTier previousTier,
+        CustomerLoyaltyTier newTier,
+        bool isUpgrade)
+    {
+        var allBenefits = new Dictionary<CustomerLoyaltyTier, List<string>>
+        {
+            { CustomerLoyaltyTier.Silver, new List<string> { "10% Discount", "Birthday Reward" } },
+            { CustomerLoyaltyTier.Gold, new List<string> { "15% Discount", "Priority Seating" } },
+            { CustomerLoyaltyTier.Platinum, new List<string> { "20% Discount", "VIP Access", "Free Delivery" } }
+        };
+        
+        var benefits = new List<string>();
+        
+        if (isUpgrade)
+        {
+            // Get benefits gained from new tier
+            if (allBenefits.TryGetValue(newTier, out var newBenefits))
+            {
+                benefits.AddRange(newBenefits);
+            }
+        }
+        else
+        {
+            // Get benefits lost from previous tier
+            if (allBenefits.TryGetValue(previousTier, out var lostBenefits))
+            {
+                benefits.AddRange(lostBenefits);
+            }
+        }
+        
+        return benefits;
     }
     
     /// <summary>

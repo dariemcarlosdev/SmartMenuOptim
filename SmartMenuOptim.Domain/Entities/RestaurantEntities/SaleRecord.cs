@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
+using SmartMenuOptim.Domain.Events.SaleEvents;
+using SmartMenuOptim.Domain.Services.Contracts;
 using SmartMenuOptim.Domain.ValueObjects;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.ConstrainedExecution;
 
 namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
@@ -134,6 +136,29 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
         /// Prevents data entry errors from creating sales records with incorrect historical dates.
         /// </summary>
         private const int MaxYearsInPast = 5;
+        
+        private readonly List<IDomainEvent> _domainEvents = new();
+        
+        // ===================================================================
+        // DOMAIN EVENTS
+        // ===================================================================
+        
+        /// <summary>
+        /// Gets the domain events raised by this entity.
+        /// Events are dispatched by the infrastructure layer after successful persistence.
+        /// </summary>
+        [NotMapped]
+        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+        
+        /// <summary>
+        /// Clears all domain events. Called by infrastructure after dispatching.
+        /// </summary>
+        public void ClearDomainEvents() => _domainEvents.Clear();
+        
+        /// <summary>
+        /// Adds a domain event to be dispatched after persistence.
+        /// </summary>
+        protected void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
 
         // ===================================================================
         // PROPERTIES WITH ENCAPSULATION (Private Setters)
@@ -277,6 +302,57 @@ namespace SmartMenuOptim.Domain.Entities.RestaurantEntities
             SaleAmount = saleAmount;
             QuantitySold = quantitySold;
             SaleDate = DateTime.UtcNow;
+        }
+        
+        /// <summary>
+        /// Records a sale with full context and raises the <see cref="SaleRecordedEvent"/>.
+        /// Use this factory method when all context is available.
+        /// </summary>
+        /// <param name="restaurantId">The restaurant identifier.</param>
+        /// <param name="orderId">The associated order identifier.</param>
+        /// <param name="dishId">The dish identifier.</param>
+        /// <param name="dishName">The name of the dish.</param>
+        /// <param name="categoryName">The category name.</param>
+        /// <param name="saleAmount">The total sale amount.</param>
+        /// <param name="unitPrice">The unit price at time of sale.</param>
+        /// <param name="quantitySold">The quantity sold.</param>
+        /// <param name="customerId">Optional customer identifier.</param>
+        /// <param name="processedByStaffId">Optional staff identifier.</param>
+        /// <param name="orderType">Optional order type.</param>
+        /// <returns>A new SaleRecord instance with the event raised.</returns>
+        public static SaleRecord RecordSale(
+            int restaurantId,
+            int orderId,
+            int dishId,
+            string dishName,
+            string categoryName,
+            Money saleAmount,
+            decimal unitPrice,
+            int quantitySold,
+            int? customerId = null,
+            int? processedByStaffId = null,
+            string? orderType = null)
+        {
+            var record = new SaleRecord(restaurantId, dishId, saleAmount, quantitySold);
+            
+            record.AddDomainEvent(new SaleRecordedEvent(
+                saleRecordId: record.Id,
+                restaurantId: restaurantId,
+                orderId: orderId,
+                dishId: dishId,
+                dishName: dishName,
+                categoryName: categoryName,
+                quantitySold: quantitySold,
+                unitPrice: unitPrice,
+                totalAmount: saleAmount.Amount,
+                saleDateTime: record.SaleDate,
+                currencyCode: saleAmount.Currency,
+                customerId: customerId,
+                processedByStaffId: processedByStaffId,
+                orderType: orderType
+            ));
+            
+            return record;
         }
 
         // ===================================================================
