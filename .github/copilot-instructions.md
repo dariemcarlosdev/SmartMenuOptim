@@ -108,4 +108,9 @@ refactor(domain): apply DDD patterns to Menu aggregate
 - Provide meaningful, user-friendly error messages
 - Log errors with appropriate context and severity levels
 - Handle async operations with proper cancellation token support
-  
+
+---
+
+## Documentation
+
+When needing the current date for documentation, use the PowerShell command `Get-Date -Format "yyyy-MM-dd"` to get the accurate current date from the system.
