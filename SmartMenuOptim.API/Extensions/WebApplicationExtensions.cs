@@ -10,45 +10,89 @@ namespace SmartMenuOptim.API.Extensions;
 public static class WebApplicationExtensions
 {
     /// <summary>
-    /// Configures the HTTP request pipeline (middleware) for the application.
+    /// Configures the HTTP request processing pipeline for the application, including middleware for Swagger, rate
+    /// limiting, routing, health checks, CORS, HTTPS redirection, authorization, and controller mapping.
     /// </summary>
-    /// <param name="app">The web application to configure.</param>
-    /// <returns>The configured web application.</returns>
+    /// <remarks>
+    /// <para><strong>MIDDLEWARE PIPELINE ORDER (registered in sequence):</strong></para>
+    /// <list type="number">
+    ///     <item><strong>GlobalExceptionHandlingMiddleware</strong> - Catches all unhandled exceptions (registered in Program.cs BEFORE this method)</item>
+    ///     <item><strong>UseSwagger()</strong> - Serves Swagger JSON specification</item>
+    ///     <item><strong>UseSwaggerUI()</strong> - Serves Swagger interactive UI at /swagger</item>
+    ///     <item><strong>UseRateLimiter()</strong> - Enforces rate limiting policies</item>
+    ///     <item><strong>UseRouting()</strong> - Matches requests to endpoints</item>
+    ///     <item><strong>UseSentryTracing()</strong> - Performance monitoring and request tracing</item>
+    ///     <item><strong>MapHealthChecks("/health")</strong> - Exposes health check endpoint</item>
+    ///     <item><strong>UseCors()</strong> - Enables Cross-Origin Resource Sharing</item>
+    ///     <item><strong>UseHttpsRedirection()</strong> - Redirects HTTP to HTTPS</item>
+    ///     <item><strong>UseAuthorization()</strong> - Enforces authorization policies</item>
+    ///     <item><strong>MapControllers()</strong> - Maps controller endpoints</item>
+    /// </list>
+    /// 
+    /// <para><strong>COMPLETE PIPELINE VISUALIZATION:</strong></para>
+    /// <code>
+    /// ┌─────────────────────────────────────────────────────────────────────────┐
+    /// │  HTTP REQUEST PIPELINE (in order of execution)                          │
+    /// ├─────────────────────────────────────────────────────────────────────────┤
+    /// │                                                                         │
+    /// │  Request ──► GlobalExceptionHandlingMiddleware (Program.cs)             │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseSwagger() ──► UseSwaggerUI()                            │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseRateLimiter()                                           │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseRouting()                                               │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseSentryTracing()                                        │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              MapHealthChecks("/health")                                │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseCors("_myAllowSpecificOrigins")                        │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseHttpsRedirection()                                     │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseAuthorization()                                        │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              MapControllers() ──► Controller Action                    │
+    /// │                                                                         │
+    /// └─────────────────────────────────────────────────────────────────────────┘
+    /// </code>
+    /// 
+    /// <para><strong>ACCESS URLs:</strong></para>
+    /// <list type="bullet">
+    ///     <item>Swagger UI: http://localhost:5000/swagger or https://localhost:7119/swagger</item>
+    ///     <item>Health Check: http://localhost:5000/health</item>
+    /// </list>
+    /// 
+    /// <para><strong>IMPORTANT NOTES:</strong></para>
+    /// <list type="bullet">
+    ///     <item>GlobalExceptionHandlingMiddleware MUST be registered FIRST in Program.cs before calling this method</item>
+    ///     <item>Swagger is always available (not restricted to Development environment)</item>
+    ///     <item>CORS must be placed before UseAuthentication/UseAuthorization</item>
+    ///     <item>UseRouting() must come before endpoint-aware middleware</item>
+    /// </list>
+    /// </remarks>
+    /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
+    /// <returns>The configured <see cref="WebApplication"/> instance.</returns>
     public static WebApplication ConfigureHtPipeline(this WebApplication app)
     {
-        // SWAGGER CONFIGURATION FIXES:
-        // 1. Middleware Order Fix:
-        //    - Moved UseSwagger() and UseSwaggerUI() to the beginning of the pipeline
-        //    - This ensures Swagger middleware is registered before routing
-        //    - Prevents potential middleware conflicts
-        // 
-        // 2. Configuration Changes:
-        //    - Removed environment check (if (app.Environment.IsDevelopment()))
-        //    - Swagger is now always available, which helps with API testing
-        //    - Added explicit SwaggerEndpoint configuration
-        //    - Set RoutePrefix to "swagger" for consistent access
-        // 
-        // 3. Access URLs:
-        //    - Swagger UI will be available at:
-        //      * HTTP:  http://localhost:5000/swagger
-        //      * HTTPS: https://localhost:7119/swagger
-        // 
-        // 4. Pipeline Order:
-        //    - UseSwagger()
-        //    - UseSwaggerUI()
-        //    - UseMiddleware<ExceptionHandlingMiddleware>
-        //    - UseRouting()
-        //    - Other middleware...
-        // 
-        // Note: If you want to restrict Swagger to development only,
-        // wrap the Swagger middleware in:
-        // if (app.Environment.IsDevelopment())
-        // {
-        //     app.UseSwagger();
-        //     app.UseSwaggerUI(...);
-        // }
+        // ═══════════════════════════════════════════════════════════════════════
+        // MIDDLEWARE REGISTRATION ORDER (see XML docs for complete pipeline diagram)
+        // ═══════════════════════════════════════════════════════════════════════
+        // NOTE: GlobalExceptionHandlingMiddleware is registered in Program.cs 
+        //       BEFORE this method is called to ensure it catches ALL exceptions.
+        // ═══════════════════════════════════════════════════════════════════════
 
-        // Move Swagger before routing to ensure proper middleware order
+        // 1. SWAGGER - API documentation (always available, not just in Development)
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {
@@ -56,32 +100,29 @@ public static class WebApplicationExtensions
             options.RoutePrefix = "swagger";
         });
 
-        // Add rate limiting early in the pipeline
+        // 2. RATE LIMITING - Throttle requests early in pipeline
         app.UseRateLimiter();
 
-        // Adds endpoint routing to the middleware pipeline. This is necessary for matching requests to endpoints.
+        // 3. ROUTING - Match requests to endpoints (required before endpoint-aware middleware)
         app.UseRouting();
         
-        // Integrates Sentry's performance tracing to monitor and trace requests.
+        // 4. SENTRY TRACING - Performance monitoring and distributed tracing
         app.UseSentryTracing();
 
-        // Exposes a health check endpoint at /health, which can be used by monitoring services.
+        // 5. HEALTH CHECKS - Expose /health endpoint for monitoring services
         app.MapHealthChecks("/health").AllowAnonymous();
 
-       // The name of the CORS policy to be used.
+        // 6. CORS - Cross-Origin Resource Sharing (must be before Auth middleware)
         const string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-        
-        // Adds the CORS middleware to the pipeline to allow cross-origin requests from configured origins.
-        // It's important to place this before UseAuthentication and UseAuthorization.
         app.UseCors(MyAllowSpecificOrigins); 
         
-        // Redirects HTTP requests to HTTPS, enhancing security.
+        // 7. HTTPS REDIRECTION - Redirect HTTP to HTTPS for security
         app.UseHttpsRedirection();
         
-        // Adds the authorization middleware to enforce authorization policies.
+        // 8. AUTHORIZATION - Enforce authorization policies
         app.UseAuthorization();
         
-        // Maps controller actions to endpoints, enabling them to handle requests.
+        // 9. CONTROLLERS - Map controller actions to endpoints
         app.MapControllers();
 
         return app;
