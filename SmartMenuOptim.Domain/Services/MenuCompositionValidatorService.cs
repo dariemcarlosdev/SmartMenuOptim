@@ -49,6 +49,16 @@ namespace SmartMenuOptim.Domain.Services;
 /// bool hasVariety = validator.HasAdequateVariety(dinnerMenu);
 /// bool balancedPricing = validator.HasBalancedPricePoints(dinnerMenu);
 /// </code>
+/// 
+/// <para><strong>Clean Architecture - Domain Layer Placement:</strong></para>
+/// <para>
+/// This service is located in the Domain Layer because it encapsulates pure business logic that:
+/// (1) doesn't naturally belong to a single entity (Menu or Dish),
+/// (2) operates across multiple domain objects (Menu, MenuDish, Dish, Category),
+/// (3) has no infrastructure dependencies (no database, no external APIs),
+/// (4) implements core business rules using ubiquitous language.
+/// Domain Services are stateless and contain logic too complex for entities but essential to the business domain.
+/// </para>
 /// </remarks>
 public class MenuCompositionValidatorService
 {
