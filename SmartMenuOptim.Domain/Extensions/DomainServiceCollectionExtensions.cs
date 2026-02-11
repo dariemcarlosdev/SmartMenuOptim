@@ -6,7 +6,7 @@ namespace SmartMenuOptim.Domain.Extensions;
 /// <summary>
 /// Provides extension methods for registering Domain layer services in the IServiceCollection.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class DomainServiceCollectionExtensions
 {
     /// <summary>
     /// Adds all Domain layer services including business logic and domain services.

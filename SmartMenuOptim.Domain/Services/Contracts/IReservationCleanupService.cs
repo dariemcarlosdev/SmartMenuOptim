@@ -1,6 +1,6 @@
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 
-namespace SmartMenuOptim.Domain.Services.Contracts;
+namespace SmartMenuOptim.Domain.Services.Abstraction;
 
 /// <summary>
 /// Service contract for automated reservation cleanup operations.
