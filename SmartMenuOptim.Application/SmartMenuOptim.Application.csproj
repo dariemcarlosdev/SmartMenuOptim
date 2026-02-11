@@ -9,22 +9,21 @@
   <ItemGroup>
     <!-- ONLY keep general-purpose libraries if absolutely needed -->
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    
+    <!-- MediatR for CQRS and Domain Events -->
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    
+    <!-- FluentValidation for request validation -->
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    
+    <!-- Logging abstractions -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SmartMenuOptim.Domain\SmartMenuOptim.Domain.csproj" />
-    <ProjectReference Include="..\SmartMenuOptim.Infrastructure\SmartMenuOptim.Infrastructure.csproj" />
     <ProjectReference Include="..\SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Behaviors\" />
-    <Folder Include="CQRS\Commands\" />
-    <Folder Include="Handlers\" />
-    <Folder Include="Mappings\" />
-    <Folder Include="CQRS\" />
-    <Folder Include="CQRS\Queries\" />
-    <Folder Include="Validators\" />
   </ItemGroup>
 
 </Project>
