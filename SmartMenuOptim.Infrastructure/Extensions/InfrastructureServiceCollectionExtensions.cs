@@ -3,20 +3,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.Services.Abstraction;
 using SmartMenuOptim.Infrastructure.BackgroundJobs;
+using SmartMenuOptim.Infrastructure.EventDispatching;
 using SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 using SmartMenuOptim.Infrastructure.Persistence.Repositories;
+using SmartMenuOptim.Infrastructure.Services.Caching;
+using SmartMenuOptim.Infrastructure.Services.DeadLetterQueue;
+using SmartMenuOptim.Infrastructure.Services.Notifications;
 
 namespace SmartMenuOptim.Infrastructure.Extensions;
 
 /// <summary>
 /// Provides extension methods for registering Infrastructure layer services in the IServiceCollection.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class InfrastructureServiceCollectionExtensions
 {
     /// <summary>
     /// Adds infrastructure-related services, including data access and external service adapters, to the application's
@@ -35,6 +40,21 @@ public static class ServiceCollectionExtensions
         
         // Add external service adapters (Hexagonal Architecture adapters implementing domain ports)
         services.AddExternalServiceAdapters();
+
+        // Register domain event dispatcher (MediatR-based event publishing)
+        services.AddScoped<IDomainEventDispatcher, MediatRDomainEventDispatcher>();
+
+        // Register notification service (logging implementation for dev/test)
+        services.AddScoped<INotificationService, LoggingNotificationService>();
+
+        // Register caching service (in-memory or Redis caching)
+        services.AddMemoryCache();
+        services.AddScoped<ICacheService, InMemoryCacheService>();
+        
+        // Register dead letter queue service for event handler resilience
+        // Development: In-memory implementation (events lost on restart)
+        // Production: Replace with Azure Service Bus DLQ or similar durable implementation
+        services.AddSingleton<IDeadLetterQueueService, InMemoryDeadLetterQueueService>();
         
         return services;
     }
@@ -154,6 +174,7 @@ public static class ServiceCollectionExtensions
 
         // Register background services (IHostedService)
         services.AddHostedService<ReservationAutoCleanupBackgroundService>();
+        services.AddHostedService<DailySalesSummaryBackgroundJob>();
 
         return services;
     }

@@ -11,19 +11,46 @@ using SmartMenuOptim.Domain.Entities;
 namespace SmartMenuOptim.Infrastructure.Persistence.Configurations
 {
     /// <summary>
+    /// Entity Type Configuration for the Order aggregate root.
     /// According to Clean Architecture principles, configuration classes for entities should reside in the Infrastructure layer.
-    /// This class is intended to hold the configuration settings for the Order entity.
-    /// By placing it here, we ensure that the domain and application layers remain free of infrastructure concerns, promoting a clean separation of responsibilities.
-    /// Example configurations might include table mappings, relationships, constraints, and other database-related settings.
+    /// This class defines the persistence mapping for the Order entity, including table mappings, relationships, 
+    /// constraints, indexes, and other database-related settings.
     /// </summary>
+    /// <remarks>
+    /// By placing configuration here, we ensure that the domain and application layers remain free of infrastructure concerns, 
+    /// promoting a clean separation of responsibilities.
+    /// 
+    /// <para><strong>Usage in AppDbContext:</strong></para>
+    /// <code>
+    /// public class AppDbContext : DbContext
+    /// {
+    ///     protected override void OnModelCreating(ModelBuilder modelBuilder)
+    ///     {
+    ///         // Apply individual configuration
+    ///         modelBuilder.ApplyConfiguration(new OrderConfiguration());
+    ///         
+    ///         // OR apply all configurations from assembly at once (recommended)
+    ///         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrderConfiguration).Assembly);
+    ///         
+    ///         base.OnModelCreating(modelBuilder);
+    ///     }
+    /// }
+    /// </code>
+    /// 
+    /// <para><strong>Benefits:</strong></para>
+    /// <list type="bullet">
+    ///     <item>Separates entity configuration from DbContext, keeping it focused and maintainable</item>
+    ///     <item>Follows the Single Responsibility Principle - one configuration class per entity</item>
+    ///     <item>Makes configurations reusable and testable</item>
+    ///     <item>Aligns with Clean Architecture and DDD principles</item>
+    /// </list>
+    /// </remarks>
     internal class OrderConfiguration : IEntityTypeConfiguration<Order>
     {
         /// <summary>
-        /// Configures the entity type mapping for the Order entity.
+        /// Entity Framework Core configuration for the Order entity.
+        /// Defines table mapping, keys, properties, indexes, and relationships.
         /// </summary>
-        /// <remarks>This method is typically called by the Entity Framework infrastructure when building
-        /// the model. It defines table mapping, keys, property configurations, indexes, and relationships for the Order
-        /// entity.I need to take out any configuration defined in AppDbContext OnModelCreating method and move it here.</remarks>
         /// <param name="builder">The builder used to configure the Order entity type.</param>
         public void Configure(EntityTypeBuilder<Order> builder)
         {

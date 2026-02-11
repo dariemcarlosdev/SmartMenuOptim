@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Hosting;
-using SmartMenuOptim.Domain.Services.Contracts;
+using SmartMenuOptim.Domain.Services.Abstraction;
 
 namespace SmartMenuOptim.Infrastructure.BackgroundJobs;
 

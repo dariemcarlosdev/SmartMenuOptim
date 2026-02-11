@@ -11,5 +11,6 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Caching
     /// </summary>
     internal class RedisCacheService
     {
+        // Implementation of Redis caching logic goes here.
     }
 }

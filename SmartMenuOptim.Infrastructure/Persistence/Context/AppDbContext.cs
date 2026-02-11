@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
@@ -10,6 +11,7 @@ using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Services.Contracts;
 using SmartMenuOptim.Domain.ValueObjects;
 using SmartMenuOptim.Infrastructure.Persistence.Context.Converters;
 
@@ -90,10 +92,24 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
         public DbSet<OrderStatus> OrderStatuses { get; set; }
         // Add DbSet for UserPermissions
         public DbSet<UserPermission> UserPermissions { get; set; }
+        
+        // Domain event dispatcher for publishing events after persistence
+        private readonly IDomainEventDispatcher? _domainEventDispatcher;
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
+        }
+        
+        /// <summary>
+        /// Creates a new AppDbContext with domain event dispatching support.
+        /// </summary>
+        /// <param name="options">The database context options.</param>
+        /// <param name="domainEventDispatcher">The domain event dispatcher for publishing events after persistence.</param>
+        public AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDispatcher domainEventDispatcher)
+            : base(options)
+        {
+            _domainEventDispatcher = domainEventDispatcher;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -1465,17 +1481,166 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) // cancellationToken is used to cancel the async operation if needed.
         {
             SetAuditProperties();
+            
+            // =====================================================================
+            // DOMAIN EVENT COLLECTION AND DISPATCHING
+            // =====================================================================
+            // This section implements the event sourcing pattern where domain events
+            // are collected from aggregates and dispatched AFTER successful persistence.
+            // This ensures that events are only published when the database transaction
+            // succeeds, maintaining data consistency.
+            //
+            // Event Flow:
+            // 1. Collect all domain events from tracked aggregates
+            // 2. Clear events from aggregates (prevent re-dispatch on retry)
+            // 3. Save changes to database (atomic transaction)
+            // 4. Dispatch events to handlers via MediatR (if save successful)
+            // =====================================================================
+            
+            // 1. Collect domain events from all tracked aggregates that support events
+            var domainEvents = CollectDomainEvents();
+            
+            // 2. Clear events from aggregates to prevent re-dispatch
+            ClearDomainEventsFromAggregates();
 
             try
             {
-                return await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                // 3. Save changes to database FIRST (ensures data consistency)
+                var result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                
+                // 4. Dispatch events AFTER successful save
+                if (domainEvents.Count > 0 && _domainEventDispatcher != null)
+                {
+                    await _domainEventDispatcher.DispatchEventsAsync(domainEvents, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                
+                return result;
             }
             catch (DbUpdateConcurrencyException ex)
             {
                 throw new DbUpdateConcurrencyException(
                     "Concurrency conflict detected while saving changes to the database.", ex);
             }
-
+        }
+        
+        /// <summary>
+        /// Collects all domain events from tracked aggregates.
+        /// </summary>
+        /// <returns>A list of domain events to be dispatched after persistence.</returns>
+        /// <remarks>
+        /// This method iterates through all tracked entities that implement domain events
+        /// and collects their pending events. Currently supports:
+        /// - Order aggregate
+        /// - CustomerLoyalty aggregate
+        /// - Menu aggregate
+        /// - SaleRecord entity
+        /// 
+        /// New aggregates that raise domain events should be added here.
+        /// </remarks>
+        private List<IDomainEvent> CollectDomainEvents()
+        {
+            var domainEvents = new List<IDomainEvent>();
+            
+            // Collect from Order aggregates
+            var orderEntries = ChangeTracker.Entries<Order>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var order in orderEntries)
+            {
+                domainEvents.AddRange(order.DomainEvents);
+            }
+            
+            // Collect from CustomerLoyalty aggregates
+            var loyaltyEntries = ChangeTracker.Entries<CustomerLoyalty>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var loyalty in loyaltyEntries)
+            {
+                domainEvents.AddRange(loyalty.DomainEvents);
+            }
+            
+            // Collect from Menu aggregates
+            var menuEntries = ChangeTracker.Entries<Menu>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var menu in menuEntries)
+            {
+                domainEvents.AddRange(menu.DomainEvents);
+            }
+            
+            // Collect from SaleRecord entities
+            var saleRecordEntries = ChangeTracker.Entries<SaleRecord>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var saleRecord in saleRecordEntries)
+            {
+                domainEvents.AddRange(saleRecord.DomainEvents);
+            }
+            
+            return domainEvents;
+        }
+        
+        /// <summary>
+        /// Clears domain events from all tracked aggregates to prevent re-dispatch.
+        /// </summary>
+        /// <remarks>
+        /// This must be called BEFORE saving to the database to ensure events
+        /// are not dispatched multiple times if SaveChangesAsync is retried.
+        /// </remarks>
+        private void ClearDomainEventsFromAggregates()
+        {
+            // Clear from Order aggregates
+            var orderEntries = ChangeTracker.Entries<Order>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var order in orderEntries)
+            {
+                order.ClearDomainEvents();
+            }
+            
+            // Clear from CustomerLoyalty aggregates
+            var loyaltyEntries = ChangeTracker.Entries<CustomerLoyalty>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var loyalty in loyaltyEntries)
+            {
+                loyalty.ClearDomainEvents();
+            }
+            
+            // Clear from Menu aggregates
+            var menuEntries = ChangeTracker.Entries<Menu>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var menu in menuEntries)
+            {
+                menu.ClearDomainEvents();
+            }
+            
+            // Clear from SaleRecord entities
+            var saleRecordEntries = ChangeTracker.Entries<SaleRecord>()
+                .Where(e => e.Entity.DomainEvents.Any())
+                .Select(e => e.Entity)
+                .ToList();
+            
+            foreach (var saleRecord in saleRecordEntries)
+            {
+                saleRecord.ClearDomainEvents();
+            }
         }
 
 
