@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SmartMenuOptim.Domain.Exceptions;
 
 /*
 -------------------------------------------------------------
@@ -289,6 +290,21 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
             // Handle specific exception types
             return exception switch
             {
+                // Domain-specific exceptions (business rule violations)
+                EntityNotFoundException entityNotFound =>
+                    (HttpStatusCode.NotFound, CreateErrorResponse(
+                        "Not Found - Entity Not Found",
+                        entityNotFound.Message,
+                        correlationId,
+                        entityNotFound)), //  <-- Include original exception for detailed logging and development response
+
+                DomainException domainEx =>
+                    (HttpStatusCode.UnprocessableEntity, CreateErrorResponse(
+                        "Domain Rule Violation - Unprocessable Entity",
+                        domainEx.Message,
+                        correlationId,
+                        domainEx)), //  <-- Include original exception for detailed logging and development response
+
                 // Application/Domain exceptions
                 ArgumentException or ArgumentNullException => 
                     (HttpStatusCode.BadRequest, CreateErrorResponse(

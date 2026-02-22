@@ -1,4 +1,5 @@
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Exceptions;
 using System;
 
 /// <summary>
@@ -205,22 +206,41 @@ public class Promotion : TenantEntityBase
         DateTime validTo,
         string description = "")
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Promotion name is required and cannot be empty.", nameof(name));
-        
+        // ---------------------------------------------------------------
+        // PARAMETER GUARD CLAUSES — ArgumentException
+        //
+        // Guard clauses validate constructor preconditions (caller contract),
+        // NOT domain business rules.
+        //
+        // • ArgumentException → 400 Bad Request (programming error)
+        // • PromotionDomainException → 422 Unprocessable Entity
+        //   (valid input, but violates a promotion lifecycle rule)
+        //
+        // EXAMPLES:
+        // • name = null             → ArgumentException  (caller bug)
+        // • discountAmount = -1     → ArgumentOutOfRangeException (caller bug)
+        // • Activate() before start → PromotionDomainException (business rule)
+        // • UpdateDetails() active  → PromotionDomainException (business rule)
+        // ---------------------------------------------------------------
+
+        if (restaurantId <= 0)
+            throw new ArgumentException("Valid restaurant ID is required.", nameof(restaurantId));
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
         if (name.Length > 150)
             throw new ArgumentException("Promotion name cannot exceed 150 characters.", nameof(name));
-        
+
         if (discountAmount < 0 || discountAmount > 1000000m)
-            throw new ArgumentException("Discount amount must be between 0 and 1,000,000.", nameof(discountAmount));
-        
+            throw new ArgumentOutOfRangeException(nameof(discountAmount), discountAmount, "Discount amount must be between 0 and 1,000,000.");
+
         if (validTo <= validFrom)
             throw new ArgumentException("ValidTo date must be after ValidFrom date.", nameof(validTo));
-        
+
         var maxFutureDate = DateTime.UtcNow.AddYears(1);
         if (validTo > maxFutureDate)
             throw new ArgumentException("Promotion cannot extend more than one year into the future.", nameof(validTo));
-        
+
         RestaurantId = restaurantId;
         Name = name;
         Description = description ?? string.Empty;
@@ -236,15 +256,16 @@ public class Promotion : TenantEntityBase
     /// <summary>
     /// Activates the promotion, making it available for use.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when attempting to activate before ValidFrom date.</exception>
+    /// <exception cref="PromotionDomainException">Thrown when attempting to activate before ValidFrom date.</exception>
     /// <remarks>
     /// Promotion can only be activated if the current date/time is on or after the ValidFrom date.
     /// Once activated, the promotion can be applied to qualifying orders.
     /// </remarks>
     public void Activate()
     {
+        // Domain rule: promotion cannot be activated before its scheduled start date.
         if (DateTime.UtcNow < ValidFrom)
-            throw new InvalidOperationException("Cannot activate promotion before ValidFrom date.");
+            throw new PromotionDomainException("Cannot activate promotion before ValidFrom date.");
         
         _isActive = true;
     }
@@ -302,7 +323,7 @@ public class Promotion : TenantEntityBase
     /// <param name="validFrom">New start date.</param>
     /// <param name="validTo">New end date (must be after validFrom).</param>
     /// <param name="description">New description.</param>
-    /// <exception cref="InvalidOperationException">Thrown when attempting to update an active promotion.</exception>
+    /// <exception cref="PromotionDomainException">Thrown when attempting to update an active promotion.</exception>
     /// <exception cref="ArgumentException">Thrown when validation rules are violated.</exception>
     /// <remarks>
     /// Promotion must be deactivated before updating details to ensure consistency.
@@ -315,21 +336,22 @@ public class Promotion : TenantEntityBase
         DateTime validTo,
         string description = "")
     {
+        // Domain rule: cannot modify details while promotion is live.
         if (_isActive)
-            throw new InvalidOperationException("Cannot update promotion details while active. Deactivate first.");
-        
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Promotion name is required and cannot be empty.", nameof(name));
-        
+            throw new PromotionDomainException("Cannot update promotion details while active. Deactivate first.");
+
+        // Guard clauses: invalid parameters are programming errors, not business rules.
+        ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
         if (name.Length > 150)
             throw new ArgumentException("Promotion name cannot exceed 150 characters.", nameof(name));
-        
+
         if (discountAmount < 0 || discountAmount > 1000000m)
-            throw new ArgumentException("Discount amount must be between 0 and 1,000,000.", nameof(discountAmount));
-        
+            throw new ArgumentOutOfRangeException(nameof(discountAmount), discountAmount, "Discount amount must be between 0 and 1,000,000.");
+
         if (validTo <= validFrom)
             throw new ArgumentException("ValidTo date must be after ValidFrom date.", nameof(validTo));
-        
+
         var maxFutureDate = DateTime.UtcNow.AddYears(1);
         if (validTo > maxFutureDate)
             throw new ArgumentException("Promotion cannot extend more than one year into the future.", nameof(validTo));
@@ -352,11 +374,12 @@ public class Promotion : TenantEntityBase
     /// </remarks>
     public void UpdateNotes(string? notes)
     {
+        // Guard clauses: invalid note length is a programming error, not a business rule.
         if (!string.IsNullOrEmpty(notes))
         {
             if (notes.Length > 1000)
                 throw new ArgumentException("Notes cannot exceed 1000 characters.", nameof(notes));
-            
+
             if (notes.Length < 10)
                 throw new ArgumentException("Notes, if provided, must be at least 10 characters long.", nameof(notes));
         }
@@ -442,7 +465,7 @@ public class Promotion : TenantEntityBase
     /// <summary>
     /// Validates that the promotion maintains multi-tenant boundaries and consistency.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when tenant consistency is violated.</exception>
+    /// <exception cref="PromotionDomainException">Thrown when tenant consistency is violated.</exception>
     /// <remarks>
     /// This method should be called after navigation properties are loaded to ensure:
     /// - RestaurantId is valid and positive
@@ -490,7 +513,7 @@ public class Promotion : TenantEntityBase
         // Validate RestaurantId is valid
         if (RestaurantId <= 0)
         {
-            throw new InvalidOperationException(
+            throw new PromotionDomainException(
                 $"Promotion has invalid RestaurantId: {RestaurantId}. " +
                 $"RestaurantId must be a positive integer. " +
                 $"Promotion: '{Name}' (ID: {Id})");
@@ -501,7 +524,7 @@ public class Promotion : TenantEntityBase
         {
             if (Restaurant.Id != RestaurantId)
             {
-                throw new InvalidOperationException(
+                throw new PromotionDomainException(
                     $"Restaurant navigation property ID ({Restaurant.Id}) does not match RestaurantId ({RestaurantId}). " +
                     $"Promotion: '{Name}' (ID: {Id}), " +
                     $"Restaurant: '{Restaurant.Name}' (ID: {Restaurant.Id})");
@@ -510,7 +533,7 @@ public class Promotion : TenantEntityBase
             // Additional validation: Ensure restaurant is active and not deleted
             if (Restaurant.IsDeleted)
             {
-                throw new InvalidOperationException(
+                throw new PromotionDomainException(
                     $"Promotion '{Name}' (ID: {Id}) is associated with a deleted restaurant '{Restaurant.Name}' (ID: {Restaurant.Id}). " +
                     $"Promotions cannot belong to deleted restaurants.");
             }

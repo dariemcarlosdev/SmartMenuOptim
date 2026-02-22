@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Events.MenuEvents;
+using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Services.Contracts;
 using SmartMenuOptim.Domain.ValueObjects;
 
@@ -313,12 +314,28 @@ public class Menu : TenantEntityBase, IValidatableObject
     /// </summary>
     public Menu(int restaurantId, string name, int menuTypeId, string? description = null)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Menu name is required.", nameof(name));
-        
+        // ---------------------------------------------------------------
+        // PARAMETER GUARD CLAUSES — ArgumentException
+        //
+        // Guard clauses validate constructor preconditions (caller contract),
+        // NOT domain business rules.
+        //
+        // • ArgumentException → 400 Bad Request (programming error)
+        // • MenuDomainException → 422 Unprocessable Entity
+        //   (valid input, but violates a menu business rule)
+        //
+        // EXAMPLES:
+        // • name = null              → ArgumentException  (caller bug)
+        // • restaurantId = 0         → ArgumentException  (caller bug)
+        // • MakeAvailable() no dishes → MenuDomainException (business rule)
+        // • AddDish() duplicate      → MenuDomainException (business rule)
+        // ---------------------------------------------------------------
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
         if (restaurantId <= 0)
             throw new ArgumentException("Valid restaurant ID is required.", nameof(restaurantId));
-        
+
         if (menuTypeId <= 0)
             throw new ArgumentException("Valid menu type ID is required.", nameof(menuTypeId));
         
@@ -338,8 +355,8 @@ public class Menu : TenantEntityBase, IValidatableObject
     /// </summary>
     public void UpdateBasicInfo(string name, string? description = null)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Menu name is required.", nameof(name));
+        // Guard clause: null/empty name is a programming error, not a business rule.
+        ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
         
         Name = name.Trim();
         Description = description?.Trim();
@@ -351,11 +368,13 @@ public class Menu : TenantEntityBase, IValidatableObject
     /// </summary>
     public void SetAvailability(TimeSpan? from, TimeSpan? to)
     {
+        // Domain rule: identical from/to times create a zero-length window.
         if (from.HasValue && to.HasValue && from.Value == to.Value)
-            throw new ArgumentException("From and To times cannot be identical.");
-        
+            throw new MenuDomainException("From and To times cannot be identical.");
+
+        // Domain rule: availability window must be fully defined or fully cleared.
         if (from.HasValue && !to.HasValue || !from.HasValue && to.HasValue)
-            throw new ArgumentException("Both from and to times must be set together.");
+            throw new MenuDomainException("Both from and to times must be set together.");
         
         AvailableFrom = from;
         AvailableTo = to;
@@ -379,14 +398,16 @@ public class Menu : TenantEntityBase, IValidatableObject
     /// </remarks>
     public void AddDish(Dish dish, int displayOrder = 0, decimal? specialPrice = null, string? notes = null)
     {
-        if (dish == null)
-            throw new ArgumentNullException(nameof(dish));
-        
+        // Guard clause: null dish is a programming error, not a business rule.
+        ArgumentNullException.ThrowIfNull(dish, nameof(dish));
+
+        // Domain rule: dish must belong to the same restaurant (tenant boundary).
         if (dish.RestaurantId != RestaurantId)
-            throw new InvalidOperationException("Cannot add dish from different restaurant.");
-        
+            throw new MenuDomainException("Cannot add dish from different restaurant.");
+
+        // Domain rule: each dish can only appear once per menu.
         if (_menuDishes.Any(md => md.DishId == dish.Id))
-            throw new InvalidOperationException($"Dish '{dish.Name}' is already on this menu.");
+            throw new MenuDomainException($"Dish '{dish.Name}' is already on this menu.");
         
         var menuDish = new MenuDish
         {
@@ -465,8 +486,9 @@ public class Menu : TenantEntityBase, IValidatableObject
     /// </summary>
     public void MakeAvailable()
     {
+        // Domain rule: menu must have at least one active dish to be available.
         if (!_menuDishes.Any(md => md.IsActive))
-            throw new InvalidOperationException("Cannot make menu available without active dishes.");
+            throw new MenuDomainException("Cannot make menu available without active dishes.");
         
         IsAvailable = true;
         UpdatedAt = DateTime.UtcNow;
@@ -516,9 +538,10 @@ public class Menu : TenantEntityBase, IValidatableObject
     /// </summary>
     public void UpdateDishDisplayOrder(int dishId, int newDisplayOrder)
     {
+        // Domain rule: dish must exist on this menu.
         var menuDish = _menuDishes.FirstOrDefault(md => md.DishId == dishId);
         if (menuDish == null)
-            throw new InvalidOperationException($"Dish {dishId} not found on this menu.");
+            throw new MenuDomainException($"Dish {dishId} not found on this menu.");
         
         // Note: This assumes MenuDish has a method to update display order
         // You may need to add this method to MenuDish
@@ -571,14 +594,14 @@ public class Menu : TenantEntityBase, IValidatableObject
         // Validate Restaurant navigation property consistency
         if (Restaurant != null && Restaurant.Id != RestaurantId)
         {
-            throw new InvalidOperationException(
+            throw new MenuDomainException(
                 $"Restaurant navigation property ID ({Restaurant.Id}) does not match RestaurantId ({RestaurantId}).");
         }
 
         // Validate MenuType belongs to same restaurant
         if (MenuType != null && MenuType.RestaurantId != RestaurantId)
         {
-            throw new InvalidOperationException(
+            throw new MenuDomainException(
                 $"Menu type must belong to the same restaurant. " +
                 $"Menu RestaurantId: {RestaurantId}, MenuType RestaurantId: {MenuType.RestaurantId}, " +
                 $"MenuType: {MenuType.Name} (ID: {MenuType.Id})");
@@ -597,7 +620,7 @@ public class Menu : TenantEntityBase, IValidatableObject
                 var dishInfo = string.Join(", ", inconsistentDishes.Select(d => 
                     $"{d.Name ?? "Unknown"} (ID: {d.DishId}, RestaurantId: {d.RestaurantId})"));
                 
-                throw new InvalidOperationException(
+                throw new MenuDomainException(
                     $"Menu contains dishes from different restaurants. " +
                     $"Menu RestaurantId: {RestaurantId}, " +
                     $"Inconsistent dishes: [{dishInfo}]");

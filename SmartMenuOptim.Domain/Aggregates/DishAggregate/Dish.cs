@@ -1,6 +1,7 @@
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.ValueObjects;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -298,7 +299,7 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
         /// <summary>
         /// Validates that the dish maintains multi-tenant boundaries and consistency across all relationships.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown when tenant consistency is violated.</exception>
+        /// <exception cref="DishDomainException">Thrown when tenant consistency is violated.</exception>
         /// <remarks>
         /// This method should be called after navigation properties are loaded to ensure:
         /// - Restaurant navigation property matches RestaurantId
@@ -343,14 +344,14 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
             // Validate Restaurant navigation property consistency
             if (Restaurant != null && Restaurant.Id != RestaurantId)
             {
-                throw new InvalidOperationException(
+                throw new DishDomainException(
                     $"Restaurant navigation property ID ({Restaurant.Id}) does not match RestaurantId ({RestaurantId}).");
             }
 
             // Validate Category belongs to same restaurant
             if (Category != null && Category.RestaurantId != RestaurantId)
             {
-                throw new InvalidOperationException(
+                throw new DishDomainException(
                     $"Dish category must belong to the same restaurant. " +
                     $"Dish RestaurantId: {RestaurantId}, Category RestaurantId: {Category.RestaurantId}, " +
                     $"Category: {Category.Name} (ID: {Category.Id})");
@@ -369,7 +370,7 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
                     var menuInfo = string.Join(", ", inconsistentMenus.Select(m => 
                         $"{m.Name ?? "Unknown"} (ID: {m.MenuId}, RestaurantId: {m.RestaurantId})"));
                     
-                    throw new InvalidOperationException(
+                    throw new DishDomainException(
                         $"Dish contains menu assignments from different restaurants. " +
                         $"Dish RestaurantId: {RestaurantId}, " +
                         $"Inconsistent menus: [{menuInfo}]");
@@ -389,7 +390,7 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
                     var reviewIds = string.Join(", ", inconsistentReviews.Select(r => r.Id));
                     var restaurantIds = string.Join(", ", inconsistentReviews.Select(r => r.RestaurantId).Distinct());
                     
-                    throw new InvalidOperationException(
+                    throw new DishDomainException(
                         $"Dish contains reviews from different restaurants. " +
                         $"Dish RestaurantId: {RestaurantId}, " +
                         $"Inconsistent Review IDs: [{reviewIds}], " +
@@ -410,7 +411,7 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
                     var saleInfo = string.Join(", ", inconsistentSales.Select(s => 
                         $"ID: {s.Id} (RestaurantId: {s.RestaurantId}, Date: {s.SaleDate:yyyy-MM-dd})"));
                     
-                    throw new InvalidOperationException(
+                    throw new DishDomainException(
                         $"Dish contains sale records from different restaurants. " +
                         $"Dish RestaurantId: {RestaurantId}, " +
                         $"Inconsistent sales: [{saleInfo}]");
@@ -430,7 +431,7 @@ namespace SmartMenuOptim.Domain.Aggregates.DishAggregate
                     var orderItemInfo = string.Join(", ", inconsistentOrderItems.Select(oi => 
                         $"OrderItem ID: {oi.Id}, Order ID: {oi.OrderId}, RestaurantId: {oi.RestaurantId}"));
                     
-                    throw new InvalidOperationException(
+                    throw new DishDomainException(
                         $"Dish contains order items from different restaurants. " +
                         $"Dish RestaurantId: {RestaurantId}, " +
                         $"Inconsistent order items: [{orderItemInfo}]");

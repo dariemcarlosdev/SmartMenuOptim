@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Events.LoyaltyEvents;
+using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Services.Contracts;
 
 namespace SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
@@ -289,6 +290,43 @@ public class CustomerLoyalty : TenantEntityBase
     /// <param name="customerId">The customer identifier for this loyalty membership.</param>
     public CustomerLoyalty(int restaurantId, int customerId)
     {
+        // ---------------------------------------------------------------
+        // PARAMETER GUARD CLAUSES — ArgumentException / ArgumentNullException
+        //
+        // These are NOT domain business rules. They are programming-error
+        // guards that enforce the method's preconditions (its "contract").
+        //
+        // WHY NOT DomainException?
+        // • An invalid restaurantId or customerId is a CALLER BUG, not a
+        //   business rule the domain model needs to express. The caller
+        //   passed data that should never reach the domain layer.
+        // • ArgumentException/ArgumentNullException signal "you called me
+        //   wrong" — they target developers, not end-users.
+        // • DomainException signals "the operation violates a business
+        //   invariant" — it targets the application layer so it can
+        //   present a meaningful error to the user.
+        //
+        // .NET CONVENTION:
+        // • ArgumentException / ArgumentNullException → 400 Bad Request
+        //   (middleware maps these to HTTP 400)
+        // • DomainException → 422 Unprocessable Entity
+        //   (valid input, but violates a business rule)
+        //
+        // EXAMPLE DISTINCTION:
+        // • restaurantId = 0    → ArgumentException  (programming error)
+        // • points = -5         → ArgumentOutOfRangeException (programming error)
+        // • RedeemPoints(500) with 100 balance → LoyaltyDomainException
+        //   (business rule: insufficient points for redemption)
+        // • Adjustment causing negative balance → LoyaltyDomainException
+        //   (business rule: points cannot go below zero)
+        // ---------------------------------------------------------------
+
+        if (restaurantId <= 0)
+            throw new ArgumentException("Valid restaurant ID is required.", nameof(restaurantId));
+
+        if (customerId <= 0)
+            throw new ArgumentException("Valid customer ID is required.", nameof(customerId));
+
         RestaurantId = restaurantId;
         CustomerId = customerId;
         Points = 0;
@@ -330,9 +368,10 @@ public class CustomerLoyalty : TenantEntityBase
         decimal? orderAmount = null,
         decimal pointsMultiplier = 1.0m)
     {
+        // Guard clause: non-positive points is a programming error, not a business rule.
         if (points <= 0)
-            throw new ArgumentException("Points must be positive.", nameof(points));
-        
+            throw new ArgumentOutOfRangeException(nameof(points), points, "Points must be a positive value.");
+
         var previousBalance = Points;
         var previousTier = Tier;
         
@@ -496,11 +535,14 @@ public class CustomerLoyalty : TenantEntityBase
         string description,
         LoyaltyTransactionType transactionType = LoyaltyTransactionType.RewardRedemption)
     {
+        // Guard clause: non-positive points is a programming error, not a business rule.
         if (points <= 0)
-            throw new ArgumentException("Points must be positive.", nameof(points));
+            throw new ArgumentOutOfRangeException(nameof(points), points, "Points must be a positive value.");
+
+        // Domain rule: cannot redeem more points than the current balance.
         if (points > Points)
-            throw new InvalidOperationException("Insufficient points.");
-        
+            throw new LoyaltyDomainException($"Insufficient points for redemption. Available: {Points}, Requested: {points}.");
+
         Points -= points;
         LastActivity = DateTime.UtcNow;
         
@@ -547,13 +589,14 @@ public class CustomerLoyalty : TenantEntityBase
         string description,
         LoyaltyTransactionType transactionType)
     {
+        // Guard clause: zero-point adjustment is a programming error, not a business rule.
         if (points == 0)
             throw new ArgumentException("Points adjustment cannot be zero.", nameof(points));
-        
-        // Check if adjustment would make balance negative
+
+        // Domain rule: adjustment must not cause a negative balance.
         if (Points + points < 0)
-            throw new InvalidOperationException(
-                $"Adjustment of {points} points would result in negative balance. Current: {Points}");
+            throw new LoyaltyDomainException(
+                $"Adjustment of {points} points would result in negative balance. Current: {Points}.");
         
         Points += points;
         

@@ -6,6 +6,7 @@ using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.ValueObjects;
 
 namespace SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
@@ -389,18 +390,47 @@ public class Restaurant : EntityBase
         string? description = null,
         string timeZoneId = "UTC")
     {
+        // ---------------------------------------------------------------
+        // PARAMETER GUARD CLAUSES — ArgumentException / ArgumentNullException
+        //
+        // These are NOT domain business rules. They are programming-error
+        // guards that enforce the method's preconditions (its "contract").
+        //
+        // WHY NOT DomainException?
+        // • A null location or empty name is a CALLER BUG, not a business
+        //   rule the domain model needs to express. The caller passed data
+        //   that should never reach the domain layer in the first place.
+        // • ArgumentException/ArgumentNullException signal "you called me
+        //   wrong" — they target developers, not end-users.
+        // • DomainException signals "the operation violates a business
+        //   invariant" — it targets the application layer so it can
+        //   present a meaningful error to the user.
+        //
+        // .NET CONVENTION:
+        // • ArgumentException / ArgumentNullException → 400 Bad Request
+        //   (middleware maps these to HTTP 400)
+        // • DomainException → 422 Unprocessable Entity
+        //   (valid input, but violates a business rule)
+        //
+        // EXAMPLE DISTINCTION:
+        // • name = null        → ArgumentException  (programming error)
+        // • name = "Joe's"     → valid input
+        // • StartAcceptingOrders() with no hours → RestaurantDomainException
+        //   (business rule: restaurant must have hours before accepting)
+        // ---------------------------------------------------------------
+
         if (ownerId <= 0)
             throw new ArgumentException("Valid owner ID is required.", nameof(ownerId));
-        
+
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Restaurant name is required.", nameof(name));
-        
+
         if (maxSimultaneousOrders <= 0)
             throw new ArgumentException("Max simultaneous orders must be greater than zero.", nameof(maxSimultaneousOrders));
-        
+
         if (string.IsNullOrWhiteSpace(timeZoneId))
             throw new ArgumentException("Time zone ID is required.", nameof(timeZoneId));
-        
+
         OwnerId = ownerId;
         Name = name.Trim();
         Description = description?.Trim();
@@ -422,6 +452,7 @@ public class Restaurant : EntityBase
     /// </summary>
     public void UpdateBasicInfo(string name, string? description = null)
     {
+        // Guard clause: null/empty name is a programming error, not a business rule.
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Restaurant name is required.", nameof(name));
         
@@ -435,6 +466,8 @@ public class Restaurant : EntityBase
     /// </summary>
     public void UpdateContactInfo(Email email, PhoneNumber phone)
     {
+        // Guard clauses: null value objects are programming errors — the caller
+        // must construct valid Email/PhoneNumber instances before reaching here.
         ContactEmail = email ?? throw new ArgumentNullException(nameof(email));
         ContactPhone = phone ?? throw new ArgumentNullException(nameof(phone));
         UpdatedAt = DateTime.UtcNow;
@@ -445,6 +478,7 @@ public class Restaurant : EntityBase
     /// </summary>
     public void UpdateLocation(Address newLocation)
     {
+        // Guard clause: null Address is a programming error, not a business rule.
         Location = newLocation ?? throw new ArgumentNullException(nameof(newLocation));
         UpdatedAt = DateTime.UtcNow;
     }
@@ -454,6 +488,7 @@ public class Restaurant : EntityBase
     /// </summary>
     public void UpdateTimeZone(string timeZoneId)
     {
+        // Guard clause: null/empty timezone is a programming error, not a business rule.
         if (string.IsNullOrWhiteSpace(timeZoneId))
             throw new ArgumentException("Time zone ID is required.", nameof(timeZoneId));
         
@@ -476,6 +511,7 @@ public class Restaurant : EntityBase
     /// </summary>
     public void TransferOwnership(int newOwnerId)
     {
+        // Guard clause: invalid ID is a programming error, not a business rule.
         if (newOwnerId <= 0)
             throw new ArgumentException("Valid owner ID is required.", nameof(newOwnerId));
         
@@ -495,7 +531,7 @@ public class Restaurant : EntityBase
     public void SetBusinessHours(DayOfWeek dayOfWeek, TimeSpan openTime, TimeSpan closeTime)
     {
         if (closeTime <= openTime)
-            throw new ArgumentException("Close time must be after open time.");
+            throw new RestaurantDomainException("Close time must be after open time.");
         
         // Remove existing hours for this day
         var existingHours = _operatingHours.FirstOrDefault(h => h.DayOfWeek == dayOfWeek);
@@ -540,7 +576,7 @@ public class Restaurant : EntityBase
     public void StartAcceptingOrders()
     {
         if (!_operatingHours.Any())
-            throw new InvalidOperationException("Cannot accept orders without setting business hours.");
+            throw new RestaurantDomainException("Cannot accept orders without setting business hours.");
         
         IsAcceptingOrders = true;
         UpdatedAt = DateTime.UtcNow;
@@ -560,6 +596,7 @@ public class Restaurant : EntityBase
     /// </summary>
     public void UpdateMaxSimultaneousOrders(int maxOrders)
     {
+        // Guard clause: non-positive capacity is a programming error, not a business rule.
         if (maxOrders <= 0)
             throw new ArgumentException("Max simultaneous orders must be greater than zero.", nameof(maxOrders));
         

@@ -7,22 +7,23 @@ This document provides a comprehensive analysis of the SmartMenuOptimizer soluti
 **Solution Name:** SmartMenuOptimizer  
 **Total Projects:** 6  
 **Architecture Pattern:** Clean Architecture (with some variations)  
-**Last Updated:** 2024
+**Last Updated:** 2026-02-21
 
 ---
 
 ## 📄 Document Information
 
 **Document Title:** SmartMenuOptimizer - Clean Architecture & Domain-Driven Design Analysis  
-**Version:** 2.0 (Consolidated & Enhanced)  
+**Version:** 3.0 (Repository Pattern Aligned)  
 **Created:** 2024  
-**Last Updated:** 2024  
+**Last Updated:** 2026-02-21  
 **Author:** AI Architecture Analysis  
 **Status:** Comprehensive Analysis - Ready for Implementation  
 
 **Change History:**
 - v1.0 - Initial DDD analysis in separate document
 - v2.0 - Consolidated analysis with Clean Architecture, added detailed DDD section, implementation roadmap, and benefits analysis
+- v3.0 - Aligned repository recommendations with implemented generic `IRepository<T>` + Specification Pattern (removed per-aggregate repository interfaces)
 
 ---
 
@@ -217,7 +218,6 @@ Contains application business logic, DTOs, interfaces, and data access implement
 
 **Interfaces:**
 - `IRepository.cs`
-- `IRepositoryWithIncludes.cs`
 - `IUnityOfWork.cs`
 
 **Repository Implementations:**
@@ -715,7 +715,7 @@ services.AddScoped<IAiTextGenerator, AzureOpenAIService>();
 | Interface Type | Location | Example | Reason |
 |----------------|----------|---------|--------|
 | **Domain Services** | `Domain.Services.Abstraction` | `IAiTextGenerator` | Business capability contract |
-| **Repository Contracts** | `Domain.Repositories` | `IRestaurantRepository` | Data access contract for domain |
+| **Repository Contracts** | `Domain.Repositories` | `IRepository<T>`, `IUnityOfWork` | Generic data access contract for domain |
 | **Application Services** | `Application.Interfaces` | `IEmailService` | Application-specific service |
 
 **Rule of thumb:** If it's a **business capability** that the domain needs, the interface lives in **Domain**. If it's an **application-level** service (like sending emails as a result of business action), it can live in **Application**.
@@ -879,18 +879,18 @@ SmartMenuOptim.sln
 │       │   └── MenuEvents/
 │       │       ├── DishAddedToMenuEvent.cs
 │       │       └── DishRemovedFromMenuEvent.cs
-│       ├── Repositories/            # Repository interfaces (Domain contracts) (NEW)
-│       │   ├── IRestaurantRepository.cs # Domain contract for Restaurant repository (NEW)
-│       │   ├── IOrderRepository.cs   # Domain contract for Order repository (NEW)
-│       │   ├── IDishRepository.cs 	# Domain contract for Dish repository (NEW)
-│       │   ├── ICustomerRepository.cs # Domain contract for Customer repository (NEW)
-│       │   └── IUnitOfWork.cs 	 # Domain contract for Unit of Work (NEW), this can replace existing one in Shared
-│       ├── Specifications/          # 🆕 Business rule specifications (NEW)
-│       │   ├── ISpecification.cs
+│       ├── Repositories/            # Repository interfaces (Domain contracts) ✅ IMPLEMENTED
+│       │   ├── IRepository.cs        # Generic repository with Specification Pattern support
+│       │   └── IUnityOfWork.cs       # Unit of Work exposing IRepository<T> per aggregate
+│       ├── Specifications/          # ✅ Specification Pattern IMPLEMENTED
+│       │   ├── ISpecification.cs     # Specification contract (Criteria, Includes, Ordering, Paging)
+│       │   ├── BaseSpecification.cs  # Base implementation with fluent API
 │       │   └── DishSpecifications/
+│       │       ├── DishWithDetailsSpec.cs
+│       │       ├── ActiveDishesByRestaurantSpec.cs
 │       │       ├── UnderperformingDishSpec.cs
 │       │       └── PopularDishSpec.cs
-│       ├── Exceptions/              # Domain-specific exceptions (NEW)
+│       ├── Exceptions/              # Domain-specific exceptions (NEW). Consider using a base DomainException for better error handling.This will help in distinguishing between different error types and providing more meaningful error messages.
 │       │   ├── DomainException.cs
 │       │   ├── OrderException.cs
 │       │   └── MenuException.cs
@@ -964,11 +964,8 @@ SmartMenuOptim.sln
 │   │   │   ├── AppDbContext.cs     # Moved from Shared
 │   │   │   └── DesignTimeDbContextFactory.cs
 │   │   ├── Repositories/            # Repository implementations
-│   │   │   ├── RestaurantRepository.cs
-│   │   │   ├── OrderRepository.cs
-│   │   │   ├── DishRepository.cs
-│   │   │   ├── CustomerRepository.cs
-│   │   │   └── UnitOfWork.cs       # Moved from Shared
+│   │   │   ├── Repository.cs         # Generic Repository<T> implementing IRepository<T> with ApplySpecification()
+│   │   │   └── UnityOfWork.cs        # UoW exposing IRepository<T> per aggregate (moved from Shared)
 │   │   ├── Configurations/          # EF Entity Configurations
 │   │   │   ├── RestaurantConfiguration.cs
 │   │   │   ├── OrderConfiguration.cs
@@ -1414,28 +1411,38 @@ Move business logic from application services into domain aggregates:
 - Loyalty points calculation → `CustomerLoyalty.CalculatePoints()`
 - Menu optimization → `Menu.OptimizeForPerformance()`
 
-#### 5. **Create Specifications Pattern** (Priority: Low)
+#### 5. **Specification Pattern** (Priority: ✅ IMPLEMENTED)
 
-For complex business rules and queries:
+The Specification Pattern has been implemented to replace the old `IRepositoryWithIncludes<T>` approach. Specifications encapsulate query logic (filtering, includes, ordering, pagination) as domain-centric, reusable, testable objects.
 
 ```csharp
-// SmartMenuOptim.Domain/Specifications/
-public interface ISpecification<T>
+// SmartMenuOptim.Domain/Specifications/ISpecification.cs
+public interface ISpecification<T> where T : class
 {
-    bool IsSatisfiedBy(T entity);
-    Expression<Func<T, bool>> ToExpression();
+    Expression<Func<T, bool>>? Criteria { get; }
+    List<Expression<Func<T, object>>> Includes { get; }
+    List<string> IncludeStrings { get; }
+    Expression<Func<T, object>>? OrderBy { get; }
+    Expression<Func<T, object>>? OrderByDescending { get; }
+    int Take { get; }
+    int Skip { get; }
+    bool IsPagingEnabled { get; }
 }
 
-public class UnderperformingDishSpecification : ISpecification<Dish>
+// SmartMenuOptim.Domain/Specifications/DishSpecifications/ActiveDishesByRestaurantSpec.cs
+public class ActiveDishesByRestaurantSpec : BaseSpecification<Dish>
 {
-    private readonly BusinessRule _salesThreshold;
-    
-    public bool IsSatisfiedBy(Dish dish)
+    public ActiveDishesByRestaurantSpec(int restaurantId)
+        : base(d => d.RestaurantId == restaurantId && d.IsAvailable)
     {
-        return dish.SalesPerformance < _salesThreshold.Value;
+        AddInclude(d => d.Category);
+        AddInclude(d => d.Restaurant);
+        ApplyOrderBy(d => d.Name);
     }
 }
 ```
+
+> **Note:** The generic `IRepository<T>.FindAsync(ISpecification<T> spec)` method works with any specification — no per-aggregate repository interfaces needed. See [Repository Pattern Refactoring](../../SmartMenuOptim.Infrastructure/docs/02-Repositories/REPOSITORY_PATTERN_REFACTORING.md) for full details.
 
 ---
 
@@ -2259,9 +2266,10 @@ These principles apply **consistently across ALL domain services**, not just `Re
     - Configure AutoMapper in DI
 
 12. ✅ **Implement Repository interfaces** in Domain
-    - Move repository interfaces to Domain layer
-    - Create specific repository interfaces (IRestaurantRepository, etc.)
-    - Implement in Persistence layer
+    - Moved `IRepository<T>` and `IUnityOfWork` to Domain layer
+    - Added Specification Pattern support (`FindAsync`, `FirstOrDefaultAsync`, `CountAsync`)
+    - Removed `IRepositoryWithIncludes<T>` (EF Core coupling)
+    - Generic `IRepository<T>` + Specifications used instead of per-aggregate interfaces
 
 ### Phase 4: Infrastructure & Cross-Cutting (2-3 weeks)
 
@@ -2630,20 +2638,22 @@ The solution is already better than most .NET applications. These improvements w
 ## 📄 Document Information
 
 **Document Title:** SmartMenuOptimizer - Clean Architecture & Domain-Driven Design Analysis  
-**Version:** 2.0 (Consolidated & Enhanced)  
+**Version:** 3.0 (Repository Pattern Aligned)  
 **Created:** 2024  
-**Last Updated:** 2024  
+**Last Updated:** 2026-02-21  
 **Author:** AI Architecture Analysis  
 **Status:** Comprehensive Analysis - Ready for Implementation  
 
 **Change History:**
 - v1.0 - Initial DDD analysis in separate document
 - v2.0 - Consolidated analysis with Clean Architecture, added detailed DDD section, implementation roadmap, and benefits analysis
+- v3.0 - Aligned repository recommendations with implemented generic `IRepository<T>` + Specification Pattern
 
 **Related Documents:**
 - [Implementation Roadmap](#-implementation-roadmap)
 - [DDD Analysis](#-domain-driven-design-ddd-analysis)
 - [Clean Architecture Layers](#-detailed-layer-analysis)
+- [Repository Pattern Refactoring](../../SmartMenuOptim.Infrastructure/docs/02-Repositories/REPOSITORY_PATTERN_REFACTORING.md)
 
 **Next Review Date:** After Phase 1 implementation completion
 

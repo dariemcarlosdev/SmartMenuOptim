@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Exceptions;
 
 namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
 {
@@ -297,6 +298,23 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
             int? partySize = null,
             string? notes = null)
         {
+            // ---------------------------------------------------------------
+            // PARAMETER GUARD CLAUSES — ArgumentException
+            //
+            // These validate constructor preconditions (caller contract),
+            // NOT domain business rules.
+            //
+            // • ArgumentException → 400 Bad Request (programming error)
+            // • ReservationDomainException → 422 Unprocessable Entity
+            //   (valid input, but violates a reservation lifecycle rule)
+            //
+            // EXAMPLES:
+            // • tableId = 0         → ArgumentException  (caller bug)
+            // • partySize = -1      → ArgumentException  (caller bug)
+            // • Confirm() on Seated → ReservationDomainException (business rule)
+            // • Cancel() on NoShow  → ReservationDomainException (business rule)
+            // ---------------------------------------------------------------
+
             // Validate invariants
             ValidateTableId(tableId);
             ValidateRestaurantId(restaurantId);
@@ -372,7 +390,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         /// <summary>
         /// Confirms the reservation, transitioning from Pending to Confirmed status.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Pending status.</exception>
+        /// <exception cref="ReservationDomainException">Thrown if reservation is not in Pending status.</exception>
         /// <remarks>
         /// This method should be called when the restaurant confirms the reservation.
         /// Only pending reservations can be confirmed.
@@ -381,7 +399,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         {
             if (Status != ReservationStatus.Pending)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     $"Can only confirm pending reservations. Current status: {Status}");
             }
 
@@ -391,7 +409,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         /// <summary>
         /// Marks the customer as seated, transitioning from Confirmed to Seated status.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Confirmed status.</exception>
+        /// <exception cref="ReservationDomainException">Thrown if reservation is not in Confirmed status.</exception>
         /// <remarks>
         /// This method should be called when the customer arrives and is seated at the table.
         /// Only confirmed reservations can be marked as seated.
@@ -400,7 +418,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         {
             if (Status != ReservationStatus.Confirmed)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     $"Can only seat confirmed reservations. Current status: {Status}");
             }
 
@@ -410,7 +428,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         /// <summary>
         /// Completes the reservation, transitioning from Seated to Completed status.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Seated status.</exception>
+        /// <exception cref="ReservationDomainException">Thrown if reservation is not in Seated status.</exception>
         /// <remarks>
         /// This method should be called when the customers finish their meal and leave.
         /// Only seated reservations can be completed.
@@ -420,7 +438,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         {
             if (Status != ReservationStatus.Seated)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     $"Can only complete seated reservations. Current status: {Status}");
             }
 
@@ -430,7 +448,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         /// <summary>
         /// Cancels the reservation, transitioning to Cancelled status.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown if reservation is already in a terminal state.</exception>
+        /// <exception cref="ReservationDomainException">Thrown if reservation is already in a terminal state.</exception>
         /// <remarks>
         /// This method can be called by either the customer or restaurant to cancel the reservation.
         /// Can only cancel reservations in Pending or Confirmed status.
@@ -440,25 +458,25 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         {
             if (Status == ReservationStatus.Seated)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     "Cannot cancel a reservation where customers are already seated.");
             }
 
             if (Status == ReservationStatus.Completed)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     "Cannot cancel an already completed reservation.");
             }
 
             if (Status == ReservationStatus.NoShow)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     "Cannot cancel a no-show reservation.");
             }
 
             if (Status == ReservationStatus.Cancelled)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     "Reservation is already cancelled.");
             }
 
@@ -468,7 +486,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         /// <summary>
         /// Marks the reservation as a no-show, indicating the customer did not arrive.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown if reservation is not in Confirmed status.</exception>
+        /// <exception cref="ReservationDomainException">Thrown if reservation is not in Confirmed status.</exception>
         /// <remarks>
         /// This method should be called when the customer fails to arrive within a reasonable time
         /// after their reservation time (e.g., 15-30 minutes).
@@ -479,7 +497,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         {
             if (Status != ReservationStatus.Confirmed)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     $"Can only mark confirmed reservations as no-show. Current status: {Status}");
             }
 
@@ -515,7 +533,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
         /// <summary>
         /// Validates that the reservation maintains multi-tenant boundaries and consistency.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown when tenant consistency is violated.</exception>
+        /// <exception cref="ReservationDomainException">Thrown when tenant consistency is violated.</exception>
         /// <remarks>
         /// This method should be called after navigation properties are loaded to ensure:
         /// - Restaurant navigation property matches RestaurantId
@@ -536,7 +554,7 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
             // Validate Restaurant navigation property consistency
             if (Restaurant != null && Restaurant.Id != RestaurantId)
             {
-                throw new InvalidOperationException(
+                throw new ReservationDomainException(
                     $"Restaurant navigation property ID ({Restaurant.Id}) does not match RestaurantId ({RestaurantId}).");
             }
 
@@ -545,13 +563,13 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
             {
                 if (Table.Id != TableId)
                 {
-                    throw new InvalidOperationException(
+                    throw new ReservationDomainException(
                         $"Table navigation property ID ({Table.Id}) does not match TableId ({TableId}).");
                 }
 
                 if (Table.RestaurantId != RestaurantId)
                 {
-                    throw new InvalidOperationException(
+                    throw new ReservationDomainException(
                         $"Reservation must belong to same restaurant as Table. " +
                         $"Reservation RestaurantId: {RestaurantId}, Table RestaurantId: {Table.RestaurantId}");
                 }
@@ -562,19 +580,19 @@ namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
             {
                 if (CustomerId.HasValue && Customer.Id != CustomerId.Value)
                 {
-                    throw new InvalidOperationException(
+                    throw new ReservationDomainException(
                         $"Customer navigation property ID ({Customer.Id}) does not match CustomerId ({CustomerId}).");
                 }
 
                 if (Customer.IsDeleted)
                 {
-                    throw new InvalidOperationException(
+                    throw new ReservationDomainException(
                         $"Cannot have reservation for deleted customer (CustomerId: {CustomerId}).");
                 }
 
                 if (!Customer.IsActive)
                 {
-                    throw new InvalidOperationException(
+                    throw new ReservationDomainException(
                         $"Cannot have reservation for inactive customer (CustomerId: {CustomerId}).");
                 }
             }

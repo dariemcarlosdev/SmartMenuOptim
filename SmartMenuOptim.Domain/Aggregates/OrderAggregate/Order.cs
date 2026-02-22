@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Events.OrderEvents;
+using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Services.Contracts;
 using SmartMenuOptim.Domain.ValueObjects;
 
@@ -303,12 +304,43 @@ public class Order : TenantEntityBase, IValidatableObject
         int orderStatusId,
         string? specialInstructions = null)
     {
+        // ---------------------------------------------------------------
+        // PARAMETER GUARD CLAUSES — ArgumentException / ArgumentNullException
+        //
+        // These are NOT domain business rules. They are programming-error
+        // guards that enforce the method's preconditions (its "contract").
+        //
+        // WHY NOT DomainException?
+        // • An invalid restaurantId or customerId is a CALLER BUG, not a
+        //   business rule the domain model needs to express. The caller
+        //   passed data that should never reach the domain layer.
+        // • ArgumentException/ArgumentNullException signal "you called me
+        //   wrong" — they target developers, not end-users.
+        // • DomainException signals "the operation violates a business
+        //   invariant" — it targets the application layer so it can
+        //   present a meaningful error to the user.
+        //
+        // .NET CONVENTION:
+        // • ArgumentException / ArgumentNullException → 400 Bad Request
+        //   (middleware maps these to HTTP 400)
+        // • DomainException → 422 Unprocessable Entity
+        //   (valid input, but violates a business rule)
+        //
+        // EXAMPLE DISTINCTION:
+        // • restaurantId = 0     → ArgumentException  (programming error)
+        // • unitPrice = -5       → ArgumentOutOfRangeException (programming error)
+        // • Place() with no items → OrderDomainException
+        //   (business rule: order must have items before placement)
+        // • Item not found in order → OrderDomainException
+        //   (business rule: cannot update non-existent item)
+        // ---------------------------------------------------------------
+
         if (restaurantId <= 0)
             throw new ArgumentException("Valid restaurant ID is required.", nameof(restaurantId));
-        
+
         if (customerId <= 0)
             throw new ArgumentException("Valid customer ID is required.", nameof(customerId));
-        
+
         if (orderStatusId <= 0)
             throw new ArgumentException("Valid order status ID is required.", nameof(orderStatusId));
         
@@ -336,17 +368,17 @@ public class Order : TenantEntityBase, IValidatableObject
     /// </remarks>
     public void AddItem(int dishId, string dishName, decimal unitPrice, int quantity, string? specialInstructions = null)
     {
+        // Guard clauses: invalid parameters are programming errors, not business rules.
         if (dishId <= 0)
             throw new ArgumentException("Valid dish ID is required.", nameof(dishId));
-        
-        if (string.IsNullOrWhiteSpace(dishName))
-            throw new ArgumentException("Dish name is required.", nameof(dishName));
-        
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(dishName, nameof(dishName));
+
         if (unitPrice < 0)
-            throw new ArgumentException("Unit price cannot be negative.", nameof(unitPrice));
-        
+            throw new ArgumentOutOfRangeException(nameof(unitPrice), unitPrice, "Unit price cannot be negative.");
+
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be positive.", nameof(quantity));
+            throw new ArgumentOutOfRangeException(nameof(quantity), quantity, "Quantity must be positive.");
         
         var orderItem = new OrderItem(dishId, unitPrice, quantity)
         {
@@ -381,12 +413,14 @@ public class Order : TenantEntityBase, IValidatableObject
     /// </summary>
     public void UpdateItemQuantity(int orderItemId, int newQuantity)
     {
+        // Guard clause: non-positive quantity is a programming error, not a business rule.
         if (newQuantity <= 0)
-            throw new ArgumentException("Quantity must be positive.", nameof(newQuantity));
-        
+            throw new ArgumentOutOfRangeException(nameof(newQuantity), newQuantity, "Quantity must be positive.");
+
+        // Domain rule: item must exist in this order.
         var item = _orderItems.FirstOrDefault(oi => oi.Id == orderItemId);
         if (item == null)
-            throw new InvalidOperationException($"Order item {orderItemId} not found.");
+            throw new OrderDomainException($"Order item '{orderItemId}' not found in this order.");
         
         item.UpdateQuantity(newQuantity);
         RecalculateTotals();
@@ -407,6 +441,7 @@ public class Order : TenantEntityBase, IValidatableObject
     /// </summary>
     public void UpdateStatus(int newOrderStatusId)
     {
+        // Guard clause: invalid status ID is a programming error, not a business rule.
         if (newOrderStatusId <= 0)
             throw new ArgumentException("Valid order status ID is required.", nameof(newOrderStatusId));
         
@@ -428,6 +463,7 @@ public class Order : TenantEntityBase, IValidatableObject
     /// </summary>
     public void AssignStaffMember(int staffMemberId)
     {
+        // Guard clause: invalid staff ID is a programming error, not a business rule.
         if (staffMemberId <= 0)
             throw new ArgumentException("Valid staff member ID is required.", nameof(staffMemberId));
         
@@ -475,7 +511,7 @@ public class Order : TenantEntityBase, IValidatableObject
     public void Place(int confirmedStatusId, string? orderType = null)
     {
         if (!_orderItems.Any())
-            throw new InvalidOperationException("Cannot place an order without items.");
+            throw new OrderDomainException("Cannot place an order without items.");
         
         OrderStatusId = confirmedStatusId;
         UpdatedAt = DateTime.UtcNow;
@@ -516,8 +552,8 @@ public class Order : TenantEntityBase, IValidatableObject
         int? cancelledByStaffId = null,
         int loyaltyPointsToReverse = 0)
     {
-        if (string.IsNullOrWhiteSpace(reason))
-            throw new ArgumentException("Cancellation reason is required.", nameof(reason));
+        // Guard clause: missing cancellation reason is a programming error, not a business rule.
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason, nameof(reason));
         
         var previousStatusId = OrderStatusId;
         OrderStatusId = cancelledStatusId;
@@ -616,14 +652,14 @@ public class Order : TenantEntityBase, IValidatableObject
         // Validate Restaurant navigation property consistency
         if (Restaurant != null && Restaurant.Id != RestaurantId)
         {
-            throw new InvalidOperationException(
+            throw new OrderDomainException(
                 $"Restaurant navigation property ID ({Restaurant.Id}) does not match RestaurantId ({RestaurantId}).");
         }
 
         // Validate OrderStatus belongs to same restaurant
         if (Status != null && Status.RestaurantId != RestaurantId)
         {
-            throw new InvalidOperationException(
+            throw new OrderDomainException(
                 $"Order status must belong to the same restaurant. " +
                 $"Order RestaurantId: {RestaurantId}, OrderStatus RestaurantId: {Status.RestaurantId}, " +
                 $"Status: {Status.Name} (ID: {Status.Id})");
@@ -642,7 +678,7 @@ public class Order : TenantEntityBase, IValidatableObject
                 var itemInfo = string.Join(", ", inconsistentItems.Select(oi => 
                     $"{oi.Name} (OrderItem ID: {oi.Id}, Dish ID: {oi.DishId}, RestaurantId: {oi.RestaurantId})"));
                 
-                throw new InvalidOperationException(
+                throw new OrderDomainException(
                     $"Order contains items from different restaurants. " +
                     $"Order RestaurantId: {RestaurantId}, " +
                     $"Inconsistent items: [{itemInfo}]");
@@ -652,7 +688,7 @@ public class Order : TenantEntityBase, IValidatableObject
         // Validate staff member belongs to same restaurant (if assigned)
         if (HandledBy != null && HandledBy.RestaurantId != RestaurantId)
         {
-            throw new InvalidOperationException(
+            throw new OrderDomainException(
                 $"Assigned staff member must belong to the same restaurant. " +
                 $"Order RestaurantId: {RestaurantId}, Staff RestaurantId: {HandledBy.RestaurantId}, " +
                 $"Staff: {HandledBy.Name} (ID: {HandledBy.Id})");

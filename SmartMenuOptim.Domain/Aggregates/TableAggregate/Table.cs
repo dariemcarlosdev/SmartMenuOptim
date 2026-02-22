@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SmartMenuOptim.Domain.Exceptions;
 
 namespace SmartMenuOptim.Domain.Aggregates.TableAggregate;
 
@@ -345,18 +346,36 @@ public class Table : TenantEntityBase
     /// <exception cref="ArgumentException">Thrown when table number is invalid, capacity is out of range, or description exceeds maximum length.</exception>
     public Table(int restaurantId, string tableNumber, int capacity, string? description = null)
     {
-        if (string.IsNullOrWhiteSpace(tableNumber))
-            throw new ArgumentException("Table number is required and cannot be empty.", nameof(tableNumber));
-        
+        // ---------------------------------------------------------------
+        // PARAMETER GUARD CLAUSES — ArgumentException
+        //
+        // Guard clauses validate constructor preconditions (caller contract),
+        // NOT domain business rules.
+        //
+        // • ArgumentException → 400 Bad Request (programming error)
+        // • TableDomainException → 422 Unprocessable Entity
+        //   (valid input, but violates a table state rule)
+        // • ReservationDomainException → 422 Unprocessable Entity
+        //   (valid input, but violates a reservation booking rule)
+        //
+        // EXAMPLES:
+        // • tableNumber = null      → ArgumentException  (caller bug)
+        // • capacity = -1           → ArgumentOutOfRangeException (caller bug)
+        // • MarkOccupied() Reserved → TableDomainException (business rule)
+        // • MakeReservation() conflict → ReservationDomainException (business rule)
+        // ---------------------------------------------------------------
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableNumber, nameof(tableNumber));
+
         if (tableNumber.Length > 20)
             throw new ArgumentException("Table number cannot exceed 20 characters.", nameof(tableNumber));
-        
+
         if (!System.Text.RegularExpressions.Regex.IsMatch(tableNumber, @"^[a-zA-Z0-9\-]+$"))
             throw new ArgumentException("Table number can only contain letters, numbers, and hyphens.", nameof(tableNumber));
-        
+
         if (capacity < 1 || capacity > 100)
-            throw new ArgumentException("Capacity must be between 1 and 100.", nameof(capacity));
-        
+            throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Capacity must be between 1 and 100.");
+
         if (!string.IsNullOrEmpty(description) && description.Length > 500)
             throw new ArgumentException("Description cannot exceed 500 characters.", nameof(description));
         
@@ -380,8 +399,8 @@ public class Table : TenantEntityBase
     public void MarkOccupied()
     {
         if (Status == TableStatus.Reserved)
-            throw new InvalidOperationException("Cannot occupy a reserved table. Mark it as available first to cancel the reservation.");
-        
+            throw new TableDomainException("Cannot occupy a reserved table. Mark it as available first to cancel the reservation.");
+
         Status = TableStatus.Occupied;
     }
     
@@ -410,8 +429,8 @@ public class Table : TenantEntityBase
     public void Reserve()
     {
         if (Status == TableStatus.Occupied)
-            throw new InvalidOperationException("Cannot reserve an occupied table. Wait until it becomes available.");
-        
+            throw new TableDomainException("Cannot reserve an occupied table. Wait until it becomes available.");
+
         Status = TableStatus.Reserved;
     }
     
@@ -499,10 +518,11 @@ public class Table : TenantEntityBase
         // Validate table is available
         if (!IsAvailableAt(reservationTime, reservationDurationHours))
         {
-            throw new InvalidOperationException(
+            //booking reservation at a time that conflicts with an existing reservation violates a business rule, so we throw a domain exception
+            throw new ReservationDomainException(
                 $"Table {TableNumber} is not available at {reservationTime}. Another reservation already exists during this time.");
         }
-        
+
         // Create reservation through internal constructor
         var reservation = new Reservation(
             tableId: Id,
@@ -512,11 +532,11 @@ public class Table : TenantEntityBase
             partySize: partySize,
             notes: notes
         );
-        
+
         _reservations.Add(reservation);
         return reservation;
     }
-    
+
     /// <summary>
     /// Makes a reservation for a walk-in/anonymous customer.
     /// This method is a factory for creating Reservation child entities within the aggregate root.
@@ -552,10 +572,10 @@ public class Table : TenantEntityBase
         // Validate table is available
         if (!IsAvailableAt(reservationTime, reservationDurationHours))
         {
-            throw new InvalidOperationException(
+            throw new ReservationDomainException(
                 $"Table {TableNumber} is not available at {reservationTime}. Another reservation already exists during this time.");
         }
-        
+
         // Create anonymous reservation through internal constructor
         var reservation = new Reservation(
             tableId: Id,
@@ -589,7 +609,8 @@ public class Table : TenantEntityBase
         
         if (reservation == null)
         {
-            throw new InvalidOperationException(
+            // Attempting to cancel a non-existent reservation violates a business rule, so we throw a domain exception
+            throw new ReservationDomainException(
                 $"Reservation with ID {reservationId} not found for table {TableNumber}.");
         }
         
@@ -610,21 +631,24 @@ public class Table : TenantEntityBase
     /// </remarks>
     public void UpdateDetails(string tableNumber, int capacity, string? description = null)
     {
+        // Domain rule: cannot update while guests are seated.
         if (Status == TableStatus.Occupied)
-            throw new InvalidOperationException("Cannot update table details while occupied. Wait until table is available.");
-        
-        if (string.IsNullOrWhiteSpace(tableNumber))
-            throw new ArgumentException("Table number is required and cannot be empty.", nameof(tableNumber));
-        
+            throw new TableDomainException("Cannot update table details while occupied. Wait until table is available.");
+
+        // Guard clauses: invalid parameters are programming errors, not business rules.
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableNumber, nameof(tableNumber));
+
+        if (string.IsNullOrWhiteSpace(description)) throw new ArgumentException("Description cannot be empty if provided.", nameof(description));
+
         if (tableNumber.Length > 20)
             throw new ArgumentException("Table number cannot exceed 20 characters.", nameof(tableNumber));
-        
+
         if (!System.Text.RegularExpressions.Regex.IsMatch(tableNumber, @"^[a-zA-Z0-9\-]+$"))
             throw new ArgumentException("Table number can only contain letters, numbers, and hyphens.", nameof(tableNumber));
-        
+
         if (capacity < 1 || capacity > 100)
-            throw new ArgumentException("Capacity must be between 1 and 100.", nameof(capacity));
-        
+            throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Capacity must be between 1 and 100.");
+
         if (!string.IsNullOrEmpty(description) && description.Length > 500)
             throw new ArgumentException("Description cannot exceed 500 characters.", nameof(description));
         
@@ -643,6 +667,7 @@ public class Table : TenantEntityBase
     /// </remarks>
     public void UpdateDescription(string? description)
     {
+        // Guard clause: exceeding max length is a programming error, not a business rule.
         if (!string.IsNullOrEmpty(description) && description.Length > 500)
             throw new ArgumentException("Description cannot exceed 500 characters.", nameof(description));
         
@@ -704,7 +729,7 @@ public class Table : TenantEntityBase
         // Validate RestaurantId is valid
         if (RestaurantId <= 0)
         {
-            throw new InvalidOperationException(
+            throw new TableDomainException(
                 $"Table has invalid RestaurantId: {RestaurantId}. " +
                 $"RestaurantId must be a positive integer. " +
                 $"Table: '{TableNumber}' (ID: {Id}, Capacity: {Capacity})");
@@ -715,7 +740,7 @@ public class Table : TenantEntityBase
         {
             if (Restaurant.Id != RestaurantId)
             {
-                throw new InvalidOperationException(
+                throw new TableDomainException(
                     $"Restaurant navigation property ID ({Restaurant.Id}) does not match RestaurantId ({RestaurantId}). " +
                     $"Table: '{TableNumber}' (ID: {Id}, Capacity: {Capacity}), " +
                     $"Restaurant: '{Restaurant.Name}' (ID: {Restaurant.Id})");
@@ -724,7 +749,7 @@ public class Table : TenantEntityBase
             // Additional validation: Ensure restaurant is active and not deleted
             if (Restaurant.IsDeleted)
             {
-                throw new InvalidOperationException(
+                throw new TableDomainException(
                     $"Table '{TableNumber}' (ID: {Id}) is associated with a deleted restaurant " +
                     $"'{Restaurant.Name}' (ID: {Restaurant.Id}). " +
                     $"Tables cannot belong to deleted restaurants.");
@@ -753,8 +778,8 @@ public class Table : TenantEntityBase
                     $"Reservation ID: {r.Id}, Customer: {r.CustomerName ?? $"ID:{r.CustomerId}"}, " +
                     $"Time: {r.ReservationTime:yyyy-MM-dd HH:mm}, Party: {r.PartySize ?? 0}, " +
                     $"RestaurantId: {r.RestaurantId}"));
-                
-                throw new InvalidOperationException(
+
+                throw new TableDomainException(
                     $"Table '{TableNumber}' (ID: {Id}) contains reservations from different restaurants. " +
                     $"Table RestaurantId: {RestaurantId}, " +
                     $"Total Inconsistent Reservations: {inconsistentReservations.Count}, " +
@@ -771,8 +796,8 @@ public class Table : TenantEntityBase
             {
                 var invalidInfo = string.Join(", ", invalidReservations.Select(r => 
                     $"Reservation ID: {r.Id}, TableId: {r.TableId}"));
-                
-                throw new InvalidOperationException(
+
+                throw new TableDomainException(
                     $"Table '{TableNumber}' (ID: {Id}) contains reservations with mismatched TableId. " +
                     $"Expected TableId: {Id}, " +
                     $"Invalid Reservations: [{invalidInfo}]");
@@ -782,7 +807,7 @@ public class Table : TenantEntityBase
         // Validate table state consistency with reservations
         if (Status == TableStatus.Reserved && !HasActiveReservations())
         {
-            throw new InvalidOperationException(
+            throw new TableDomainException(
                 $"Table '{TableNumber}' (ID: {Id}) has Reserved status but no active reservations. " +
                 $"Table status and reservation collection are inconsistent.");
         }
