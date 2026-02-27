@@ -1,5 +1,4 @@
 ﻿using SmartMenuOptim.API.Extensions;
-using SmartMenuOptim.Infrastructure.Infrastructure.Middlewares;
 
 namespace SmartMenuOptim.API;
 
@@ -70,10 +69,8 @@ public class Program
         builder.ApiServiceCollection();
 
         var app = builder.Build();
-        // To Handle REST API exceptions from controllers
-        app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
-        //Resolve tenant from incoming request headers. It must be placed early in the pipeline to ensure tenant context is available for subsequent middleware and request handling.
+                //Resolve tenant from incoming request headers.
         // This middleware extracts the tenant identifier from the request headers and sets it in the request context.
         // For the moment, this is commented out as we are not implementing multi-tenancy yet, but it can be easily enabled in the future when needed.
         

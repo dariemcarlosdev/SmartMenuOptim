@@ -1,5 +1,6 @@
 using Sentry;
 using SmartMenuOptim.API.Data;
+using SmartMenuOptim.Infrastructure.Infrastructure.Middlewares;
 using System.Threading.Tasks;
 
 namespace SmartMenuOptim.API.Extensions;
@@ -16,7 +17,7 @@ public static class WebApplicationExtensions
     /// <remarks>
     /// <para><strong>MIDDLEWARE PIPELINE ORDER (registered in sequence):</strong></para>
     /// <list type="number">
-    ///     <item><strong>GlobalExceptionHandlingMiddleware</strong> - Catches all unhandled exceptions (registered in Program.cs BEFORE this method)</item>
+    ///     <item><strong>GlobalExceptionHandlingMiddleware</strong> - Catches all unhandled exceptions (must be FIRST in pipeline)</item>
     ///     <item><strong>UseSwagger()</strong> - Serves Swagger JSON specification</item>
     ///     <item><strong>UseSwaggerUI()</strong> - Serves Swagger interactive UI at /swagger</item>
     ///     <item><strong>UseRateLimiter()</strong> - Enforces rate limiting policies</item>
@@ -35,7 +36,7 @@ public static class WebApplicationExtensions
     /// │  HTTP REQUEST PIPELINE (in order of execution)                          │
     /// ├─────────────────────────────────────────────────────────────────────────┤
     /// │                                                                         │
-    /// │  Request ──► GlobalExceptionHandlingMiddleware (Program.cs)             │
+    /// │  Request ──► GlobalExceptionHandlingMiddleware                          │
     /// │                 │                                                       │
     /// │                 ▼                                                       │
     /// │              UseSwagger() ──► UseSwaggerUI()                            │
@@ -75,7 +76,7 @@ public static class WebApplicationExtensions
     /// 
     /// <para><strong>IMPORTANT NOTES:</strong></para>
     /// <list type="bullet">
-    ///     <item>GlobalExceptionHandlingMiddleware MUST be registered FIRST in Program.cs before calling this method</item>
+    ///     <item>GlobalExceptionHandlingMiddleware is registered FIRST in this method to catch all downstream exceptions</item>
     ///     <item>Swagger is always available (not restricted to Development environment)</item>
     ///     <item>CORS must be placed before UseAuthentication/UseAuthorization</item>
     ///     <item>UseRouting() must come before endpoint-aware middleware</item>
@@ -88,11 +89,13 @@ public static class WebApplicationExtensions
         // ═══════════════════════════════════════════════════════════════════════
         // MIDDLEWARE REGISTRATION ORDER (see XML docs for complete pipeline diagram)
         // ═══════════════════════════════════════════════════════════════════════
-        // NOTE: GlobalExceptionHandlingMiddleware is registered in Program.cs 
-        //       BEFORE this method is called to ensure it catches ALL exceptions.
-        // ═══════════════════════════════════════════════════════════════════════
 
-        // 1. SWAGGER - API documentation (always available, not just in Development)
+        // 1. GLOBAL EXCEPTION HANDLING - Must be first to catch all downstream exceptions
+        // Handles DomainException (422), EntityNotFoundException (404), and other exception types
+        // See: SmartMenuOptim.Domain/docs/08-Exceptions/DOMAIN_EXCEPTION_HANDLING.md
+        app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
+        // 2. SWAGGER - API documentation (always available, not just in Development)
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {
@@ -100,29 +103,29 @@ public static class WebApplicationExtensions
             options.RoutePrefix = "swagger";
         });
 
-        // 2. RATE LIMITING - Throttle requests early in pipeline
+        // 3. RATE LIMITING - Throttle requests early in pipeline
         app.UseRateLimiter();
 
-        // 3. ROUTING - Match requests to endpoints (required before endpoint-aware middleware)
+        // 4. ROUTING - Match requests to endpoints (required before endpoint-aware middleware)
         app.UseRouting();
-        
-        // 4. SENTRY TRACING - Performance monitoring and distributed tracing
+
+        // 5. SENTRY TRACING - Performance monitoring and distributed tracing
         app.UseSentryTracing();
 
-        // 5. HEALTH CHECKS - Expose /health endpoint for monitoring services
+        // 6. HEALTH CHECKS - Expose /health endpoint for monitoring services
         app.MapHealthChecks("/health").AllowAnonymous();
 
-        // 6. CORS - Cross-Origin Resource Sharing (must be before Auth middleware)
+        // 7. CORS - Cross-Origin Resource Sharing (must be before Auth middleware)
         const string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         app.UseCors(MyAllowSpecificOrigins); 
-        
-        // 7. HTTPS REDIRECTION - Redirect HTTP to HTTPS for security
+
+        // 8. HTTPS REDIRECTION - Redirect HTTP to HTTPS for security
         app.UseHttpsRedirection();
-        
-        // 8. AUTHORIZATION - Enforce authorization policies
+
+        // 9. AUTHORIZATION - Enforce authorization policies
         app.UseAuthorization();
-        
-        // 9. CONTROLLERS - Map controller actions to endpoints
+
+        // 10. CONTROLLERS - Map controller actions to endpoints
         app.MapControllers();
 
         return app;
