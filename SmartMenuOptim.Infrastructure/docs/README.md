@@ -17,7 +17,9 @@ SmartMenuOptim.Infrastructure/docs/
 ├── 📁 03-Migrations/                     ← EF Core Migrations Guide
 ├── 📁 04-ValueObjectMapping/             ← Value Object to DB Mapping
 ├── 📁 05-Verification/                   ← Testing & Verification Checklists
-└── 📁 06-BackgroundJobs/                 ← Background Jobs & Hosted Services
+├── 📁 06-BackgroundJobs/                 ← Background Jobs & Hosted Services
+├── 📁 07-Middleware/                     ← HTTP Pipeline Middleware
+└── 📁 08-EventDispatching/               ← Domain Event Dispatching
 ```
 
 ---
@@ -85,6 +87,24 @@ SmartMenuOptim.Infrastructure/docs/
 
 ---
 
+### 📁 07-Middleware
+*HTTP pipeline middleware components*
+
+| Document | Description |
+|----------|-------------|
+| [GLOBAL_EXCEPTION_HANDLING_MIDDLEWARE.md](07-Middleware/GLOBAL_EXCEPTION_HANDLING_MIDDLEWARE.md) | Centralized exception handling with domain exception integration |
+
+---
+
+### 📁 08-EventDispatching
+*Domain event dispatching mechanism using MediatR*
+
+| Document | Description |
+|----------|-------------|
+| [DOMAIN_EVENT_DISPATCHING_MECHANISM.md](08-EventDispatching/DOMAIN_EVENT_DISPATCHING_MECHANISM.md) | MediatR-based event dispatching, handlers, and dead letter queue |
+
+---
+
 ## 🏗️ Architecture Overview
 
 ### Infrastructure Layer Responsibilities
@@ -109,8 +129,18 @@ SmartMenuOptim.Infrastructure/docs/
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │              Background Jobs                         │   │
+│  │              Background Jobs (06-*)                  │   │
 │  │  IHostedService implementations, Scheduled Tasks   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Middleware (07-*)                       │   │
+│  │  GlobalExceptionHandling, Domain Exception Mapping │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Event Dispatching (08-*)                │   │
+│  │  MediatRDomainEventDispatcher, Dead Letter Queue   │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -146,6 +176,19 @@ SmartMenuOptim.Infrastructure/docs/
 | Job | Description |
 |-----|-------------|
 | `ReservationAutoCleanupBackgroundService` | Cleans expired reservations |
+
+### Middleware
+
+| Middleware | File | Description |
+|------------|------|-------------|
+| `GlobalExceptionHandlingMiddleware` | `Infrastructure/Middlewares/ExceptionHandlingMiddleware.cs` | Maps domain exceptions to HTTP status codes |
+
+### Event Dispatching
+
+| Component | File | Description |
+|-----------|------|-------------|
+| `MediatRDomainEventDispatcher` | `EventDispatching/MediatRDomainEventDispatcher.cs` | Publishes domain events via MediatR |
+| `InMemoryDeadLetterQueueService` | `Services/DeadLetterQueue/InMemoryDeadLetterQueueService.cs` | Stores failed events for retry |
 
 ---
 
