@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Application.Contracts;
-using SmartMenuOptim.Domain.Services.Contracts;
+using SmartMenuOptim.Domain.Common;
 
 namespace SmartMenuOptim.Application.Handlers;
 
@@ -40,7 +40,7 @@ namespace SmartMenuOptim.Application.Handlers;
 /// </code>
 /// 
 /// <para><strong>Related Documentation:</strong></para>
-/// <para>See docs/architecture/EVENT_HANDLER_IMPLEMENTATION.md for handler patterns.</para>
+/// <para>See SmartMenuOptim.Application/docs/03-EventHandlers/EVENT_HANDLER_IMPLEMENTATION.md for handler patterns.</para>
 /// </remarks>
 public abstract class ResilientEventHandlerBase<TEvent> : INotificationHandler<TEvent>
     where TEvent : class, IDomainEvent

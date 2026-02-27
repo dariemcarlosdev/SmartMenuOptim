@@ -1,4 +1,4 @@
-using SmartMenuOptim.Domain.Services.Contracts;
+using SmartMenuOptim.Domain.Common;
 
 namespace SmartMenuOptim.Application.Contracts;
 

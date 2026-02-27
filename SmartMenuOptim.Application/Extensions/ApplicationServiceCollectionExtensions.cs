@@ -23,10 +23,6 @@ namespace SmartMenuOptim.Application.Extensions;
 ///     <item><description><strong>Application Services:</strong> For use case orchestration</description></item>
 ///     <item><description><strong>Validators:</strong> For FluentValidation request validation</description></item>
 /// </list>
-/// 
-/// <para><strong>Related Documentation:</strong></para>
-/// <para>See docs/architecture/EVENT_HANDLER_IMPLEMENTATION.md for handler patterns.</para>
-/// <para>See docs/architecture/DOMAIN_EVENTS_GUIDE.md for event specifications.</para>
 /// </remarks>
 public static class ApplicationServiceCollectionExtensions
 {
