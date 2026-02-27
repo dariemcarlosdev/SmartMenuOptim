@@ -94,7 +94,7 @@ Even though this middleware is PROD-READY, it can be further extended by:
 
 • Creating custom domain exceptions (e.g., DomainException, ValidationException)
   - Define a base DomainException class for business rule violations
-  - Create specific exceptions like EntityNotFoundException, BusinessRuleViolationException
+  - Create specific exceptions like EntityNotFoundException, BusinessRuleViolationException, DishDomainException, etc.
 
 • Adding FluentValidation exception handling
   - Catch ValidationException from FluentValidation
@@ -298,6 +298,9 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
                         correlationId,
                         entityNotFound)), //  <-- Include original exception for detailed logging and development response
 
+                // Domain exceptions that represent business rule violations (e.g., validation failures, state violations)
+                // You can create specific domain exceptions for different types of business rule violations (e.g., ValidationException, BusinessRuleViolationException)
+                // Each custom domain exception can be handled here with specific status codes and messages.
                 DomainException domainEx =>
                     (HttpStatusCode.UnprocessableEntity, CreateErrorResponse(
                         "Domain Rule Violation - Unprocessable Entity",

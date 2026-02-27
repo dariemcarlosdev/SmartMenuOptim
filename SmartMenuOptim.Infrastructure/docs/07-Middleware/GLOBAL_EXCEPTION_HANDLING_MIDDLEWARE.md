@@ -220,7 +220,7 @@ public class ErrorDetails
 **Location:** `SmartMenuOptim.API/Extensions/WebApplicationExtensions.cs`
 
 ```csharp
-public static WebApplication ConfigureHtPipeline(this WebApplication app)
+public static WebApplication ConfigureHttpPipeline(this WebApplication app)
 {
     // 1. GLOBAL EXCEPTION HANDLING - Must be first
     app.UseMiddleware<GlobalExceptionHandlingMiddleware>();

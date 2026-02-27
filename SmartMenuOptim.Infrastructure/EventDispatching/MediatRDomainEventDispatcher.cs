@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Application.Contracts;
-using SmartMenuOptim.Domain.Services.Contracts;
+using SmartMenuOptim.Domain.Common;
 
 namespace SmartMenuOptim.Infrastructure.EventDispatching;
 
@@ -22,8 +22,8 @@ namespace SmartMenuOptim.Infrastructure.EventDispatching;
 /// this dispatcher logs the error and continues processing remaining events to prevent cascade failures.</para>
 /// 
 /// <para><strong>Related Documentation:</strong></para>
-/// <para>See docs/architecture/EVENT_HANDLER_IMPLEMENTATION.md for handler patterns.</para>
-/// <para>See docs/architecture/DOMAIN_EVENTS_GUIDE.md for event specifications.</para>
+/// <para>See SmartMenuOptim.Application/docs/03-EventHandlers/EVENT_HANDLER_IMPLEMENTATION.md for handler patterns.</para>
+/// <para>See SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md for event specifications.</para>
 /// </remarks>
 public class MediatRDomainEventDispatcher : IDomainEventDispatcher
 {
