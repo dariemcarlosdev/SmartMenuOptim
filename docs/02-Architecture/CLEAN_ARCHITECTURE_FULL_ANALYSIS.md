@@ -828,13 +828,16 @@ SmartMenuOptim.sln
 
 ### 🎯 Recommended Solution Structure (Target Architecture)
 
+> **Domain Layer Status:** Updated 2026-02-24 to reflect current implementation
+
 ```
 SmartMenuOptim.sln
 │
 ├── 📦 Core Layer (No Dependencies)
 │   │
-│   └── SmartMenuOptim.Domain/      # ✅ Domain Layer - Pure business logic
-│       ├── Aggregates/              # Aggregate roots and entities
+│   └── SmartMenuOptim.Domain/           # ✅ Domain Layer - Pure business logic (95% IMPLEMENTED)
+│       │
+│       ├── Aggregates/                   # ✅ Aggregate roots and entities
 │       │   ├── CustomerLoyaltyAggregate/
 │       │   │   ├── CustomerLoyalty.cs (Aggregate Root)
 │       │   │   └── LoyaltyTransaction.cs
@@ -854,21 +857,29 @@ SmartMenuOptim.sln
 │       │   └── TableAggregate/
 │       │       ├── Table.cs (Aggregate Root)
 │       │       └── Reservation.cs
-│       ├── ValueObjects/            # Immutable value objects
-│       │   ├── Money.cs
-│       │   ├── Email.cs
-│       │   ├── PhoneNumber.cs
-│       │   ├── Address.cs
-│       │   ├── Percentage.cs
-│       │   ├── Rating.cs            # 🆕 New
-│       │   └── DishName.cs          # 🆕 New
-│       ├── Services/                # 🆕 Domain Services (NEW)
-│       │   ├── IMenuOptimizationService.cs # Domain service for menu optimization (NEW)
-│       │   ├── IOrderProcessingService.cs # Domain service for order processing (NEW)
-│       │   ├── IPricingService.cs   # Domain service for pricing logic (NEW)
-│       │   └── ILoyaltyCalculationService.cs
-│       ├── Events/                  # 🆕 Domain Events (NEW)
-│       │   ├── IDomainEvent.cs
+│       │
+│       ├── Common/                       # ✅ Domain primitives and base classes (IMPLEMENTED)
+│       │   ├── EntityBase.cs             #✅ Base class for all entities
+│       │   ├── TenantEntityBase.cs       # ✅ Base class for multi-tenant entities
+│       │   ├── IDomainEvent.cs           # ✅ Domain event marker interface
+│       │   └── DomainEventBase.cs        # ✅ Abstract base for all domain events
+│       │
+│       ├── Entities/                     # ✅ Non-aggregate entities
+│       │   ├── GlobalEntities/
+│       │   │   ├── ApplicationUser.cs
+│       │   │   ├── BusinessRule.cs
+│       │   │   └── UserPermission.cs
+│       │   ├── ProfileEntities/
+│       │   │   ├── Customer.cs
+│       │   │   ├── StaffMember.cs
+│       │   │   └── AdminUser.cs
+│       │   └── RestaurantEntities/
+│       │       ├── Category.cs
+│       │       ├── Review.cs
+│       │       ├── SaleRecord.cs
+│       │       └── StaffSchedule.cs
+│       │
+│       ├── Events/                       # ✅ Domain Events (IMPLEMENTED)
 │       │   ├── OrderEvents/
 │       │   │   ├── OrderPlacedEvent.cs
 │       │   │   ├── OrderCancelledEvent.cs
@@ -876,27 +887,74 @@ SmartMenuOptim.sln
 │       │   ├── LoyaltyEvents/
 │       │   │   ├── LoyaltyPointsEarnedEvent.cs
 │       │   │   └── LoyaltyTierChangedEvent.cs
-│       │   └── MenuEvents/
-│       │       ├── DishAddedToMenuEvent.cs
-│       │       └── DishRemovedFromMenuEvent.cs
-│       ├── Repositories/            # Repository interfaces (Domain contracts) ✅ IMPLEMENTED
-│       │   ├── IRepository.cs        # Generic repository with Specification Pattern support
-│       │   └── IUnityOfWork.cs       # Unit of Work exposing IRepository<T> per aggregate
-│       ├── Specifications/          # ✅ Specification Pattern IMPLEMENTED
-│       │   ├── ISpecification.cs     # Specification contract (Criteria, Includes, Ordering, Paging)
-│       │   ├── BaseSpecification.cs  # Base implementation with fluent API
-│       │   └── DishSpecifications/
-│       │       ├── DishWithDetailsSpec.cs
-│       │       ├── ActiveDishesByRestaurantSpec.cs
-│       │       ├── UnderperformingDishSpec.cs
-│       │       └── PopularDishSpec.cs
-│       ├── Exceptions/              # Domain-specific exceptions (NEW). Consider using a base DomainException for better error handling.This will help in distinguishing between different error types and providing more meaningful error messages.
-│       │   ├── DomainException.cs
-│       │   ├── OrderException.cs
-│       │   └── MenuException.cs
-│       └── Common/                  # Shared domain primitives and base classes
-│           ├── EntityBase.cs
-│           └── TenantEntityBase.cs
+│       │   ├── MenuEvents/
+│       │   │   ├── DishAddedToMenuEvent.cs
+│       │   │   └── DishRemovedFromMenuEvent.cs
+│       │   └── SaleEvents/
+│       │       ├── SaleRecordedEvent.cs
+│       │       └── DailySalesSummarizedEvent.cs
+│       │
+│       ├── Exceptions/                   # ✅ Domain-specific exceptions (IMPLEMENTED)
+│       │   ├── DomainException.cs        # Base exception (HTTP 422)
+│       │   ├── EntityNotFoundException.cs # Lookup failures (HTTP 404)
+│       │   ├── OrderDomainException.cs
+│       │   ├── DishDomainException.cs
+│       │   ├── MenuDomainException.cs
+│       │   ├── PromotionDomainException.cs
+│       │   ├── ReservationDomainException.cs
+│       │   ├── RestaurantDomainException.cs
+│       │   ├── TableDomainException.cs
+│       │   └── LoyaltyDomainException.cs
+│       │
+│       ├── Repositories/                 # ✅ Repository interfaces (IMPLEMENTED)
+│       │   ├── IRepository.cs            # Generic repository with Specification Pattern
+│       │   └── IUnityOfWork.cs           # Unit of Work pattern
+│       │
+│       ├── Services/                     # ✅ Domain Services (IMPLEMENTED)
+│       │   ├── MenuOptimizationService.cs
+│       │   ├── MenuPricingService.cs
+│       │   ├── MenuCompositionValidatorService.cs
+│       │   ├── DishPopularityRankingService.cs
+│       │   ├── ReviewSentimentAnalysisService.cs
+│       │   ├── ReservationManagementService.cs
+│       │   ├── TableAvailabilityService.cs
+│       │   ├── PromotionEligibilityService.cs
+│       │   ├── InventoryForecastingService.cs
+│       │   ├── RevenueAnalysisService.cs
+│       │   └── Contracts/                # Port interfaces for Infrastructure
+│       │       ├── ISentimentAnalyzer.cs
+│       │       ├── IAiTextGenerator.cs
+│       │       ├── IAdminAuthorizationService.cs
+│       │       └── IReservationCleanupService.cs
+│       │
+│       ├── Specifications/               # ✅ Specification Pattern (IMPLEMENTED)
+│       │   ├── ISpecification.cs         # Specification contract
+│       │   ├── BaseSpecification.cs      # Fluent API base implementation
+│       │   ├── ReservationSpecifications.cs
+│       │   ├── DishSpecifications/
+│       │   │   └── DishWithDetailsSpecification.cs
+│       │   ├── ReviewSpecifications/
+│       │   │   ├── FilteredReviewsSpecification.cs
+│       │   │   └── ReviewWithDetailsSpecification.cs
+│       │   └── SaleRecordSpecifications/
+│       │       └── SaleRecordWithDetailsSpecification.cs
+│       │
+│       ├── ValueObjects/                 # ✅ Immutable value objects
+│       │   ├── Money.cs
+│       │   ├── Email.cs
+│       │   ├── PhoneNumber.cs
+│       │   ├── Address.cs
+│       │   └── Percentage.cs
+│       │
+│       └── docs/                         # ✅ Domain documentation
+│           ├── 01-Entities/
+│           ├── 02-Aggregates/
+│           ├── 03-ValueObjects/
+│           ├── 04-DomainServices/
+│           ├── 05-Specifications/
+│           ├── 06-Events/
+│           ├── 07-MultiTenancy/
+│           └── 08-Exceptions/
 │
 ├── 📦 Application Layer (Depends on: Domain)
 │   │

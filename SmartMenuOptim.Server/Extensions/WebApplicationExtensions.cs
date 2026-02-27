@@ -1,3 +1,4 @@
+using SmartMenuOptim.Infrastructure.Infrastructure.Middlewares;
 using SmartMenuOptim.Server.Components;
 
 namespace SmartMenuOptim.Server.Extensions;
@@ -12,6 +13,11 @@ public static class WebApplicationExtensions
     /// </summary>
     public static WebApplication ConfigureHttpPipeline(this WebApplication app)
     {
+        // Global Exception Handling - Must be first to catch all downstream exceptions
+        // Handles DomainException (422), EntityNotFoundException (404), and other exception types
+        // See: SmartMenuOptim.Domain/docs/08-Exceptions/DOMAIN_EXCEPTION_HANDLING.md
+        app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
         app.UseRouting();
 
 
