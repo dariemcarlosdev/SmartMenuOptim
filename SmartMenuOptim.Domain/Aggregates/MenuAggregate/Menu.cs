@@ -4,7 +4,7 @@ using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Events.MenuEvents;
 using SmartMenuOptim.Domain.Exceptions;
-using SmartMenuOptim.Domain.Services.Contracts;
+using SmartMenuOptim.Domain.Common;
 using SmartMenuOptim.Domain.ValueObjects;
 
 namespace SmartMenuOptim.Domain.Aggregates.MenuAggregate;

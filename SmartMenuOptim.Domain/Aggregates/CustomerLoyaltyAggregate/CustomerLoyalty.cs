@@ -3,7 +3,7 @@ using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Events.LoyaltyEvents;
 using SmartMenuOptim.Domain.Exceptions;
-using SmartMenuOptim.Domain.Services.Contracts;
+using SmartMenuOptim.Domain.Common;
 
 namespace SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 

@@ -1,5 +1,7 @@
 using SmartMenuOptim.Domain.ValueObjects;
 
+using SmartMenuOptim.Domain.Common;
+
 namespace SmartMenuOptim.Domain.Events.OrderEvents;
 
 /// <summary>

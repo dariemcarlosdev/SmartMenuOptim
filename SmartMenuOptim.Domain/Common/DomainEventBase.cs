@@ -1,6 +1,4 @@
-using SmartMenuOptim.Domain.Services.Contracts;
-
-namespace SmartMenuOptim.Domain.Events;
+namespace SmartMenuOptim.Domain.Common;
 
 /// <summary>
 /// Abstract base class for all domain events in the SmartMenuOptimizer application.

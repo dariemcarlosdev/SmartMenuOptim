@@ -1,3 +1,5 @@
+using SmartMenuOptim.Domain.Common;
+
 namespace SmartMenuOptim.Domain.Events.SaleEvents;
 
 /// <summary>

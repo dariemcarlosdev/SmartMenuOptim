@@ -1,18 +1,17 @@
-﻿using System;
-using MediatR;
+﻿using MediatR;
 
-namespace SmartMenuOptim.Domain.Services.Contracts
-{
-    /// <summary>
-    /// Marker interface for domain events in the SmartMenuOptimizer application.
-    /// All domain events must implement this interface to enable event-driven communication 
-    /// between aggregates while maintaining loose coupling and clean architecture boundaries.
-    /// </summary>
-    /// <remarks>
-    /// <para><strong>MediatR Integration:</strong></para>
-    /// <para>This interface extends <see cref="INotification"/> from MediatR, enabling automatic 
-    /// event dispatching through the MediatR pipeline. Event handlers implement 
-    /// <see cref="INotificationHandler{TNotification}"/> to react to domain events.</para>
+namespace SmartMenuOptim.Domain.Common;
+
+/// <summary>
+/// Marker interface for domain events in the SmartMenuOptimizer application.
+/// All domain events must implement this interface to enable event-driven communication 
+/// between aggregates while maintaining loose coupling and clean architecture boundaries.
+/// </summary>
+/// <remarks>
+/// <para><strong>MediatR Integration:</strong></para>
+/// <para>This interface extends <see cref="INotification"/> from MediatR, enabling automatic 
+/// event dispatching through the MediatR pipeline. Event handlers implement 
+/// <see cref="INotificationHandler{TNotification}"/> to react to domain events.</para>
     /// 
     /// <para><strong>Domain Events Overview:</strong></para>
     /// <para>Domain events represent something significant that has happened in the domain. They are
@@ -64,8 +63,8 @@ namespace SmartMenuOptim.Domain.Services.Contracts
     /// they contain business logic or technical concerns (e.g., sending emails).</para>
     /// 
     /// <para><strong>Related Documentation:</strong></para>
-    /// <para>See docs/architecture/DOMAIN_EVENTS_GUIDE.md for comprehensive implementation guide.</para>
-    /// <para>See docs/architecture/EVENT_HANDLER_IMPLEMENTATION.md for handler patterns and best practices.</para>
+    /// <para>See SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md for comprehensive implementation guide.</para>
+    /// <para>See SmartMenuOptim.Application/docs/03-EventHandlers/EVENT_HANDLER_IMPLEMENTATION.md for handler patterns and best practices.</para>
     /// </remarks>
     public interface IDomainEvent : INotification
     {
@@ -85,4 +84,3 @@ namespace SmartMenuOptim.Domain.Services.Contracts
         /// </summary>
         string EventType { get; }
     }
-}

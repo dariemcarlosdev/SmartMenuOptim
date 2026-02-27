@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Events.SaleEvents;
-using SmartMenuOptim.Domain.Services.Contracts;
+using SmartMenuOptim.Domain.Common;
 using SmartMenuOptim.Domain.ValueObjects;
 using System.Runtime.ConstrainedExecution;
 
