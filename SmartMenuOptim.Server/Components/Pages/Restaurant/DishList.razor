@@ -1,0 +1,508 @@
+@page "/restaurants/{RestaurantId:int}/dishes"
+@page "/restaurants/{RestaurantId:int}/menus/{MenuId:int}/dishes"
+@using SmartMenuOptim.Application.Dtos.Dish
+@using SmartMenuOptim.Server.Helpers
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ILogger<DishList> Logger
+
+<PageTitle>Dishes - SmartMenuOptimizer</PageTitle>
+
+<div class="container-fluid mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/restaurants">Restaurants</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId">Restaurant</a></li>
+            @if (MenuId.HasValue)
+            {
+                <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId/menus">Menus</a></li>
+                <li class="breadcrumb-item active">Menu Dishes</li>
+            }
+            else
+            {
+                <li class="breadcrumb-item active">All Dishes</li>
+            }
+        </ol>
+    </nav>
+
+    @* Header *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-cup-straw me-2"></i>@(MenuId.HasValue ? "Menu Dishes" : "All Dishes")
+            </h2>
+            <p class="text-muted mb-0">
+                @(MenuId.HasValue 
+                    ? "Manage dishes assigned to this menu" 
+                    : "Manage all dishes for this restaurant")
+            </p>
+        </div>
+        <div class="btn-group">
+            @if (MenuId.HasValue)
+            {
+                <button class="btn btn-outline-primary" @onclick="ShowAddDishModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Existing Dish
+                </button>
+            }
+            <button class="btn btn-primary" @onclick="CreateNew">
+                <i class="bi bi-plus-lg me-1"></i> Create New Dish
+            </button>
+        </div>
+    </div>
+
+    @* Filter by Category *@
+    @if (_categories?.Any() == true && !MenuId.HasValue)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="text-muted small">Filter by category:</span>
+                    <button class="btn btn-sm @(_selectedCategoryId is null ? "btn-primary" : "btn-outline-secondary")"
+                            @onclick="() => FilterByCategory(null)">
+                        All
+                    </button>
+                    @foreach (var category in _categories)
+                    {
+                        <button class="btn btn-sm @(_selectedCategoryId == category.Id ? "btn-primary" : "btn-outline-secondary")"
+                                @onclick="() => FilterByCategory(category.Id)">
+                            @category.Name
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Error Alert *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @_error
+            <button type="button" class="btn-close" @onclick="() => _error = null"></button>
+        </div>
+    }
+
+    @* Loading State *@
+    @if (_loading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading dishes...</span>
+            </div>
+        </div>
+    }
+    @* Empty State *@
+    else if (_filteredDishes is null || !_filteredDishes.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-cup-straw display-1 text-muted mb-3"></i>
+                <h4>No dishes found</h4>
+                <p class="text-muted mb-3">
+                    @(MenuId.HasValue 
+                        ? "Add dishes to this menu from your restaurant's dish catalog" 
+                        : "Create dishes to add to your menus")
+                </p>
+                <button class="btn btn-primary" @onclick="CreateNew">
+                    <i class="bi bi-plus-lg me-1"></i> Create New Dish
+                </button>
+            </div>
+        </div>
+    }
+    @* Dish Table *@
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Dish Name</th>
+                            <th>Category</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-center">Status</th>
+                            <th style="width: 150px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dish in _filteredDishes)
+                        {
+                            <tr class="@(!dish.IsActive ? "table-secondary" : "")">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded p-2 me-3">
+                                            <i class="bi bi-cup-straw text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">@dish.Name</div>
+                                            @if (!string.IsNullOrWhiteSpace(dish.Description))
+                                            {
+                                                <small class="text-muted">@TruncateText(dish.Description, 40)</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@(dish.CategoryName ?? "Uncategorized")</span>
+                                </td>
+                                <td class="text-end fw-semibold">
+                                    @dish.Price.ToString("C")
+                                </td>
+                                <td class="text-center">
+                                    @if (dish.IsVegetarian)
+                                    {
+                                        <span class="badge bg-success me-1" title="Vegetarian">
+                                            <i class="bi bi-leaf"></i>
+                                        </span>
+                                    }
+                                    @if (dish.IsSpicy)
+                                    {
+                                        <span class="badge bg-danger me-1" title="Spicy">
+                                            <i class="bi bi-fire"></i>
+                                        </span>
+                                    }
+                                    <span class="badge @(dish.IsActive ? "bg-success" : "bg-secondary")">
+                                        @(dish.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" 
+                                                @onclick="() => Edit(dish.Id)"
+                                                title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        @if (MenuId.HasValue)
+                                        {
+                                            <button class="btn btn-outline-warning" 
+                                                    @onclick="() => RemoveFromMenu(dish)"
+                                                    title="Remove from menu">
+                                                <i class="bi bi-dash-circle"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-outline-danger" 
+                                                    @onclick="() => ConfirmDelete(dish)"
+                                                    title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-3 text-muted small">
+            Showing @_filteredDishes.Count dish(es)
+        </div>
+    }
+
+    @* Delete Confirmation Modal *@
+    @if (_showDeleteModal && _dishToDelete is not null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                            Confirm Delete
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete <strong>@_dishToDelete.Name</strong>?</p>
+                        <p class="text-muted small mb-0">This dish will be removed from all menus.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                        <button type="button" class="btn btn-danger" @onclick="DeleteDishAsync" disabled="@_deleting">
+                            @if (_deleting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Add to Menu Modal (for menu context) *@
+    @if (_showAddToMenuModal && MenuId.HasValue)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Add Dish to Menu
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="() => _showAddToMenuModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if (_availableDishes?.Any() == true)
+                        {
+                            <div class="list-group">
+                                @foreach (var dish in _availableDishes)
+                                {
+                                    <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                            @onclick="() => AddToMenuAsync(dish)">
+                                        <div>
+                                            <strong>@dish.Name</strong>
+                                            <small class="text-muted ms-2">@(dish.CategoryName ?? "Uncategorized")</small>
+                                        </div>
+                                        <span class="badge bg-primary">@dish.Price.ToString("C")</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-3">No available dishes to add.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int RestaurantId { get; set; }
+    [Parameter] public int? MenuId { get; set; }
+
+    private List<DishListItemDTO>? _dishes;
+    private List<DishListItemDTO>? _filteredDishes;
+    private List<CategoryDTO>? _categories;
+    private List<DishListItemDTO>? _availableDishes;
+    private int? _selectedCategoryId;
+    private bool _loading = true;
+    private string? _error;
+
+    // Delete state
+    private bool _showDeleteModal;
+    private DishListItemDTO? _dishToDelete;
+    private bool _deleting;
+
+    // Add to menu state
+    private bool _showAddToMenuModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+
+            // Load categories for filtering
+            _categories = await client.GetFromJsonAsync<List<CategoryDTO>>(
+                $"api/v1/restaurants/{RestaurantId}/categories");
+
+            // Load dishes based on context
+            if (MenuId.HasValue)
+            {
+                _dishes = await client.GetFromJsonAsync<List<DishListItemDTO>>(
+                    $"api/v1/menus/{MenuId}/dishes");
+            }
+            else
+            {
+                _dishes = await client.GetFromJsonAsync<List<DishListItemDTO>>(
+                    $"api/v1/restaurants/{RestaurantId}/dishes");
+            }
+
+            _filteredDishes = _dishes;
+            Logger.LogInformation("Loaded {Count} dishes", _dishes?.Count ?? 0);
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Failed to load dishes");
+            _error = "Unable to load dishes. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error loading dishes");
+            _error = "An unexpected error occurred.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void FilterByCategory(int? categoryId)
+    {
+        _selectedCategoryId = categoryId;
+        
+        if (categoryId is null)
+        {
+            _filteredDishes = _dishes;
+        }
+        else
+        {
+            _filteredDishes = _dishes?.Where(d => d.CategoryId == categoryId).ToList();
+        }
+    }
+
+    private void CreateNew() => Navigation.NavigateTo($"/restaurants/{RestaurantId}/dishes/new");
+    
+    private void Edit(int dishId) => Navigation.NavigateTo($"/restaurants/{RestaurantId}/dishes/{dishId}/edit");
+
+    private async void ShowAddDishModal()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            
+            // Get all restaurant dishes
+            var allDishes = await client.GetFromJsonAsync<List<DishListItemDTO>>(
+                $"api/v1/restaurants/{RestaurantId}/dishes");
+            
+            // Filter out dishes already in the menu
+            var menuDishIds = _dishes?.Select(d => d.Id).ToHashSet() ?? new HashSet<int>();
+            _availableDishes = allDishes?.Where(d => !menuDishIds.Contains(d.Id)).ToList();
+            
+            _showAddToMenuModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading available dishes");
+            _error = "Failed to load available dishes.";
+        }
+    }
+
+    private async Task AddToMenuAsync(DishListItemDTO dish)
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var response = await client.PostAsync($"api/v1/menus/{MenuId}/dishes/{dish.Id}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _dishes?.Add(dish);
+                _filteredDishes = _dishes;
+                _availableDishes?.Remove(dish);
+                Logger.LogInformation("Dish {DishId} added to menu {MenuId}", dish.Id, MenuId);
+            }
+            else
+            {
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, "Failed to add dish to menu.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error adding dish {DishId} to menu", dish.Id);
+            _error = "An error occurred while adding the dish.";
+        }
+    }
+
+    private async Task RemoveFromMenu(DishListItemDTO dish)
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var response = await client.DeleteAsync($"api/v1/menus/{MenuId}/dishes/{dish.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                _dishes?.Remove(dish);
+                _filteredDishes = _dishes;
+                Logger.LogInformation("Dish {DishId} removed from menu {MenuId}", dish.Id, MenuId);
+            }
+            else
+            {
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, "Failed to remove dish from menu.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error removing dish {DishId} from menu", dish.Id);
+            _error = "An error occurred while removing the dish.";
+        }
+    }
+
+    private void ConfirmDelete(DishListItemDTO dish)
+    {
+        _dishToDelete = dish;
+        _showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        _dishToDelete = null;
+        _showDeleteModal = false;
+    }
+
+    private async Task DeleteDishAsync()
+    {
+        if (_dishToDelete is null) return;
+
+        _deleting = true;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var response = await client.DeleteAsync($"api/v1/dishes/{_dishToDelete.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                Logger.LogInformation("Dish {DishId} deleted", _dishToDelete.Id);
+                _dishes?.Remove(_dishToDelete);
+                _filteredDishes = _dishes;
+                CancelDelete();
+            }
+            else
+            {
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, "Failed to delete dish.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting dish {DishId}", _dishToDelete.Id);
+            _error = "An error occurred while deleting.";
+        }
+        finally
+        {
+            _deleting = false;
+        }
+    }
+
+    private static string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text[..maxLength] + "...";
+    }
+
+    // Extended DTO for dish list display
+    private class DishListItemDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int CategoryId { get; set; }
+        public string? CategoryName { get; set; }
+        public decimal Price { get; set; }
+        public bool IsVegetarian { get; set; }
+        public bool IsSpicy { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

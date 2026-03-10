@@ -1,45 +1,97 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
-using SmartMenuOptim.Domain.Entities;
 
-namespace SmartMenuOptim.Infrastructure.Persistence.Configurations
+namespace SmartMenuOptim.Infrastructure.Persistence.Configurations;
+
+/// <summary>
+/// EF Core configuration for the Dish aggregate root.
+/// </summary>
+/// <remarks>
+/// Dish represents a menu item with pricing, categorization, and nutritional information.
+/// Each dish belongs to a category and can be part of multiple menus.
+/// </remarks>
+internal sealed class DishConfiguration : IEntityTypeConfiguration<Dish>
 {
-    /// <summary>
-    /// According to Clean Architecture principles, configuration classes for entities should reside in the Infrastructure layer.
-    /// This class is intended to hold the configuration settings for the Dish entity.
-    /// By placing it here, we ensure that the domain and application layers remain free of infrastructure concerns, promoting a clean separation of responsibilities.
-    /// Example configurations might include table mappings, relationships, constraints, and other database-related settings.
-    /// </summary>
-    internal class DishConfiguration : IEntityTypeConfiguration<Dish>
+    public void Configure(EntityTypeBuilder<Dish> builder)
     {
-        //This is a sample configuration. Adjust properties and relationships as per your actual Dish entity definition.
-        // Currently, it configures the table name, primary key, and some properties of the Dish entity which actually is defined in AppDbContext.
-        // DbContext will automatically apply this configuration during model creation.
-        // Make sure to expand this configuration based on the actual structure and requirements of your Dish entity.
-        /// I need to take out any configuration defined in AppDbContext OnModelCreating method and move it here.
-        public void Configure(EntityTypeBuilder<Dish> builder)
-        {
-            builder.ToTable("Dishes");
+        // ═══════════════════════════════════════════════════════════════════════
+        // TABLE & PRIMARY KEY
+        // ═══════════════════════════════════════════════════════════════════════
+        builder.ToTable("Dishes");
+        builder.HasKey(d => d.Id);
 
-            builder.HasKey(d => d.Id);
+        // ═══════════════════════════════════════════════════════════════════════
+        // PROPERTIES
+        // ═══════════════════════════════════════════════════════════════════════
+        builder.Property(d => d.Name)
+            .IsRequired()
+            .HasMaxLength(200);
 
-            builder.Property(d => d.Name)
-                .IsRequired()
-                .HasMaxLength(200);
+        builder.Property(d => d.Description)
+            .HasMaxLength(1000);
 
-            builder.Property(d => d.Description)
-                .HasMaxLength(1000);
+        builder.Property(d => d.DishPrice)
+            .IsRequired()
+            .HasPrecision(18, 2);
 
-            builder.Property(d => d.DishPrice)
-                .HasPrecision(18, 2);
+        builder.Property(d => d.Calories)
+            .HasColumnType("int");
 
-            builder.HasIndex(d => d.Name);
-        }
+        builder.Property(d => d.IsVegetarian)
+            .IsRequired();
+
+        builder.Property(d => d.IsSpicy)
+            .IsRequired();
+
+        builder.Property(d => d.Ingredients)
+            .HasMaxLength(2000);
+
+        builder.Property(d => d.IsActive)
+            .IsRequired();
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // RELATIONSHIPS
+        // ═══════════════════════════════════════════════════════════════════════
+        builder.HasOne(d => d.Category)
+            .WithMany(c => c.Dishes)
+            .HasForeignKey(d => d.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(d => d.Restaurant)
+            .WithMany(r => r.Dishes)
+            .HasForeignKey(d => d.RestaurantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // MenuDishes relationship configured in MenuDishConfiguration
+        // Reviews relationship configured in ReviewConfiguration
+        // SaleRecords relationship configured in SaleRecordConfiguration
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // INDEXES
+        // ═══════════════════════════════════════════════════════════════════════
+        // Unique index for dish names per restaurant
+        builder.HasIndex(d => new { d.RestaurantId, d.Name })
+            .IsUnique()
+            .HasDatabaseName("IX_Dishes_Restaurant_UniqueName");
+
+        builder.HasIndex(d => d.CategoryId)
+            .HasDatabaseName("IX_Dishes_CategoryId");
+
+        // Composite index for dish search by price range
+        builder.HasIndex(d => new { d.RestaurantId, d.CategoryId, d.DishPrice })
+            .HasDatabaseName("IX_Dishes_Restaurant_Category_Price");
+
+        builder.HasIndex(d => new { d.RestaurantId, d.IsActive })
+            .HasDatabaseName("IX_Dishes_Restaurant_Active");
+
+        // Index for dietary filtering
+        builder.HasIndex(d => new { d.RestaurantId, d.IsVegetarian, d.IsSpicy })
+            .HasDatabaseName("IX_Dishes_Restaurant_Dietary");
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // QUERY FILTERS
+        // ═══════════════════════════════════════════════════════════════════════
+        builder.HasQueryFilter(d => !d.IsDeleted);
     }
 }

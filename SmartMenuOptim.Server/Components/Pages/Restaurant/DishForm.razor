@@ -1,0 +1,448 @@
+@page "/restaurants/{RestaurantId:int}/dishes/new"
+@page "/restaurants/{RestaurantId:int}/dishes/{DishId:int}/edit"
+@using SmartMenuOptim.Application.Dtos.Dish
+@using SmartMenuOptim.Server.Helpers
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ILogger<DishForm> Logger
+
+<PageTitle>@(_isEdit ? "Edit" : "Create") Dish - SmartMenuOptimizer</PageTitle>
+
+<div class="container mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/restaurants">Restaurants</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId">Restaurant</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId/dishes">Dishes</a></li>
+            <li class="breadcrumb-item active">@(_isEdit ? "Edit" : "New")</li>
+        </ol>
+    </nav>
+
+    @* Page Header *@
+    <div class="mb-4">
+        <h2>
+            <i class="bi @(_isEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+            @(_isEdit ? "Edit Dish" : "Create New Dish")
+        </h2>
+        <p class="text-muted">@(_isEdit ? "Update dish information and pricing" : "Add a new dish to your restaurant's catalog")</p>
+    </div>
+
+    @* Error Alert *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @_error
+            <button type="button" class="btn-close" @onclick="() => _error = null"></button>
+        </div>
+    }
+
+    @* Loading State *@
+    @if (_isEdit && _loadingDish)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading dish...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="@_model" OnValidSubmit="HandleSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-lg-8">
+                    @* Basic Information Card *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="bi bi-info-circle me-2"></i>Basic Information
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Dish Name <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="_model.Name" 
+                                           placeholder="e.g., Grilled Salmon, Caesar Salad" />
+                                <ValidationMessage For="() => _model.Name" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Description</label>
+                                <InputTextArea class="form-control" @bind-Value="_model.Description" rows="3" 
+                                               placeholder="Describe the dish, its ingredients, and preparation..." />
+                                <ValidationMessage For="() => _model.Description" class="text-danger small" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                    <InputSelect class="form-select" @bind-Value="_model.CategoryId">
+                                        <option value="0">-- Select Category --</option>
+                                        @if (_categories is not null)
+                                        {
+                                            @foreach (var category in _categories)
+                                            {
+                                                <option value="@category.Id">@category.Name</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="() => _model.CategoryId" class="text-danger small" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Price <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <InputNumber class="form-control" @bind-Value="_model.Price" 
+                                                     step="0.01" min="0" />
+                                    </div>
+                                    <ValidationMessage For="() => _model.Price" class="text-danger small" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Dietary Information Card *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-success text-white">
+                            <i class="bi bi-heart-pulse me-2"></i>Dietary Information
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <InputCheckbox class="form-check-input" @bind-Value="_model.IsVegetarian" id="vegetarian" />
+                                        <label class="form-check-label" for="vegetarian">
+                                            <i class="bi bi-leaf text-success me-1"></i>
+                                            Vegetarian
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <InputCheckbox class="form-check-input" @bind-Value="_model.IsSpicy" id="spicy" />
+                                        <label class="form-check-label" for="spicy">
+                                            <i class="bi bi-fire text-danger me-1"></i>
+                                            Spicy
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Calories</label>
+                                    <div class="input-group">
+                                        <InputNumber class="form-control" @bind-Value="_model.Calories" min="0" />
+                                        <span class="input-group-text">kcal</span>
+                                    </div>
+                                    <div class="form-text">Optional - helps health-conscious customers</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" id="dishActive" />
+                                        <label class="form-check-label" for="dishActive">
+                                            @(_model.IsActive ? "Active - Available for ordering" : "Inactive - Hidden from menus")
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Ingredients</label>
+                                <InputTextArea class="form-control" @bind-Value="_model.Ingredients" rows="2" 
+                                               placeholder="List main ingredients, separated by commas..." />
+                                <div class="form-text">Help customers with allergies identify ingredients</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Sidebar *@
+                <div class="col-lg-4">
+                    @* Preview Card *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-eye me-2"></i>Preview
+                        </div>
+                        <div class="card-body">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">@(string.IsNullOrWhiteSpace(_model.Name) ? "Dish Name" : _model.Name)</h6>
+                                    <span class="fw-bold text-primary">@_model.Price.ToString("C")</span>
+                                </div>
+                                <p class="text-muted small mb-2">
+                                    @(string.IsNullOrWhiteSpace(_model.Description) ? "Description will appear here..." : _model.Description)
+                                </p>
+                                <div class="d-flex gap-1">
+                                    @if (_model.IsVegetarian)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-leaf"></i> Vegetarian</span>
+                                    }
+                                    @if (_model.IsSpicy)
+                                    {
+                                        <span class="badge bg-danger"><i class="bi bi-fire"></i> Spicy</span>
+                                    }
+                                    @if (_model.Calories > 0)
+                                    {
+                                        <span class="badge bg-info">@_model.Calories kcal</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Tips Card *@
+                    <div class="card shadow-sm mb-4 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>Tips for Great Dishes
+                            </h6>
+                            <ul class="small text-muted mb-0">
+                                <li class="mb-2">Use appetizing, descriptive names</li>
+                                <li class="mb-2">Include key ingredients in the description</li>
+                                <li class="mb-2">Mark dietary options accurately</li>
+                                <li class="mb-2">Price competitively for your market</li>
+                                <li>Keep descriptions concise but enticing</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Form Actions *@
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>@(_isEdit ? "Updating..." : "Creating...")</span>
+                    }
+                    else
+                    {
+                        <i class="bi @(_isEdit ? "bi-check-lg" : "bi-plus-lg") me-2"></i>
+                        <span>@(_isEdit ? "Update Dish" : "Create Dish")</span>
+                    }
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="Cancel" disabled="@_saving">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter] public int RestaurantId { get; set; }
+    [Parameter] public int? DishId { get; set; }
+
+    private DishFormModel _model = new();
+    private List<CategoryDTO>? _categories;
+    private bool _isEdit => DishId.HasValue;
+    private bool _saving;
+    private bool _loadingDish;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoriesAsync();
+
+        if (_isEdit)
+        {
+            await LoadDishAsync();
+        }
+        else
+        {
+            _model = new DishFormModel { IsActive = true };
+        }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            _categories = await client.GetFromJsonAsync<List<CategoryDTO>>(
+                $"api/v1/restaurants/{RestaurantId}/categories");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load categories");
+            _error = "Failed to load categories.";
+        }
+    }
+
+    private async Task LoadDishAsync()
+    {
+        _loadingDish = true;
+        _error = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var dish = await client.GetFromJsonAsync<DishDetailDTO>($"api/v1/dishes/{DishId}");
+
+            if (dish is not null)
+            {
+                _model = new DishFormModel
+                {
+                    Name = dish.Name,
+                    Description = dish.Description,
+                    CategoryId = dish.CategoryId,
+                    Price = dish.Price,
+                    Calories = dish.Calories,
+                    IsVegetarian = dish.IsVegetarian,
+                    IsSpicy = dish.IsSpicy,
+                    Ingredients = dish.Ingredients,
+                    IsActive = dish.IsActive
+                };
+                Logger.LogInformation("Loaded dish {DishId} for editing", DishId);
+            }
+            else
+            {
+                _error = "Dish not found.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Failed to load dish {DishId}", DishId);
+            _error = "Unable to load dish. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error loading dish {DishId}", DishId);
+            _error = "An unexpected error occurred.";
+        }
+        finally
+        {
+            _loadingDish = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_model.CategoryId <= 0)
+        {
+            _error = "Please select a category.";
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            HttpResponseMessage response;
+
+            if (_isEdit)
+            {
+                var updateDto = new
+                {
+                    Id = DishId!.Value,
+                    RestaurantId = RestaurantId,
+                    Name = _model.Name,
+                    Description = _model.Description,
+                    CategoryId = _model.CategoryId,
+                    DishPrice = _model.Price,
+                    Calories = _model.Calories,
+                    IsVegetarian = _model.IsVegetarian,
+                    IsSpicy = _model.IsSpicy,
+                    Ingredients = _model.Ingredients,
+                    IsActive = _model.IsActive
+                };
+                response = await client.PutAsJsonAsync($"api/v1/dishes/{DishId}", updateDto);
+                Logger.LogInformation("Updating dish {DishId}", DishId);
+            }
+            else
+            {
+                var createDto = new
+                {
+                    RestaurantId = RestaurantId,
+                    Name = _model.Name,
+                    Description = _model.Description,
+                    CategoryId = _model.CategoryId,
+                    DishPrice = _model.Price,
+                    Calories = _model.Calories,
+                    IsVegetarian = _model.IsVegetarian,
+                    IsSpicy = _model.IsSpicy,
+                    Ingredients = _model.Ingredients,
+                    IsActive = _model.IsActive
+                };
+                response = await client.PostAsJsonAsync($"api/v1/restaurants/{RestaurantId}/dishes", createDto);
+                Logger.LogInformation("Creating new dish for restaurant {RestaurantId}", RestaurantId);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                Logger.LogInformation("Dish {Action} successfully", _isEdit ? "updated" : "created");
+                Navigation.NavigateTo($"/restaurants/{RestaurantId}/dishes");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Logger.LogWarning("Failed to {Action} dish. Status: {Status}, Error: {Error}", 
+                    _isEdit ? "update" : "create", response.StatusCode, errorContent);
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, 
+                    $"Failed to {(_isEdit ? "update" : "create")} dish. Please check the form and try again.");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Network error {Action} dish", _isEdit ? "updating" : "creating");
+            _error = "Unable to connect to the server. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error {Action} dish", _isEdit ? "updating" : "creating");
+            _error = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => Navigation.NavigateTo($"/restaurants/{RestaurantId}/dishes");
+
+    // Form model
+    private class DishFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Dish name is required")]
+        [System.ComponentModel.DataAnnotations.StringLength(200, MinimumLength = 2, ErrorMessage = "Name must be 2-200 characters")]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.StringLength(1000)]
+        public string? Description { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue, ErrorMessage = "Please select a category")]
+        public int CategoryId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Range(0.01, 10000, ErrorMessage = "Price must be between $0.01 and $10,000")]
+        public decimal Price { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Range(0, 10000)]
+        public int? Calories { get; set; }
+
+        public bool IsVegetarian { get; set; }
+        public bool IsSpicy { get; set; }
+        public string? Ingredients { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    // DTO for loading dish details
+    private class DishDetailDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int CategoryId { get; set; }
+        public decimal Price { get; set; }
+        public int? Calories { get; set; }
+        public bool IsVegetarian { get; set; }
+        public bool IsSpicy { get; set; }
+        public string? Ingredients { get; set; }
+        public bool IsActive { get; set; }
+    }
+}
