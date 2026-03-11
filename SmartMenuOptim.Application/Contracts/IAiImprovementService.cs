@@ -1,6 +1,6 @@
 ﻿using SmartMenuOptim.Application.Dtos;
 
-namespace SmartMenuOptim.Application.Interfaces;
+namespace SmartMenuOptim.Application.Contracts;
 
 /// <summary>
 /// Defines a contract for services that generate AI-driven improvement strategies for underperforming dishes based on sales and sentiment analysis.

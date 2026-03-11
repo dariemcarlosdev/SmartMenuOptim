@@ -4,10 +4,12 @@ using SmartMenuOptim.Application.Handlers.LoyaltyEventHandlers;
 using SmartMenuOptim.Application.Handlers.MenuEventHandlers;
 using SmartMenuOptim.Application.Handlers.OrderEventHandlers;
 using SmartMenuOptim.Application.Handlers.SaleEventHandlers;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Application.Services;
 using SmartMenuOptim.Application.Services.Reservations;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Application.Services.Restaurant;
+using SmartMenuOptim.Application.Features.Restaurants.Services;
+using SmartMenuOptim.Domain.Services.Abstractions;
+using SmartMenuOptim.Application.Contracts;
 
 namespace SmartMenuOptim.Application.Extensions;
 
@@ -49,6 +51,12 @@ public static class ApplicationServiceCollectionExtensions
         // Reservation Management Application Services
         services.AddScoped<IReservationCleanupService, ReservationAutoCleanupService>();
         services.AddScoped<ReservationReportingService>();
+
+        // Restaurant Management Application Services (Phase 2)
+        services.AddScoped<IRestaurantService, RestaurantService>();
+        services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IDishService, DishService>();
 
         return services;
     }

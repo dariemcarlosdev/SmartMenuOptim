@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
+using SmartMenuOptim.Domain.Enums;
 using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.Services;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Services.Abstractions;
 using SmartMenuOptim.Domain.Specifications;
 
 namespace SmartMenuOptim.Application.Services.Reservations;

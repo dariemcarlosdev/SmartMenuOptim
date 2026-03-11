@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using Microsoft.Extensions.Logging;
+using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Application.Dtos;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Repositories;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Services.Abstractions;
 
 namespace SmartMenuOptim.Application.Services;
 

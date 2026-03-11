@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Dtos\Sentiment\**" />
+    <EmbeddedResource Remove="Dtos\Sentiment\**" />
+    <None Remove="Dtos\Sentiment\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- ONLY keep general-purpose libraries if absolutely needed -->
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     
@@ -24,6 +30,10 @@
   <ItemGroup>
     <ProjectReference Include="..\SmartMenuOptim.Domain\SmartMenuOptim.Domain.csproj" />
     <ProjectReference Include="..\SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\Mapping\" />
   </ItemGroup>
 
 </Project>

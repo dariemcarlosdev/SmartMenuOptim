@@ -2,7 +2,7 @@ using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.Services;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
-using SmartMenuOptim.Domain.DTOs;
+using SmartMenuOptim.Domain.Services.Models;
 using Microsoft.EntityFrameworkCore;
 
 /// <summary>
@@ -36,9 +36,9 @@ public class ReviewApplicationService
         /// <remarks>Throws a NotFoundException if the review with the specified ID does not exist. This
         /// method logs informational and error messages during the analysis process.</remarks>
         /// <param name="reviewId">The unique identifier of the review to analyze. Must correspond to an existing review.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains a ReviewSentimentResult with the
+        /// <returns>A task that represents the asynchronous operation. The task result contains a ReviewSentimentDto with the
         /// sentiment analysis of the specified review.</returns>
-        public async Task<ReviewSentimentResult> AnalyzeReviewAsync(int reviewId)
+        public async Task<ReviewSentimentDto> AnalyzeReviewAsync(int reviewId)
         {
             try
             {
@@ -51,7 +51,7 @@ public class ReviewApplicationService
                     throw new NotFoundException($"Review {reviewId} not found");
                 }
 
-                var result = await _sentimentAnalysisService.AnalyzeReviewSentimentAsync(review);
+                var result = await _sentimentAnalysisService.AnalyzeSingleReviewAsync(review);
 
                 _logger.LogInformation("Successfully analyzed sentiment for review {ReviewId}. Sentiment: {Sentiment}",
                     reviewId, result.SentimentScore);
@@ -76,11 +76,11 @@ public class ReviewApplicationService
     /// <remarks>This method retrieves all non-deleted reviews for the given dish and performs sentiment
     /// analysis across them. The result reflects the combined sentiment of all relevant reviews. If no reviews are
     /// found, the returned sentiment may indicate a neutral or undefined state depending on the implementation of
-    /// AggregateReviewSentiment.</remarks>
+    /// AggregateReviewSentimentDto.</remarks>
     /// <param name="dishId">The unique identifier of the dish for which to analyze review sentiment.</param>
-    /// <returns>An AggregateReviewSentiment representing the overall sentiment derived from all reviews associated with the
+    /// <returns>An AggregateReviewSentimentDto representing the overall sentiment derived from all reviews associated with the
     /// specified dish.</returns>
-    public async Task<AggregateReviewSentiment> GetDishSentimentAsync(int dishId)
+    public async Task<AggregateReviewSentimentDto> GetDishSentimentAsync(int dishId)
     {
         try
         {

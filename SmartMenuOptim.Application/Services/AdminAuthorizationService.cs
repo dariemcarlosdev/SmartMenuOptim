@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Repositories;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Services.Abstractions;
 
 namespace SmartMenuOptim.Application.Services;
 

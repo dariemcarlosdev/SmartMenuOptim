@@ -1,6 +1,6 @@
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 
-namespace SmartMenuOptim.Application.Extensions;
+namespace SmartMenuOptim.Application.Extensions.Security;
 
 /*
  Placement rationale / Reference & Next steps

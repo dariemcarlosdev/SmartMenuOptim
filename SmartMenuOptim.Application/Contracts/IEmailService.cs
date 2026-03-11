@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartMenuOptim.Application.Interfaces
+namespace SmartMenuOptim.Application.Contracts
 {
     internal interface IEmailService
     {
