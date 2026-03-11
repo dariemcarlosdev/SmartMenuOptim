@@ -102,6 +102,33 @@ refactor(domain): apply DDD patterns to Menu aggregate
 - Use value objects for domain concepts without identity
 - Keep application services thin (orchestration only)
 
+### Interface Placement Rules
+Interfaces must be defined in the layer that **needs** the abstraction:
+
+**Domain layer** (`Domain/Repositories/`, `Domain/Services/Abstractions/`):
+- Repository contracts (`IRepository<T>`, `IUnityOfWork`)
+- Domain service abstractions (`ISentimentAnalyzer`, `IMenuCompositionValidator`)
+- These express what the **domain needs** to function
+
+**Application layer** (`Application/Contracts/`, `Application/Features/*/Services/`):
+- Infrastructure ports (`ICacheService`, `IExternalPricingApi`, `IEmailService`)
+- Application service contracts (`IRestaurantService`, `IMenuService`)
+- These define what the **application orchestrates** — caching, external APIs, use cases
+
+**Presentation layer** (`Server/Features/*/Services/`):
+- Client adapters (`IRestaurantClientService`)
+- These adapt backend services for **UI consumption** via HTTP
+
+**Never** move infrastructure concerns (caching, external APIs) into Domain.
+**Never** define repository interfaces in Application — they belong to Domain.
+
+### Vertical Slice (Feature Folder) Conventions
+- Organize feature code under `Features/{FeatureName}/` in each project layer
+- Use **plural** for feature namespace (`Features.Restaurants`) to avoid C# namespace-type collision with singular class names (`Restaurant`)
+- Cross-cutting concerns (base classes, shared contracts, middleware) stay in their original locations
+- Use `GlobalDtoUsings.cs` for backward-compatible type aliases when migrating DTOs to feature folders
+- EF Core configurations auto-discovered via `ApplyConfigurationsFromAssembly` regardless of folder
+
 ### Error Handling
 - Use the Result pattern for operations that can fail
 - Avoid throwing exceptions for expected failures
