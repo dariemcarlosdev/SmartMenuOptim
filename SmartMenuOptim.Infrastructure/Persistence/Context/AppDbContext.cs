@@ -6,12 +6,13 @@ using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
-using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Features.Restaurants;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Common;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Enums;
 using SmartMenuOptim.Domain.ValueObjects;
 using SmartMenuOptim.Infrastructure.Persistence.Context.Converters;
 
@@ -115,6 +116,13 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // APPLY CONFIGURATIONS FROM ASSEMBLY
+            // ═══════════════════════════════════════════════════════════════════════
+            // Auto-discover and apply all IEntityTypeConfiguration<T> implementations
+            // from the Configurations folder. This enables modular configuration files.
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
             /// ------- Configure Identity table names and keys
             /// 

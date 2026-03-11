@@ -1,5 +1,6 @@
 ﻿using SmartMenuOptim.Domain.Aggregates.DishAggregate;
-using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
+using SmartMenuOptim.Domain.Features.Restaurants;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
@@ -22,6 +23,7 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
         public IRepository<SaleRecord> SaleRecords { get; }
         public IRepository<Review> Reviews { get; }
         public IRepository<Dish> Dishes { get; }
+        public IRepository<Menu> Menus { get; }
         public IRepository<DishCategory> Categories { get; }
         public IRepository<Customer> Customers { get; }
         public IRepository<AdminUser> AdminUsers { get; }
@@ -38,10 +40,11 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
         public UnityOfWork(AppDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            
+
             SaleRecords = new Repository<SaleRecord>(_context);
             Reviews = new Repository<Review>(_context);
             Dishes = new Repository<Dish>(_context);
+            Menus = new Repository<Menu>(_context);
             Categories = new Repository<DishCategory>(_context);
             Customers = new Repository<Customer>(_context);
             AdminUsers = new Repository<AdminUser>(_context);

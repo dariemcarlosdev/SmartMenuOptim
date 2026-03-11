@@ -1,15 +1,9 @@
-﻿using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
+﻿using SmartMenuOptim.Application.Contracts;
+using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
-using SmartMenuOptim.Domain.Services.Abstraction;
 using SmartMenuOptim.Domain.ValueObjects;
-using SmartMenuOptim.Infrastructure.Services.Abstraction;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartMenuOptim.Infrastructure.Services
 {

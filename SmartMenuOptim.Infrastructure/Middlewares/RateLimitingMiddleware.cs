@@ -2,10 +2,10 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
+namespace SmartMenuOptim.Infrastructure.Middlewares
 {
     /// <summary>
-    /// RateLimittitngMiddleware
+    /// RateLimitingMiddleware
     /// 
     /// Description:
     /// This middleware is used to restrict the number of requests a single client IP can make within a specified time window. It helps protect your API from abuse, denial-of-service attacks, and excessive resource consumption by enforcing a configurable rate limit per client.
@@ -19,20 +19,20 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
     /// - Register this middleware early in the ASP.NET Core pipeline (in Program.cs or Startup.cs) to ensure all requests are rate-limited before reaching your controllers or services.
     /// 
     /// How to use:
-    /// - Add to the middleware pipeline with: app.UseMiddleware<RateLimittitngMiddleware>();
+    /// - Add to the middleware pipeline with: app.UseMiddleware&lt;RateLimitingMiddleware&gt;();
     /// - Configure the rate limit and time window as needed in the middleware code.
     /// 
     /// The middleware uses a thread-safe ConcurrentDictionary to track request counts and timestamps per client IP.
     /// </summary>
-    public class RateLimittitngMiddleware
+    public class RateLimitingMiddleware
     {
         private readonly RequestDelegate _next;
         // Thread-safe dictionary to store request counts and timestamps per client IP
         private static ConcurrentDictionary<string, (DateTime Timestamp, int Count)> _requestCounts = new();
         private static readonly TimeSpan TimeWindow = TimeSpan.FromMinutes(1);
         private const int MaxRequestsPerWindow = 60; // Max 60 requests per minute
-        private readonly ILogger<RateLimittitngMiddleware> _logger;
-        public RateLimittitngMiddleware(RequestDelegate next, ILogger<RateLimittitngMiddleware> logger)
+        private readonly ILogger<RateLimitingMiddleware> _logger;
+        public RateLimitingMiddleware(RequestDelegate next, ILogger<RateLimitingMiddleware> logger)
         {
             _next = next;
             _logger = logger;

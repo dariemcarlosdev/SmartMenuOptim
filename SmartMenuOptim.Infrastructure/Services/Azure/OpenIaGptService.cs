@@ -1,11 +1,11 @@
-﻿using Azure;
+using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Services.Abstractions;
 
-namespace SmartMenuOptim.Infrastructure.Infrastructure.Services.Azure
+namespace SmartMenuOptim.Infrastructure.Services.Azure
 {
     /// <summary>
     /// Azure OpenAI implementation of IAiTextGenerator.

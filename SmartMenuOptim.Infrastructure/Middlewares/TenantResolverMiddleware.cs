@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 
-namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
+namespace SmartMenuOptim.Infrastructure.Middlewares
 {
     /// <summary>
     /// TenantResolverMiddleware
@@ -18,7 +18,7 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
     /// - Register this middleware early in the ASP.NET Core pipeline (in Program.cs or Startup.cs) so that tenant information is available to all subsequent middleware and request handlers.
     /// 
     /// How to use:
-    /// - Add to the middleware pipeline with: app.UseMiddleware<TenantResolverMiddleware>();
+    /// - Add to the middleware pipeline with: app.UseMiddleware&lt;TenantResolverMiddleware&gt;();
     /// - Access the resolved tenant ID in controllers or services via: context.Items["TenantId"]
     /// 
     /// Supports resolution from header (X-Tenant-ID), query string (tenantId), and subdomain (e.g., tenant1.example.com).

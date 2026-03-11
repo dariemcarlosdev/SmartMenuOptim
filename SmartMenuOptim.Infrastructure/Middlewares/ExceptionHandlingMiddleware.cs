@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -12,16 +12,16 @@ using SmartMenuOptim.Domain.Exceptions;
 How to register ExceptionHandlingMiddleware in Program.cs:
 
 1. Add the following using directive:
-   using SmartMenuOptim.Infrastructure.Infrastructure.Middlewares;
+   using SmartMenuOptim.Infrastructure.Middlewares;
 
 2. After building the app (after 'var app = builder.Build();'), register the middleware FIRST before other middlewares:
-   app.UseMiddleware<ExceptionHandlingMiddleware>();
+   app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
    // Example placement:
    var app = builder.Build();
    
    // Global Exception Handling - Must be first!
-   app.UseMiddleware<ExceptionHandlingMiddleware>();
+   app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
    
    // Then other middleware
    app.UseHttpsRedirection();
@@ -115,7 +115,7 @@ Even though this middleware is PROD-READY, it can be further extended by:
 */
 
 
-namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
+namespace SmartMenuOptim.Infrastructure.Middlewares
 {
     /// <summary>
     /// Global exception handling middleware for the request pipeline.
@@ -452,4 +452,3 @@ namespace SmartMenuOptim.Infrastructure.Infrastructure.Middlewares
         public string? InnerException { get; set; }
     }
 }
-
