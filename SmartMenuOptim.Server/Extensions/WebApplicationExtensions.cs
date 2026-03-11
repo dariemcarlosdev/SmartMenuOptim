@@ -1,4 +1,4 @@
-using SmartMenuOptim.Infrastructure.Infrastructure.Middlewares;
+using SmartMenuOptim.Infrastructure.Middlewares;
 using SmartMenuOptim.Server.Components;
 
 namespace SmartMenuOptim.Server.Extensions;

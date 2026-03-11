@@ -1,0 +1,468 @@
+@page "/restaurants/new"
+@page "/restaurants/{Id:int}/edit"
+@using SmartMenuOptim.Application.Dtos.Restaurant
+@using SmartMenuOptim.Server.Helpers
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ILogger<RestaurantForm> Logger
+
+<PageTitle>@(_isEdit ? "Edit" : "Create") Restaurant - SmartMenuOptimizer</PageTitle>
+
+<div class="container mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/restaurants">Restaurants</a></li>
+            <li class="breadcrumb-item active">@(_isEdit ? "Edit" : "New")</li>
+        </ol>
+    </nav>
+
+    @* Page Header *@
+    <div class="mb-4">
+        <h2>
+            <i class="bi @(_isEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+            @(_isEdit ? "Edit Restaurant" : "Create New Restaurant")
+        </h2>
+        <p class="text-muted">@(_isEdit ? "Update restaurant information" : "Add a new restaurant to your portfolio")</p>
+    </div>
+
+    @* Error Alert *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @_error
+            <button type="button" class="btn-close" @onclick="() => _error = null"></button>
+        </div>
+    }
+
+    @* Loading State for Edit *@
+    @if (_isEdit && _loadingRestaurant)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading restaurant...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="@_model" OnValidSubmit="HandleSubmitAsync">
+            <DataAnnotationsValidator />
+
+            @* Basic Information Card *@
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="bi bi-info-circle me-2"></i>Basic Information
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-semibold">Restaurant Name <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_model.Name" placeholder="Enter restaurant name" />
+                            <ValidationMessage For="() => _model.Name" class="text-danger small" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Max Simultaneous Orders</label>
+                            <InputNumber class="form-control" @bind-Value="_model.MaxSimultaneousOrders" />
+                            <div class="form-text">Kitchen capacity for concurrent orders</div>
+                            <ValidationMessage For="() => _model.MaxSimultaneousOrders" class="text-danger small" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <InputTextArea class="form-control" @bind-Value="_model.Description" rows="3" 
+                                       placeholder="Describe your restaurant, cuisine type, specialties..." />
+                        <ValidationMessage For="() => _model.Description" class="text-danger small" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Timezone</label>
+                            <InputSelect class="form-select" @bind-Value="_model.TimeZoneId">
+                                <option value="UTC">UTC</option>
+                                <option value="America/New_York">Eastern Time (US)</option>
+                                <option value="America/Chicago">Central Time (US)</option>
+                                <option value="America/Denver">Mountain Time (US)</option>
+                                <option value="America/Los_Angeles">Pacific Time (US)</option>
+                                <option value="Europe/London">London (UK)</option>
+                                <option value="Europe/Paris">Central European</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Contact Information Card *@
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <i class="bi bi-telephone me-2"></i>Contact Information
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <InputText class="form-control" @bind-Value="_model.Email" 
+                                           type="email" placeholder="restaurant@example.com" />
+                            </div>
+                            <ValidationMessage For="() => _model.Email" class="text-danger small" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Phone <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                <InputText class="form-control" @bind-Value="_model.PhoneNumber" 
+                                           type="tel" placeholder="+1-555-000-0000" />
+                            </div>
+                            <ValidationMessage For="() => _model.PhoneNumber" class="text-danger small" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Address Card *@
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-geo-alt me-2"></i>Address
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-semibold">Street Address <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_model.Address.Street" 
+                                       placeholder="123 Main Street" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Suite/Unit</label>
+                            <InputText class="form-control" @bind-Value="_model.Address.Street2" 
+                                       placeholder="Suite 100" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">City <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_model.Address.City" 
+                                       placeholder="New York" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">State/Province <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_model.Address.State" 
+                                       placeholder="NY" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Postal Code <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_model.Address.PostalCode" 
+                                       placeholder="10001" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Country Code</label>
+                            <InputSelect class="form-select" @bind-Value="_model.Address.CountryCode">
+                                <option value="US">United States (US)</option>
+                                <option value="CA">Canada (CA)</option>
+                                <option value="MX">Mexico (MX)</option>
+                                <option value="GB">United Kingdom (GB)</option>
+                                <option value="FR">France (FR)</option>
+                                <option value="DE">Germany (DE)</option>
+                                <option value="ES">Spain (ES)</option>
+                                <option value="IT">Italy (IT)</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Business Hours Card *@
+            <div class="card shadow-sm mb-4" id="business-hours">
+                <div class="card-header bg-warning text-dark">
+                    <i class="bi bi-clock me-2"></i>Business Hours
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Configure operating hours for each day. Business hours are required before the restaurant can accept orders.
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 140px;">Day</th>
+                                    <th style="width: 80px;" class="text-center">Closed</th>
+                                    <th>Open Time</th>
+                                    <th>Close Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in _businessHoursEntries)
+                                {
+                                    <tr class="@(entry.IsClosed ? "table-light" : "")">
+                                        <td class="fw-semibold">@entry.DayOfWeek</td>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input"
+                                                   checked="@entry.IsClosed"
+                                                   @onchange="e => ToggleClosed(entry, (bool)(e.Value ?? false))" />
+                                        </td>
+                                        <td>
+                                            <input type="time" class="form-control form-control-sm"
+                                                   value="@entry.OpenTimeString"
+                                                   @onchange="@(e => UpdateOpenTime(entry, e))"
+                                                   disabled="@entry.IsClosed" />
+                                        </td>
+                                        <td>
+                                            <input type="time" class="form-control form-control-sm"
+                                                   value="@entry.CloseTimeString"
+                                                   @onchange="@(e => UpdateCloseTime(entry, e))"
+                                                   disabled="@entry.IsClosed" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            @* Form Actions *@
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>@(_isEdit ? "Updating..." : "Creating...")</span>
+                    }
+                    else
+                    {
+                        <i class="bi @(_isEdit ? "bi-check-lg" : "bi-plus-lg") me-2"></i>
+                        <span>@(_isEdit ? "Update Restaurant" : "Create Restaurant")</span>
+                    }
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="Cancel" disabled="@_saving">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private RestaurantCreateDTO _model = new()
+    {
+        OwnerId = 1, // MVP: Default owner
+        Address = new AddressDTO { CountryCode = "US" },
+        MaxSimultaneousOrders = 50,
+        TimeZoneId = "UTC"
+    };
+
+    private bool _isEdit => Id.HasValue;
+    private bool _saving;
+    private bool _loadingRestaurant;
+    private string? _error;
+    private bool _currentIsAcceptingOrders;
+    private List<BusinessHoursEntry> _businessHoursEntries = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        InitializeBusinessHoursEntries();
+
+        if (_isEdit)
+        {
+            await LoadRestaurantAsync();
+        }
+    }
+
+    private void InitializeBusinessHoursEntries()
+    {
+        _businessHoursEntries = Enum.GetValues<DayOfWeek>()
+            .Select(day => new BusinessHoursEntry
+            {
+                DayOfWeek = day,
+                IsClosed = true,
+                OpenTimeString = "09:00",
+                CloseTimeString = "22:00"
+            })
+            .ToList();
+    }
+
+    private async Task LoadRestaurantAsync()
+    {
+        _loadingRestaurant = true;
+        _error = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var restaurant = await client.GetFromJsonAsync<RestaurantDTO>($"api/v1/restaurants/{Id}");
+
+            if (restaurant is not null)
+            {
+                _model = new RestaurantCreateDTO
+                {
+                    Name = restaurant.Name,
+                    Description = restaurant.Description,
+                    Email = restaurant.Email,
+                    PhoneNumber = restaurant.PhoneNumber,
+                    Address = restaurant.Address ?? new AddressDTO { CountryCode = "US" },
+                    OwnerId = restaurant.OwnerId,
+                    TimeZoneId = restaurant.TimeZoneId ?? "UTC",
+                    MaxSimultaneousOrders = restaurant.MaxSimultaneousOrders
+                };
+                _currentIsAcceptingOrders = restaurant.IsAcceptingOrders;
+
+                // Populate business hours from loaded data
+                if (restaurant.BusinessHours?.Count > 0)
+                {
+                    foreach (var bh in restaurant.BusinessHours)
+                    {
+                        var entry = _businessHoursEntries.FirstOrDefault(e => e.DayOfWeek == bh.DayOfWeek);
+                        if (entry is not null)
+                        {
+                            entry.IsClosed = bh.IsClosed;
+                            entry.OpenTimeString = bh.OpenTime.ToString(@"hh\:mm");
+                            entry.CloseTimeString = bh.CloseTime.ToString(@"hh\:mm");
+                        }
+                    }
+                }
+
+                Logger.LogInformation("Loaded restaurant {Id} for editing", Id);
+            }
+            else
+            {
+                _error = "Restaurant not found.";
+                Logger.LogWarning("Restaurant {Id} not found", Id);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Failed to load restaurant {Id}", Id);
+            _error = "Unable to load restaurant. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error loading restaurant {Id}", Id);
+            _error = "An unexpected error occurred.";
+        }
+        finally
+        {
+            _loadingRestaurant = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _saving = true;
+        _error = null;
+        SyncBusinessHoursToModel();
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            HttpResponseMessage response;
+
+            if (_isEdit)
+            {
+                var updateDto = new RestaurantUpdateDTO
+                {
+                    Id = Id!.Value,
+                    Name = _model.Name,
+                    Description = _model.Description,
+                    Email = _model.Email,
+                    PhoneNumber = _model.PhoneNumber,
+                    Address = _model.Address,
+                    OwnerId = _model.OwnerId,
+                    TimeZoneId = _model.TimeZoneId,
+                    MaxSimultaneousOrders = _model.MaxSimultaneousOrders,
+                    IsAcceptingOrders = _currentIsAcceptingOrders,
+                    BusinessHours = _model.BusinessHours
+                };
+                response = await client.PutAsJsonAsync($"api/v1/restaurants/{Id}", updateDto);
+                Logger.LogInformation("Updating restaurant {Id}", Id);
+            }
+            else
+            {
+                response = await client.PostAsJsonAsync("api/v1/restaurants", _model);
+                Logger.LogInformation("Creating new restaurant");
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                Logger.LogInformation("Restaurant {Action} successfully", _isEdit ? "updated" : "created");
+                Navigation.NavigateTo("/restaurants");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Logger.LogWarning("Failed to {Action} restaurant. Status: {Status}, Error: {Error}", 
+                    _isEdit ? "update" : "create", response.StatusCode, errorContent);
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, 
+                    $"Failed to {(_isEdit ? "update" : "create")} restaurant. Please check the form and try again.");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Network error {Action} restaurant", _isEdit ? "updating" : "creating");
+            _error = "Unable to connect to the server. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error {Action} restaurant", _isEdit ? "updating" : "creating");
+            _error = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => Navigation.NavigateTo("/restaurants");
+
+    private void SyncBusinessHoursToModel()
+    {
+        _model.BusinessHours = _businessHoursEntries
+            .Select(e => new BusinessHoursDTO
+            {
+                DayOfWeek = e.DayOfWeek,
+                IsClosed = e.IsClosed,
+                OpenTime = TimeSpan.TryParse(e.OpenTimeString, out var open) ? open : TimeSpan.Zero,
+                CloseTime = TimeSpan.TryParse(e.CloseTimeString, out var close) ? close : TimeSpan.Zero
+            })
+            .ToList();
+    }
+
+    private void ToggleClosed(BusinessHoursEntry entry, bool isClosed)
+    {
+        entry.IsClosed = isClosed;
+    }
+
+    private void UpdateOpenTime(BusinessHoursEntry entry, ChangeEventArgs e)
+    {
+        entry.OpenTimeString = e.Value?.ToString() ?? "09:00";
+    }
+
+    private void UpdateCloseTime(BusinessHoursEntry entry, ChangeEventArgs e)
+    {
+        entry.CloseTimeString = e.Value?.ToString() ?? "22:00";
+    }
+
+    private static string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+
+        return text[..maxLength] + "...";
+    }
+
+    /// <summary>
+    /// Helper class for two-way binding of business hours in the form.
+    /// </summary>
+    private class BusinessHoursEntry
+    {
+        public DayOfWeek DayOfWeek { get; set; }
+        public bool IsClosed { get; set; } = true;
+        public string OpenTimeString { get; set; } = "09:00";
+        public string CloseTimeString { get; set; } = "22:00";
+    }
+}

@@ -1,0 +1,399 @@
+@page "/restaurants/{RestaurantId:int}/menus/new"
+@page "/restaurants/{RestaurantId:int}/menus/{MenuId:int}/edit"
+@using SmartMenuOptim.Application.Dtos.Restaurant
+@using SmartMenuOptim.Server.Helpers
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ILogger<MenuEditor> Logger
+
+<PageTitle>@(_isEdit ? "Edit" : "Create") Menu - SmartMenuOptimizer</PageTitle>
+
+<div class="container mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/restaurants">Restaurants</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId">Restaurant</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId/menus">Menus</a></li>
+            <li class="breadcrumb-item active">@(_isEdit ? "Edit" : "New")</li>
+        </ol>
+    </nav>
+
+    @* Page Header *@
+    <div class="mb-4">
+        <h2>
+            <i class="bi @(_isEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+            @(_isEdit ? "Edit Menu" : "Create New Menu")
+        </h2>
+        <p class="text-muted">@(_isEdit ? "Update menu details and availability" : "Add a new menu like Breakfast, Lunch, or Dinner")</p>
+    </div>
+
+    @* Error Alert *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @_error
+            <button type="button" class="btn-close" @onclick="() => _error = null"></button>
+        </div>
+    }
+
+    @* Loading State for Edit *@
+    @if (_isEdit && _loadingMenu)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading menu...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="@_model" OnValidSubmit="HandleSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-lg-8">
+                    @* Basic Information Card *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="bi bi-info-circle me-2"></i>Menu Information
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Menu Name <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="_model.Name" 
+                                           placeholder="e.g., Breakfast, Lunch, Dinner, Happy Hour" />
+                                <ValidationMessage For="() => _model.Name" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Description</label>
+                                <InputTextArea class="form-control" @bind-Value="_model.Description" rows="3" 
+                                               placeholder="Describe this menu, its offerings, or special features..." />
+                                <ValidationMessage For="() => _model.Description" class="text-danger small" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Menu Type</label>
+                                    <InputSelect class="form-select" @bind-Value="_model.MenuTypeId">
+                                        <option value="">-- Select Type --</option>
+                                        <option value="1">Breakfast</option>
+                                        <option value="2">Brunch</option>
+                                        <option value="3">Lunch</option>
+                                        <option value="4">Dinner</option>
+                                        <option value="5">Late Night</option>
+                                        <option value="6">Happy Hour</option>
+                                        <option value="7">Kids Menu</option>
+                                        <option value="8">Seasonal</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" id="menuActive" />
+                                        <label class="form-check-label" for="menuActive">
+                                            @(_model.IsActive ? "Active - Visible to customers" : "Inactive - Hidden from customers")
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Availability Card *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <i class="bi bi-clock me-2"></i>Availability Hours
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="allDay" 
+                                       checked="@_isAllDay" @onchange="ToggleAllDay" />
+                                <label class="form-check-label" for="allDay">
+                                    Available all day
+                                </label>
+                            </div>
+
+                            @if (!_isAllDay)
+                            {
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Available From</label>
+                                        <InputText type="time" class="form-control" @bind-Value="_availableFromStr" />
+                                        <div class="form-text">Time when menu becomes available</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Available Until</label>
+                                        <InputText type="time" class="form-control" @bind-Value="_availableToStr" />
+                                        <div class="form-text">Time when menu stops being available</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* Sidebar *@
+                <div class="col-lg-4">
+                    @* Tips Card *@
+                    <div class="card shadow-sm mb-4 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>Tips
+                            </h6>
+                            <ul class="small text-muted mb-0">
+                                <li class="mb-2">Use clear, descriptive names like "Lunch Specials" or "Weekend Brunch"</li>
+                                <li class="mb-2">Set availability hours to match your service times</li>
+                                <li class="mb-2">Inactive menus are hidden from customers but preserved</li>
+                                <li>Add dishes after creating the menu</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    @* Common Menu Types *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-clock-history me-2"></i>Common Availability
+                            </h6>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("06:00", "11:00")'>
+                                    <strong>Breakfast:</strong> 6:00 AM - 11:00 AM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("10:00", "14:00")'>
+                                    <strong>Brunch:</strong> 10:00 AM - 2:00 PM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("11:00", "15:00")'>
+                                    <strong>Lunch:</strong> 11:00 AM - 3:00 PM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("17:00", "22:00")'>
+                                    <strong>Dinner:</strong> 5:00 PM - 10:00 PM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("15:00", "18:00")'>
+                                    <strong>Happy Hour:</strong> 3:00 PM - 6:00 PM
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Form Actions *@
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>@(_isEdit ? "Updating..." : "Creating...")</span>
+                    }
+                    else
+                    {
+                        <i class="bi @(_isEdit ? "bi-check-lg" : "bi-plus-lg") me-2"></i>
+                        <span>@(_isEdit ? "Update Menu" : "Create Menu")</span>
+                    }
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="Cancel" disabled="@_saving">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter] public int RestaurantId { get; set; }
+    [Parameter] public int? MenuId { get; set; }
+
+    private MenuFormModel _model = new();
+    private bool _isEdit => MenuId.HasValue;
+    private bool _saving;
+    private bool _loadingMenu;
+    private string? _error;
+
+    // Availability state
+    private bool _isAllDay = true;
+    private string _availableFromStr = "09:00";
+    private string _availableToStr = "21:00";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_isEdit)
+        {
+            await LoadMenuAsync();
+        }
+        else
+        {
+            _model = new MenuFormModel { IsActive = true };
+        }
+    }
+
+    private async Task LoadMenuAsync()
+    {
+        _loadingMenu = true;
+        _error = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var menu = await client.GetFromJsonAsync<MenuDTO>($"api/v1/menus/{MenuId}");
+
+            if (menu is not null)
+            {
+                _model = new MenuFormModel
+                {
+                    Name = menu.Name,
+                    Description = menu.Description,
+                    MenuTypeId = menu.MenuTypeId,
+                    IsActive = menu.IsActive
+                };
+
+                if (menu.AvailableFrom.HasValue && menu.AvailableTo.HasValue)
+                {
+                    _isAllDay = false;
+                    _availableFromStr = menu.AvailableFrom.Value.ToString(@"hh\:mm");
+                    _availableToStr = menu.AvailableTo.Value.ToString(@"hh\:mm");
+                }
+
+                Logger.LogInformation("Loaded menu {MenuId} for editing", MenuId);
+            }
+            else
+            {
+                _error = "Menu not found.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Failed to load menu {MenuId}", MenuId);
+            _error = "Unable to load menu. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error loading menu {MenuId}", MenuId);
+            _error = "An unexpected error occurred.";
+        }
+        finally
+        {
+            _loadingMenu = false;
+        }
+    }
+
+    private void ToggleAllDay(ChangeEventArgs e)
+    {
+        _isAllDay = (bool)(e.Value ?? true);
+    }
+
+    private void SetAvailability(string from, string to)
+    {
+        _isAllDay = false;
+        _availableFromStr = from;
+        _availableToStr = to;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _saving = true;
+        _error = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+
+            // Parse availability times
+            TimeSpan? availableFrom = null;
+            TimeSpan? availableTo = null;
+
+            if (!_isAllDay)
+            {
+                if (TimeSpan.TryParse(_availableFromStr, out var from))
+                    availableFrom = from;
+                if (TimeSpan.TryParse(_availableToStr, out var to))
+                    availableTo = to;
+            }
+
+            HttpResponseMessage response;
+
+            if (_isEdit)
+            {
+                var updateDto = new MenuUpdateDTO
+                {
+                    Id = MenuId!.Value,
+                    Name = _model.Name,
+                    Description = _model.Description,
+                    MenuTypeId = _model.MenuTypeId,
+                    AvailableFrom = availableFrom,
+                    AvailableTo = availableTo,
+                    IsActive = _model.IsActive
+                };
+                response = await client.PutAsJsonAsync($"api/v1/menus/{MenuId}", updateDto);
+                Logger.LogInformation("Updating menu {MenuId}, IsActive: {IsActive}", MenuId, _model.IsActive);
+            }
+            else
+            {
+                var createDto = new MenuCreateDTO
+                {
+                    Name = _model.Name,
+                    Description = _model.Description,
+                    MenuTypeId = _model.MenuTypeId,
+                    AvailableFrom = availableFrom,
+                    AvailableTo = availableTo,
+                    IsActive = _model.IsActive
+                };
+                response = await client.PostAsJsonAsync($"api/v1/restaurants/{RestaurantId}/menus", createDto);
+                Logger.LogInformation("Creating new menu for restaurant {RestaurantId}, IsActive: {IsActive}", 
+    RestaurantId, _model.IsActive);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                Logger.LogInformation("Menu {Action} successfully", _isEdit ? "updated" : "created");
+                Navigation.NavigateTo($"/restaurants/{RestaurantId}/menus");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Logger.LogWarning("Failed to {Action} menu. Status: {Status}, Error: {Error}", 
+                    _isEdit ? "update" : "create", response.StatusCode, errorContent);
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, 
+                    $"Failed to {(_isEdit ? "update" : "create")} menu. Please check the form and try again.");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Network error {Action} menu", _isEdit ? "updating" : "creating");
+            _error = "Unable to connect to the server. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error {Action} menu", _isEdit ? "updating" : "creating");
+            _error = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => Navigation.NavigateTo($"/restaurants/{RestaurantId}/menus");
+
+    // Form model
+    private class MenuFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Menu name is required")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be 2-100 characters")]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.StringLength(500)]
+        public string? Description { get; set; }
+
+        public int? MenuTypeId { get; set; }
+
+        public bool IsActive { get; set; } = true;
+    }
+}

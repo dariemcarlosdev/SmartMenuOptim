@@ -1,0 +1,321 @@
+@page "/restaurants/{RestaurantId:int}/menus"
+@using SmartMenuOptim.Application.Dtos.Restaurant
+@using SmartMenuOptim.Server.Helpers
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ILogger<MenuList> Logger
+
+<PageTitle>Menus - SmartMenuOptimizer</PageTitle>
+
+<div class="container-fluid mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/restaurants">Restaurants</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId">Restaurant</a></li>
+            <li class="breadcrumb-item active">Menus</li>
+        </ol>
+    </nav>
+
+    @* Header *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-book me-2"></i>Menus
+            </h2>
+            <p class="text-muted mb-0">Manage breakfast, lunch, dinner, and special menus</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateNew">
+            <i class="bi bi-plus-lg me-1"></i> Add Menu
+        </button>
+    </div>
+
+    @* Error Alert *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @_error
+            <button type="button" class="btn-close" @onclick="() => _error = null"></button>
+        </div>
+    }
+
+    @* Loading State *@
+    @if (_loading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading menus...</span>
+            </div>
+        </div>
+    }
+    @* Empty State *@
+    else if (_menus is null || !_menus.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-book display-1 text-muted mb-3"></i>
+                <h4>No menus found</h4>
+                <p class="text-muted mb-3">Create menus to organize your dishes (e.g., Breakfast, Lunch, Dinner)</p>
+                <button class="btn btn-primary" @onclick="CreateNew">
+                    <i class="bi bi-plus-lg me-1"></i> Create First Menu
+                </button>
+            </div>
+        </div>
+    }
+    @* Menu Cards *@
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var menu in _menus)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm menu-card">
+                        <div class="card-body">
+                            @* Header with Status *@
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-book-half me-2 text-primary"></i>
+                                    @menu.Name
+                                </h5>
+                                <span class="badge @(menu.IsActive ? "bg-success" : "bg-secondary")">
+                                    @menu.StatusDisplay
+                                </span>
+                            </div>
+
+                            @* Description *@
+                            <p class="card-text text-muted small mb-3">
+                                @(string.IsNullOrWhiteSpace(menu.Description) 
+                                    ? "No description" 
+                                    : TruncateText(menu.Description, 80))
+                            </p>
+
+                            @* Menu Info *@
+                            <div class="small mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">
+                                        <i class="bi bi-clock me-1"></i> Availability
+                                    </span>
+                                    <span class="fw-semibold">@menu.AvailabilityDisplay</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">
+                                        <i class="bi bi-cup-straw me-1"></i> Dishes
+                                    </span>
+                                    <span class="fw-semibold">@menu.DishCount items</span>
+                                </div>
+                            </div>
+
+                            @* Quick Actions *@
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm @(menu.IsActive ? "btn-outline-warning" : "btn-outline-success")" 
+                                        @onclick="() => ToggleStatusAsync(menu)"
+                                        title="@(menu.IsActive ? "Deactivate" : "Activate")">
+                                    <i class="bi @(menu.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        @* Card Footer with Actions *@
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        @onclick="() => ManageDishes(menu.Id)"
+                                        title="Manage dishes in this menu">
+                                    <i class="bi bi-list-ul me-1"></i> Dishes
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" 
+                                        @onclick="() => Edit(menu.Id)"
+                                        title="Edit menu">
+                                    <i class="bi bi-pencil me-1"></i> Edit
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        @onclick="() => ConfirmDelete(menu)"
+                                        title="Delete menu">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* Delete Confirmation Modal *@
+    @if (_showDeleteModal && _menuToDelete is not null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                            Confirm Delete
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete <strong>@_menuToDelete.Name</strong>?</p>
+                        <p class="text-muted small mb-0">
+                            This menu has @_menuToDelete.DishCount dish(es) assigned. 
+                            Dishes will be unlinked but not deleted.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                        <button type="button" class="btn btn-danger" @onclick="DeleteMenuAsync" disabled="@_deleting">
+                            @if (_deleting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int RestaurantId { get; set; }
+
+    private List<MenuDTO>? _menus;
+    private bool _loading = true;
+    private string? _error;
+
+    // Delete state
+    private bool _showDeleteModal;
+    private MenuDTO? _menuToDelete;
+    private bool _deleting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMenusAsync();
+    }
+
+    private async Task LoadMenusAsync()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            _menus = await client.GetFromJsonAsync<List<MenuDTO>>($"api/v1/restaurants/{RestaurantId}/menus");
+            Logger.LogInformation("Loaded {Count} menus for restaurant {RestaurantId}", 
+                _menus?.Count ?? 0, RestaurantId);
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Failed to load menus for restaurant {RestaurantId}", RestaurantId);
+            _error = "Unable to load menus. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error loading menus");
+            _error = "An unexpected error occurred.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ToggleStatusAsync(MenuDTO menu)
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var newStatus = !menu.IsActive;
+
+            // Use the correct endpoint based on desired status
+            var endpoint = newStatus 
+                ? $"api/v1/menus/{menu.Id}/activate" 
+                : $"api/v1/menus/{menu.Id}/deactivate";
+
+            var response = await client.PostAsync(endpoint, null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                menu.IsActive = newStatus;
+                Logger.LogInformation("Menu {MenuId} status toggled to {Status}", menu.Id, newStatus);
+            }
+            else
+            {
+                // Extract error details from response (supports domain exceptions)
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, "Failed to update menu status.");
+                Logger.LogWarning("Failed to toggle menu {MenuId} status. Response: {StatusCode}", 
+                    menu.Id, response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error toggling status for menu {MenuId}", menu.Id);
+            _error = "An error occurred while updating status.";
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void CreateNew() => Navigation.NavigateTo($"/restaurants/{RestaurantId}/menus/new");
+
+    private void Edit(int menuId) => Navigation.NavigateTo($"/restaurants/{RestaurantId}/menus/{menuId}/edit");
+
+    private void ManageDishes(int menuId) => Navigation.NavigateTo($"/restaurants/{RestaurantId}/menus/{menuId}/dishes");
+
+    private void ConfirmDelete(MenuDTO menu)
+    {
+        _menuToDelete = menu;
+        _showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        _menuToDelete = null;
+        _showDeleteModal = false;
+    }
+
+    private async Task DeleteMenuAsync()
+    {
+        if (_menuToDelete is null) return;
+
+        _deleting = true;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("BackendAPI");
+            var response = await client.DeleteAsync($"api/v1/menus/{_menuToDelete.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                Logger.LogInformation("Menu {MenuId} deleted", _menuToDelete.Id);
+                _menus?.Remove(_menuToDelete);
+                CancelDelete();
+            }
+            else
+            {
+                _error = await ApiErrorHelper.GetErrorMessageAsync(response, "Failed to delete menu.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting menu {MenuId}", _menuToDelete.Id);
+            _error = "An error occurred while deleting.";
+        }
+        finally
+        {
+            _deleting = false;
+        }
+    }
+
+    private static string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text[..maxLength] + "...";
+    }
+}
