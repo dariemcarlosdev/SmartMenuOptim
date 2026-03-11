@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Features.Restaurants;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Enums;
 using SmartMenuOptim.Domain.Events.LoyaltyEvents;
 using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Common;
@@ -718,27 +719,4 @@ public class CustomerLoyalty : TenantEntityBase
         // Note: Customer validation is intentionally omitted because customers are global entities
         // A customer can have loyalty memberships at multiple restaurants (expected behavior)
     }
-}
-
-
-/// <summary>
-/// Represents the tier levels in a customer loyalty program, based on accumulated points. You can earn and redeem points to move between tiers.
-/// Access the enum via CustomerLoyalty.Tier property.
-/// </summary>
-/// <remarks>
-/// <para>Tier levels are automatically calculated based on the customer's current point balance:</para>
-/// <list type="bullet">
-///   <item><description><strong>Bronze:</strong> 0-99 points (default starting tier)</description></item>
-///   <item><description><strong>Silver:</strong> 100-499 points</description></item>
-///   <item><description><strong>Gold:</strong> 500-999 points</description></item>
-///   <item><description><strong>Platinum:</strong> 1000+ points</description></item>
-/// </list>
-/// <para>Tiers can both increase and decrease based on point accumulation and redemption activities.</para>
-/// </remarks>
-public enum CustomerLoyaltyTier 
-{ 
-    Bronze, // 0-99 points
-    Silver, // 100-499 points
-    Gold, // 500-999 points
-    Platinum    // 1000+ points
 }

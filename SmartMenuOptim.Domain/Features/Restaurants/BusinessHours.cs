@@ -1,4 +1,4 @@
-namespace SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+namespace SmartMenuOptim.Domain.Features.Restaurants;
 
 /// <summary>
 /// Operating hours configuration for a specific day of the week.
@@ -59,9 +59,10 @@ public class BusinessHours
     /// Closing time for this day.
     /// </summary>
     public TimeSpan CloseTime { get; private set; }
-    
+
     /// <summary>
     /// Indicates if the restaurant is closed all day.
+    /// Computed property based on OpenTime and CloseTime. If both are equal, it means the restaurant is closed for the entire day.. It should not be stored in the database, but calculated at runtime.
     /// </summary>
     public bool IsClosed => OpenTime == CloseTime;
     

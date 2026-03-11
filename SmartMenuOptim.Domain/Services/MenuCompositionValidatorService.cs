@@ -98,7 +98,7 @@ public class MenuCompositionValidatorService
     /// Validates the complete menu composition against all business rules.
     /// </summary>
     /// <param name="menu">The menu to validate. Cannot be null.</param>
-    /// <returns>Validation result with errors, warnings, and summary.</returns>
+    /// <returns>Validation outcome with errors, warnings, and summary.</returns>
     /// <exception cref="ArgumentNullException">Thrown when menu is null.</exception>
     /// <remarks>
     /// Performs comprehensive validation including:
@@ -108,7 +108,7 @@ public class MenuCompositionValidatorService
     /// - Duplicate dish detection
     /// - Seasonal item currency validation
     /// </remarks>
-    public MenuValidationResult ValidateMenuComposition(Menu menu)
+    public MenuValidationOutcome ValidateMenuComposition(Menu menu)
     {
         if (menu == null)
             throw new ArgumentNullException(nameof(menu));
@@ -140,10 +140,10 @@ public class MenuCompositionValidatorService
         // Validate seasonal items (warning only)
         ValidateSeasonalItems(menu, warnings);
 
-        // Return result
+        // Return outcome
         return errors.Any()
-            ? MenuValidationResult.Failure(errors, warnings)
-            : MenuValidationResult.Success(warnings);
+            ? MenuValidationOutcome.Failure(errors, warnings)
+            : MenuValidationOutcome.Success(warnings);
     }
 
     /// <summary>

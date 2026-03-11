@@ -1,82 +1,10 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Enums;
 using SmartMenuOptim.Domain.Exceptions;
 
 namespace SmartMenuOptim.Domain.Aggregates.TableAggregate
 {
-    /// <summary>
-    /// Represents the lifecycle status of a reservation.
-    /// </summary>
-    /// <remarks>
-    /// <para><strong>DDD Design Decision - Enum Co-location with Aggregate</strong></para>
-    /// 
-    /// <para>This enum is intentionally placed within Reservation.cs rather than in a separate file because:</para>
-    /// <list type="number">
-    ///   <item><description><strong>High Cohesion:</strong> The enum is tightly coupled to the Reservation aggregate and represents its core state machine</description></item>
-    ///   <item><description><strong>Single Responsibility:</strong> Only the Reservation entity uses this status - it's not shared across multiple aggregates</description></item>
-    ///   <item><description><strong>Encapsulation:</strong> The enum is an integral part of Reservation's invariants and business rules</description></item>
-    ///   <item><description><strong>Discoverability:</strong> Developers find everything related to Reservation lifecycle in one place</description></item>
-    /// </list>
-    /// 
-    /// <para><strong>DDD Best Practice:</strong> Keep enums WITH their aggregate when they represent aggregate-specific state.</para>
-    /// 
-    /// <para><strong>Alternative Considered:</strong> Moving to separate file would only be justified if:</para>
-    /// <list type="bullet">
-    ///   <item><description>The enum grows beyond 20 values</description></item>
-    ///   <item><description>Multiple classes in the same aggregate need this enum (e.g., ReservationHistory)</description></item>
-    ///   <item><description>The Reservation.cs file exceeds 1000 lines</description></item>
-    /// </list>
-    /// 
-    /// <para><strong>State Transitions:</strong></para>
-    /// <code>
-    ///        Pending
-    ///       /       \
-    ///  Confirmed   Cancelled
-    ///    /  |  \
-    /// Seated  |  NoShow
-    ///    |    |
-    /// Completed Cancelled
-    /// </code>
-    /// </remarks>
-    public enum ReservationStatus
-    {
-        /// <summary>
-        /// Reservation has been created but not yet confirmed.
-        /// Awaiting confirmation from customer or restaurant.
-        /// </summary>
-        Pending = 0,
-
-        /// <summary>
-        /// Reservation has been confirmed by the restaurant.
-        /// Customer is expected to arrive at the scheduled time.
-        /// </summary>
-        Confirmed = 1,
-
-        /// <summary>
-        /// Customer has arrived and been seated at the table.
-        /// Reservation is currently active.
-        /// </summary>
-        Seated = 2,
-
-        /// <summary>
-        /// Reservation has been fulfilled and customers have left.
-        /// Table is available for new reservations.
-        /// </summary>
-        Completed = 3,
-
-        /// <summary>
-        /// Reservation was cancelled by customer or restaurant.
-        /// Table is available for other reservations.
-        /// </summary>
-        Cancelled = 4,
-
-        /// <summary>
-        /// Customer did not show up for their reservation.
-        /// Table remained empty during the reserved time slot.
-        /// </summary>
-        NoShow = 5
-    }
-
     /// <summary>
     /// Time-based table booking linking customers to tables with reservation details.
     /// Child entity of Table aggregate - semi-mutable with complex cross-aggregate references.

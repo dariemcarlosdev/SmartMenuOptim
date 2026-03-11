@@ -6,10 +6,10 @@ using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
-using SmartMenuOptim.Domain.Exceptions;
+using SmartMenuOptim.Domain.Features.Restaurants.Errors;
 using SmartMenuOptim.Domain.ValueObjects;
 
-namespace SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+namespace SmartMenuOptim.Domain.Features.Restaurants;
 
 /// <summary>
 /// Represents a restaurant aggregate root managing business operations, hours, contact information, and serving as the tenant boundary for multi-tenancy.

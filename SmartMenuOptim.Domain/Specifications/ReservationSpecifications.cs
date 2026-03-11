@@ -1,4 +1,5 @@
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
+using SmartMenuOptim.Domain.Enums;
 using System.Linq.Expressions;
 
 namespace SmartMenuOptim.Domain.Specifications;

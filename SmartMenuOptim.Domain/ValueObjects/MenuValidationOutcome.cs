@@ -1,16 +1,18 @@
 namespace SmartMenuOptim.Domain.ValueObjects;
 
 /// <summary>
-/// Represents the result of a menu validation operation, including the overall validity, summary message, and any
-/// errors or warnings encountered during validation.
+/// Value Object representing the outcome of a menu composition validation operation.
 /// </summary>
 /// <remarks>
 /// <para>
 /// This value object is returned by the <c>MenuCompositionValidatorService</c>, which validates that a menu meets 
 /// certain business rules and standards, such as having a balanced variety of dishes, appropriate price points, 
-/// and no duplicate items. It ensures that the menu is well-structured and appealing to customers while adhering 
-/// to the restaurant's strategic goals.
+/// and no duplicate items.
 /// </para>
+/// 
+/// <para><strong>Note:</strong> This is a domain Value Object, not to be confused with generic result patterns
+/// like <see cref="Common.DomainResult{T}"/>. It represents a specific domain concept (menu validation outcome)
+/// with domain-specific properties (Errors, Warnings, Summary).</para>
 /// 
 /// <para><strong>Business Rules Validated:</strong></para>
 /// <list type="bullet">
@@ -21,40 +23,19 @@ namespace SmartMenuOptim.Domain.ValueObjects;
 ///   <item><description><strong>Seasonal items are current:</strong> Seasonal dishes match the current season</description></item>
 /// </list>
 /// 
-/// <para>
-/// Use this type to inspect the outcome of a menu validation process. The result indicates whether the
-/// menu composition is valid and provides collections of error and warning messages to help diagnose issues. 
-/// Static methods are available to create success or failure results with appropriate messages. 
-/// This type is immutable and intended to be used as a value object in validation workflows.
-/// </para>
-/// 
 /// <para><strong>Example Usage:</strong></para>
 /// <code>
 /// var validator = new MenuCompositionValidatorService();
-/// MenuValidationResult result = validator.ValidateMenuComposition(menu);
+/// MenuValidationOutcome outcome = validator.ValidateMenuComposition(menu);
 /// 
-/// if (!result.IsValid)
+/// if (!outcome.IsValid)
 /// {
-///     foreach (var error in result.Errors)
+///     foreach (var error in outcome.Errors)
 ///         Console.WriteLine($"❌ {error}");
 /// }
-/// 
-/// foreach (var warning in result.Warnings)
-///     Console.WriteLine($"⚠️ {warning}");
 /// </code>
-/// 
-/// <para><strong>Clean Architecture - Domain Layer Placement:</strong></para>
-/// <para>
-/// This Value Object is located in the Domain Layer because it:
-/// (1) represents a pure domain concept (menu validation outcome),
-/// (2) is immutable with value-based equality (C# record),
-/// (3) has no infrastructure dependencies,
-/// (4) uses ubiquitous language from the restaurant domain,
-/// (5) is returned by a Domain Service (MenuCompositionValidatorService).
-/// Value Objects encapsulate domain concepts defined by their attributes, not identity.
-/// </para>
 /// </remarks>
-public sealed record MenuValidationResult
+public sealed record MenuValidationOutcome
 {
     /// <summary>
     /// Gets whether the menu composition is valid.
@@ -72,17 +53,17 @@ public sealed record MenuValidationResult
     public IReadOnlyList<string> Warnings { get; init; }
 
     /// <summary>
-    /// Gets a summary message describing the validation result.
+    /// Gets a summary message describing the validation outcome.
     /// </summary>
     public string Summary { get; init; }
 
     /// <summary>
-    /// Creates a successful validation result with optional warnings.
+    /// Creates a successful validation outcome with optional warnings.
     /// </summary>
-    public static MenuValidationResult Success(IEnumerable<string>? warnings = null)
+    public static MenuValidationOutcome Success(IEnumerable<string>? warnings = null)
     {
         var warningList = warnings?.ToList() ?? new List<string>();
-        return new MenuValidationResult
+        return new MenuValidationOutcome
         {
             IsValid = true,
             Errors = Array.Empty<string>(),
@@ -94,17 +75,17 @@ public sealed record MenuValidationResult
     }
 
     /// <summary>
-    /// Creates a failed validation result with error messages.
+    /// Creates a failed validation outcome with error messages.
     /// </summary>
-    public static MenuValidationResult Failure(IEnumerable<string> errors, IEnumerable<string>? warnings = null)
+    public static MenuValidationOutcome Failure(IEnumerable<string> errors, IEnumerable<string>? warnings = null)
     {
         if (errors == null || !errors.Any())
-            throw new ArgumentException("Failure result must have at least one error", nameof(errors));
+            throw new ArgumentException("Failure outcome must have at least one error", nameof(errors));
 
         var errorList = errors.ToList();
         var warningList = warnings?.ToList() ?? new List<string>();
 
-        return new MenuValidationResult
+        return new MenuValidationOutcome
         {
             IsValid = false,
             Errors = errorList,
@@ -117,7 +98,7 @@ public sealed record MenuValidationResult
     /// <summary>
     /// Private constructor for record initialization.
     /// </summary>
-    private MenuValidationResult()
+    private MenuValidationOutcome()
     {
         Errors = Array.Empty<string>();
         Warnings = Array.Empty<string>();

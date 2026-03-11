@@ -1,7 +1,8 @@
 // SmartMenuOptim.Domain/Services/ReviewSentimentAnalysisService.cs
-using SmartMenuOptim.Domain.DTOs;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Enums;
+using SmartMenuOptim.Domain.Services.Abstractions;
+using SmartMenuOptim.Domain.Services.Models;
 
 namespace SmartMenuOptim.Domain.Services;
 
@@ -34,17 +35,17 @@ public class ReviewSentimentAnalysisService
     /// </summary>
     /// <param name="review">The review to analyze. The review's comment is used to determine sentiment. Cannot be null.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a <see
-    /// cref="ReviewSentimentResult"/> with the sentiment analysis outcome. If the review comment is empty or
+    /// cref="ReviewSentimentDto"/> with the sentiment analysis outcome. If the review comment is empty or
     /// whitespace, the result will indicate an unknown sentiment.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="review"/> is null.</exception>
-    public async Task<ReviewSentimentResult> AnalyzeReviewSentimentAsync(Review review)
+    public async Task<ReviewSentimentDto> AnalyzeSingleReviewAsync(Review review)
     {
         if (review == null)
             throw new ArgumentNullException(nameof(review));
 
         if (string.IsNullOrWhiteSpace(review.Comment))
         {
-            return new ReviewSentimentResult
+            return new ReviewSentimentDto
             {
                 ReviewId = review.Id,
                 SentimentScore = null,
@@ -55,7 +56,7 @@ public class ReviewSentimentAnalysisService
 
         var score = await _sentimentAnalyzer.AnalyzePositiveSentimentAsync(new[] { review.Comment });
 
-        return new ReviewSentimentResult
+        return new ReviewSentimentDto
         {
             ReviewId = review.Id,
             SentimentScore = score,
@@ -69,11 +70,11 @@ public class ReviewSentimentAnalysisService
     /// </summary>
     /// <param name="reviews">A collection of reviews to analyze. The collection cannot be null or empty. Only reviews with non-empty comments
     /// are included in the sentiment analysis.</param>
-    /// <returns>An AggregateReviewSentiment object containing the total number of reviews, the number of reviews analyzed, the
+    /// <returns>An AggregateReviewSentimentResult object containing the total number of reviews, the number of reviews analyzed, the
     /// average sentiment score, the overall sentiment category, and counts of positive and negative reviews. If no
     /// reviews with comments are provided, the average sentiment is null and the overall category is set to Unknown.</returns>
     /// <exception cref="ArgumentException">Thrown if the reviews collection is null or empty.</exception>
-    public async Task<AggregateReviewSentiment> AnalyzeMultipleReviewsAsync(
+    public async Task<AggregateReviewSentimentDto> AnalyzeMultipleReviewsAsync(
         IEnumerable<Review> reviews)
     {
         if (reviews == null || !reviews.Any())
@@ -87,7 +88,7 @@ public class ReviewSentimentAnalysisService
 
         if (!commentsToAnalyze.Any())
         {
-            return new AggregateReviewSentiment
+            return new AggregateReviewSentimentDto
             {
                 TotalReviews = reviewList.Count,
                 ReviewsAnalyzed = 0,
@@ -101,7 +102,7 @@ public class ReviewSentimentAnalysisService
             string.Join(" ", commentsToAnalyze)
         );
 
-        return new AggregateReviewSentiment
+        return new AggregateReviewSentimentDto
         {
             TotalReviews = reviewList.Count,
             ReviewsAnalyzed = commentsToAnalyze.Count,
@@ -126,7 +127,7 @@ public class ReviewSentimentAnalysisService
             if (string.IsNullOrWhiteSpace(review.Comment))
                 continue;
 
-            var result = await AnalyzeReviewSentimentAsync(review);
+            var result = await AnalyzeSingleReviewAsync(review);
 
             // Business rule: High rating but negative sentiment
             if (review.Rating >= 4 && result.SentimentCategory == SentimentCategory.Negative)

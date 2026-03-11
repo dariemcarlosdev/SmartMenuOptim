@@ -31,9 +31,8 @@ public abstract class EntityBase
     /// <summary>
     /// Date and time when the entity was last updated (UTC).
     /// </summary>
-    [Required]
     [DataType(DataType.DateTime)]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
     /// <summary>
     /// Indicates if the entity is soft-deleted.
     /// </summary>

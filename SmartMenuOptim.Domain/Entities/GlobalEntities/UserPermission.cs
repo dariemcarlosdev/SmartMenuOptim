@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Features.Restaurants;
 
 namespace SmartMenuOptim.Domain.Entities.GlobalEntities
 {

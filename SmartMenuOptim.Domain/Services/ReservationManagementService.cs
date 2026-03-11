@@ -1,4 +1,5 @@
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
+using SmartMenuOptim.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace SmartMenuOptim.Domain.Services;

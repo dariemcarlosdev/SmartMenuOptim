@@ -1,6 +1,6 @@
-using SmartMenuOptim.Domain.Aggregates.TableAggregate;
+using SmartMenuOptim.Domain.Enums;
 
-namespace SmartMenuOptim.Domain.Services.Abstraction;
+namespace SmartMenuOptim.Domain.Services.Abstractions;
 
 /// <summary>
 /// Service contract for automated reservation cleanup operations.
@@ -13,7 +13,7 @@ namespace SmartMenuOptim.Domain.Services.Abstraction;
 /// 
 /// <para><strong>Clean Architecture:</strong></para>
 /// <list type="bullet">
-///   <item><description>Domain layer defines the contract (interface)</description></item>
+///   <item><description>Domain layer defines the contract (this interface)</description></item>
 ///   <item><description>Application layer provides implementation</description></item>
 ///   <item><description>Infrastructure layer can depend on this abstraction</description></item>
 /// </list>
@@ -44,44 +44,28 @@ public interface IReservationCleanupService
 /// </summary>
 public class CleanupResult
 {
-    /// <summary>
-    /// Gets or sets whether the cleanup operation succeeded.
-    /// </summary>
+    /// <summary>Whether the cleanup operation succeeded.</summary>
     public bool Success { get; set; }
 
-    /// <summary>
-    /// Gets or sets the error message if cleanup failed.
-    /// </summary>
+    /// <summary>Error message if cleanup failed.</summary>
     public string? ErrorMessage { get; set; }
 
-    /// <summary>
-    /// Gets or sets the duration of the cleanup operation.
-    /// </summary>
+    /// <summary>Duration of the cleanup operation.</summary>
     public TimeSpan Duration { get; set; }
 
-    /// <summary>
-    /// Gets or sets the number of expired pending reservations identified.
-    /// </summary>
+    /// <summary>Number of expired pending reservations identified.</summary>
     public int ExpiredPendingCount { get; set; }
 
-    /// <summary>
-    /// Gets or sets the number of expired pending reservations successfully cancelled.
-    /// </summary>
+    /// <summary>Number of expired pending reservations successfully cancelled.</summary>
     public int CancelledPendingCount { get; set; }
 
-    /// <summary>
-    /// Gets or sets the number of potential no-show reservations identified.
-    /// </summary>
+    /// <summary>Number of potential no-show reservations identified.</summary>
     public int NoShowIdentifiedCount { get; set; }
 
-    /// <summary>
-    /// Gets or sets the number of reservations successfully marked as no-show.
-    /// </summary>
+    /// <summary>Number of reservations successfully marked as no-show.</summary>
     public int MarkedAsNoShowCount { get; set; }
 
-    /// <summary>
-    /// Gets or sets the initial reservation statistics before cleanup.
-    /// </summary>
+    /// <summary>Initial reservation statistics before cleanup.</summary>
     public Dictionary<ReservationStatus, int> InitialStatistics { get; set; } = new();
 
     /// <summary>

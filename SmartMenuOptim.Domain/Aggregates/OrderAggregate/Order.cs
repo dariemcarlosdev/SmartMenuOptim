@@ -206,9 +206,14 @@ public class Order : TenantEntityBase, IValidatableObject
     /// Clears all domain events. Called by infrastructure after dispatching.
     /// </summary>
     public void ClearDomainEvents() => _domainEvents.Clear();
-    
+
     /// <summary>
     /// Adds a domain event to be dispatched after persistence.
+    /// Dispatcher will handle these events to trigger side effects (e.g., notifications, integration events) without coupling the domain model to external services.
+    /// Domain events represent significant occurrences within the aggregate that other parts of the system may react to.
+    /// Domain events are raised by the aggregate's behavioral methods (e.g., Place, Cancel, Complete) to signal important state changes.
+    /// Domain events are stored in a private collection and exposed as read-only to prevent external modification. They are cleared after being dispatched by the infrastructure layer.
+    /// Dispatching domain events allows for decoupled communication between the domain model and other parts of the system (e.g., application layer, external services) without creating tight coupling or dependencies.
     /// </summary>
     protected void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
     

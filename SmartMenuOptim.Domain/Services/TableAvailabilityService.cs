@@ -1,5 +1,6 @@
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 

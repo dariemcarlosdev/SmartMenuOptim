@@ -287,7 +287,18 @@ public class Menu : TenantEntityBase, IValidatableObject
     public virtual ICollection<MenuDish> MenuDishes 
     { 
         get => _menuDishes;
-        set => _menuDishes.Clear(); // EF Core needs setter
+        // Private setter for EF Core Materialization. Clears existing collection and adds new items to maintain encapsulation.
+        private set
+        {
+            _menuDishes.Clear();
+            if (value != null)
+            {
+                foreach (var item in value)
+                {
+                    _menuDishes.Add(item);
+                }
+            }
+        }
     }
 
     /// <summary>

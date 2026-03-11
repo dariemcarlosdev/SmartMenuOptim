@@ -1,5 +1,6 @@
 ﻿using SmartMenuOptim.Domain.Aggregates.DishAggregate;
-using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
+using SmartMenuOptim.Domain.Features.Restaurants;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
@@ -27,6 +28,11 @@ namespace SmartMenuOptim.Domain.Repositories
         /// Repository for menu dishes (aggregate root).
         /// </summary>
         IRepository<Dish> Dishes { get; }
+
+        /// <summary>
+        /// Repository for menus (aggregate root).
+        /// </summary>
+        IRepository<Menu> Menus { get; }
 
         /// <summary>
         /// Repository for dish categories.

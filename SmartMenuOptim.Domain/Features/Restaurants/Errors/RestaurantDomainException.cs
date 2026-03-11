@@ -1,4 +1,6 @@
-namespace SmartMenuOptim.Domain.Exceptions;
+using SmartMenuOptim.Domain.Exceptions;
+
+namespace SmartMenuOptim.Domain.Features.Restaurants.Errors;
 
 /// <summary>
 /// Exception thrown when a restaurant-related business rule is violated.
