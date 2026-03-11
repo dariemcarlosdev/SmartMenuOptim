@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SmartMenuOptim.API.Controllers.v1;
+using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Application.Dtos;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Repositories;
 
 namespace SmartMenuOptim.Tests.UnitTests.Controllers
@@ -98,7 +98,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             Assert.NotNull(response);
             // Only one dish should be recommended based on the highest sales
             Assert.Single(response);
-            Assert.Equal("Pizza", response[0].RecomendedDish);
+            Assert.Equal("Pizza", response[0].RecommendedDish);
         }
 
         /// <summary>
@@ -136,8 +136,8 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             Assert.NotNull(response);
             // Both Pizza and Burger should be recommended since both have positive sentiment and are tied in sales
             Assert.Equal(2, response.Count);
-            Assert.Contains(response, r => r.RecomendedDish == "Pizza");
-            Assert.Contains(response, r => r.RecomendedDish == "Burger");
+            Assert.Contains(response, r => r.RecommendedDish == "Pizza");
+            Assert.Contains(response, r => r.RecommendedDish == "Burger");
             // Strategy note should still be the same
             Assert.All(response, r => Assert.Equal("AI strategy to boost this item with promotions and track review sentiment to refine.", r.StrategyNote));
         }

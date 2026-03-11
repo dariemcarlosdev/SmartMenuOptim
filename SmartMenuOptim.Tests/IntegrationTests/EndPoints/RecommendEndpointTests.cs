@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 using SmartMenuOptim.API;
 using SmartMenuOptim.Tests.IntegrationTests.Helpers;
 using SmartMenuOptim.Application.Dtos;
+using SmartMenuOptim.Application.Dtos.AI;
+using SmartMenuOptim.Application.Dtos.Sales;
+using SmartMenuOptim.Application.Dtos.Review;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {
@@ -32,7 +35,7 @@ namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
         public async Task PostRecommend_WithValidRequest_Returns200Ok()
         {
             // Arrange: Define a valid request with sale records. Arrange is used to set up the test environment, including any necessary data or configurations.
-            var request = new AiRecomendationRequestDTO
+            var request = new AiRecommendationRequestDTO
             {
                 SaleRecords = new List<SaleRecordDTO>
                 {
