@@ -83,7 +83,7 @@ public class Program
 
         // In Program.cs, register the middleware:
         // app.UseMiddleware<TenantResolverMiddleware>();
-        // app.UseMiddleware<RateLimittitngMiddleware>();
+        // app.UseMiddleware<RateLimitingMiddleware>();
 
         // Run the application.
         app.Run();

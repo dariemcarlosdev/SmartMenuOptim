@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Services.Abstractions;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;

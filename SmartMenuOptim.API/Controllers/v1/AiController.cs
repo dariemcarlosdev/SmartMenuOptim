@@ -18,8 +18,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Application.Dtos;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Repositories;
@@ -134,7 +134,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         /// - Tenant isolation is maintained through RestaurantId filtering in underlying queries.
         /// </remarks>
         [HttpGet("underperforming")]
-        public async Task<ActionResult<PaginatedResponseDto<UnderperformingDishDTO>>> GetUnderperformingDishes(
+        public async Task<ActionResult<PaginatedResponseDto<UnderperformingDishDTO>>> GetUnderperformingDishesAsync(
             [FromQuery] int? page = null,
             [FromQuery] int? pageSize = null,
             [FromQuery] string? sortBy = null,
@@ -367,7 +367,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         /// <returns></returns>
         /// [MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost("v1/recommend")]
-        public ActionResult<List<AiRecomendationResponseDTO>> Recommend_v1([FromBody] AiRecomendationRequestDTO request)
+        public ActionResult<List<AiRecomendationResponseDTO>> Recommend_v1([FromBody] AiRecommendationRequestDTO request)
         {
             Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(request));
             // Validating the request 
@@ -413,7 +413,7 @@ namespace SmartMenuOptim.API.Controllers.v1
 
                     aiResponses.Add(new AiRecomendationResponseDTO
                     {
-                        RecomendedDish = recommendedDishes.Select(d => d.Trim()).FirstOrDefault() ?? dish,
+                        RecommendedDish = recommendedDishes.Select(d => d.Trim()).FirstOrDefault() ?? dish,
                         StrategyNote = "AI strategy to boost this item with promotions and track review sentiment to refine."
                     });
                 }
@@ -491,7 +491,7 @@ namespace SmartMenuOptim.API.Controllers.v1
 
                     aiResponses.Add(new AiRecomendationResponseDTO
                     {
-                        RecomendedDish = dish.Trim(),
+                        RecommendedDish = dish.Trim(),
                         StrategyNote = "AI strategy to boost this item with promotions and track review sentiment to refine.",
                         QuantitySold = quantitySold,
                         AverageRating = Math.Round(averageRating, 2),
@@ -513,7 +513,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost("underperforming/improve-strategy")]
-        public async Task<ActionResult<string>> GetImprovementStrategy([FromQuery] string name, [FromQuery] int sales, [FromQuery] double sentiment)
+        public async Task<ActionResult<string>> GetImprovementStrategyAsync([FromQuery] string name, [FromQuery] int sales, [FromQuery] double sentiment)
         {
             // Create an instance of UnderperformingDishDTO from the query parameters
             var underperformingDish = new UnderperformingDishDTO

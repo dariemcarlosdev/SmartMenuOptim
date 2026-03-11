@@ -2,18 +2,21 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.Application.Services.Reservations;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
+using SmartMenuOptim.Domain.Enums;
 
-namespace SmartMenuOptim.API.Controllers;
+namespace SmartMenuOptim.API.Controllers.v1;
 
 /// <summary>
 /// API controller for reservation reporting and statistics.
 /// </summary>
 /// <remarks>
 /// Provides endpoints for reservation analytics, monitoring, and operational metrics.
+/// <para><b>Status:</b> Planned - Not yet implemented. Hidden from API documentation.</para>
 /// </remarks>
 [ApiController]
-[Route("api/[controller]")]
-[Authorize] // Requires authentication
+[Route("api/v1/[controller]")]
+[ApiExplorerSettings(IgnoreApi = true)] // TODO: Remove when fully implemented
+[Authorize]
 public class ReservationReportsController : ControllerBase
 {
     private readonly ReservationReportingService _reportingService;
@@ -40,7 +43,7 @@ public class ReservationReportsController : ControllerBase
     [ProducesResponseType(typeof(ReservationStatisticsReport), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ReservationStatisticsReport>> GetStatistics(
+    public async Task<ActionResult<ReservationStatisticsReport>> GetStatisticsAsync(
         [FromQuery] int? restaurantId = null,
         CancellationToken cancellationToken = default)
     {
@@ -72,7 +75,7 @@ public class ReservationReportsController : ControllerBase
     [HttpGet("status-counts")]
     [ProducesResponseType(typeof(Dictionary<ReservationStatus, int>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<Dictionary<ReservationStatus, int>>> GetStatusCounts(
+    public async Task<ActionResult<Dictionary<ReservationStatus, int>>> GetStatusCountsAsync(
         [FromQuery] int? restaurantId = null,
         CancellationToken cancellationToken = default)
     {
@@ -106,7 +109,7 @@ public class ReservationReportsController : ControllerBase
     [ProducesResponseType(typeof(TimeBasedStatistics), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<TimeBasedStatistics>> GetTimeBasedStatistics(
+    public async Task<ActionResult<TimeBasedStatistics>> GetTimeBasedStatisticsAsync(
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate,
         [FromQuery] int? restaurantId = null,
@@ -154,7 +157,7 @@ public class ReservationReportsController : ControllerBase
     [HttpGet("active-count")]
     [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<int>> GetActiveCount(
+    public async Task<ActionResult<int>> GetActiveCountAsync(
         [FromQuery] int? restaurantId = null,
         CancellationToken cancellationToken = default)
     {

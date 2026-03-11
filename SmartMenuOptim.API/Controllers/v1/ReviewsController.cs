@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartMenuOptim.Application.Dtos;
-using SmartMenuOptim.Application.Interfaces;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Repositories;
-using SmartMenuOptim.Domain.Services.Abstraction;
+using SmartMenuOptim.Domain.Services.Abstractions;
 using SmartMenuOptim.Domain.Specifications.ReviewSpecifications;
-using static System.Net.Mime.MediaTypeNames;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -48,7 +45,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         /// <param name="sentiment"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ReviewDTO>>> GetAllReviews([FromQuery] string? dishname = null, [FromQuery] double? sentiment = null)
+        public async Task<ActionResult<IEnumerable<ReviewDTO>>> GetAllReviewsAsync([FromQuery] string? dishname = null, [FromQuery] double? sentiment = null)
         {
             try
             {
@@ -86,7 +83,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         // GET api/<ReviewsController>/5
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpGet("{id}")]
-        public async Task<ActionResult<Review>> GetReviewById(int id)
+        public async Task<ActionResult<Review>> GetReviewByIdAsync(int id)
         {
             try
             {
@@ -116,7 +113,7 @@ namespace SmartMenuOptim.API.Controllers.v1
 
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost]
-        public async Task<ActionResult<Review>> CreateReview([FromBody] Review review)
+        public async Task<ActionResult<Review>> CreateReviewAsync([FromBody] Review review)
         {
             //all this checks are to ensure that the review object is valid before proceeding with the creation.
             if (review == null)
@@ -160,7 +157,7 @@ namespace SmartMenuOptim.API.Controllers.v1
 
                 await _unityOfWork.Reviews.AddAsync(review);
                 await _unityOfWork.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetReviewById), new { id = review.Id }, review); // This will return the created review with its ID in the response.
+                return CreatedAtAction(nameof(GetReviewByIdAsync), new { id = review.Id }, review); // This will return the created review with its ID in the response.
             }
             catch (Exception ex)
             {
@@ -173,7 +170,7 @@ namespace SmartMenuOptim.API.Controllers.v1
 
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPut("{id}")]
-        public async Task<ActionResult<Review>> UpdateReview(int id, [FromBody] Review review)
+        public async Task<ActionResult<Review>> UpdateReviewAsync(int id, [FromBody] Review review)
         {
             if (review == null || review.Id != id)
             {
@@ -226,7 +223,7 @@ namespace SmartMenuOptim.API.Controllers.v1
 
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteReview(int id)
+        public async Task<IActionResult> DeleteReviewAsync(int id)
         {
             if(_unityOfWork == null)
             {

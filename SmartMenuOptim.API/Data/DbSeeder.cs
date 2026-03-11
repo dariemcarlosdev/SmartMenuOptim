@@ -2,12 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
-using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
+using SmartMenuOptim.Domain.Features.Restaurants;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
+using SmartMenuOptim.Domain.Enums;
 using SmartMenuOptim.Domain.ValueObjects;
 using System.Data.Common;
 using SmartMenuOptim.Infrastructure.Persistence.Context;

@@ -44,9 +44,9 @@ namespace SmartMenuOptim.API.Controllers.v1
         
         [HttpGet]
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
-        public async Task<ActionResult<IEnumerable<SaleRecordDTO>>> GetAllSaleRecords()
+        public async Task<ActionResult<IEnumerable<SaleRecordDTO>>> GetAllSaleRecordsAsync()
         {
-            _logger.LogInformation("GetAllSaleRecords method called at: {time}", DateTime.UtcNow);
+            _logger.LogInformation("GetAllSaleRecordsAsync method called at: {time}", DateTime.UtcNow);
             try
             {
                 // ✅ NEW: Use specification pattern for complex includes
@@ -81,7 +81,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         // GET api/<SaleRecordsController>/5
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpGet("{id}")]
-        public async Task<ActionResult<SaleRecord>> GetSaleRecordById (int id)
+        public async Task<ActionResult<SaleRecord>> GetSaleRecordByIdAsync(int id)
         {
             try
             {
@@ -105,7 +105,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         // POST api/<SaleRecordsController>
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPost]
-        public async Task<ActionResult<SaleRecord>> CreateSaleRecord([FromBody] SaleRecord saleRecord)
+        public async Task<ActionResult<SaleRecord>> CreateSaleRecordAsync([FromBody] SaleRecord saleRecord)
         {
             if (saleRecord == null)
             {
@@ -115,7 +115,7 @@ namespace SmartMenuOptim.API.Controllers.v1
             {
                 await _unityOfWork.SaleRecords.AddAsync(saleRecord);
                 await _unityOfWork.SaveChangesAsync();
-                return CreatedAtAction(nameof(CreateSaleRecord), new { id = saleRecord.Id }, saleRecord); // This will return the created sale record with its ID in the response.
+                return CreatedAtAction(nameof(GetSaleRecordByIdAsync), new { id = saleRecord.Id }, saleRecord); // This will return the created sale record with its ID in the response.
             }
             catch (Exception ex)
             {
@@ -129,7 +129,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         // PUT api/<SaleRecordsController>/5
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSaleRecord(int id, [FromBody] SaleRecord SaleRecord)
+        public async Task<IActionResult> UpdateSaleRecordAsync(int id, [FromBody] SaleRecord SaleRecord)
         {
 
 
@@ -181,7 +181,7 @@ namespace SmartMenuOptim.API.Controllers.v1
         // DELETE api/<SaleRecordsController>/5
         //[MapToApiVersion("1.0")] // Map this action to API version 1.0
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSaleRecord(int id)
+        public async Task<IActionResult> DeleteSaleRecordAsync(int id)
         {
             try
             {
@@ -208,3 +208,4 @@ namespace SmartMenuOptim.API.Controllers.v1
         }
     }
 }
+

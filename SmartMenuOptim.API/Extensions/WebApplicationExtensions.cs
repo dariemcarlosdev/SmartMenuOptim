@@ -1,6 +1,6 @@
 using Sentry;
 using SmartMenuOptim.API.Data;
-using SmartMenuOptim.Infrastructure.Infrastructure.Middlewares;
+using SmartMenuOptim.Infrastructure.Middlewares;
 using System.Threading.Tasks;
 
 namespace SmartMenuOptim.API.Extensions;

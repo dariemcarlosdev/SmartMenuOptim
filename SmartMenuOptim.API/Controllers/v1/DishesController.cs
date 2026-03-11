@@ -40,7 +40,7 @@ public class DishesController : ControllerBase
     [HttpGet("api/v1/dishes/{id:int}")]
     [ProducesResponseType(typeof(DishDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<DishDTO>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<DishDTO>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         _logger.LogDebug("API: Getting dish with ID {DishId}", id);
 
@@ -56,7 +56,7 @@ public class DishesController : ControllerBase
     /// </summary>
     [HttpGet("api/v1/restaurants/{restaurantId:int}/dishes")]
     [ProducesResponseType(typeof(IReadOnlyList<DishDTO>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<DishDTO>>> GetByRestaurant(
+    public async Task<ActionResult<IReadOnlyList<DishDTO>>> GetByRestaurantAsync(
         int restaurantId, CancellationToken cancellationToken)
     {
         _logger.LogDebug("API: Getting dishes for restaurant {RestaurantId}", restaurantId);
@@ -74,7 +74,7 @@ public class DishesController : ControllerBase
     [HttpGet("api/v1/menus/{menuId:int}/dishes")]
     [ProducesResponseType(typeof(IReadOnlyList<DishDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyList<DishDTO>>> GetByMenu(
+    public async Task<ActionResult<IReadOnlyList<DishDTO>>> GetByMenuAsync(
         int menuId, CancellationToken cancellationToken)
     {
         _logger.LogDebug("API: Getting dishes for menu {MenuId}", menuId);
@@ -102,7 +102,7 @@ public class DishesController : ControllerBase
     [ProducesResponseType(typeof(DishDTO), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<DishDTO>> Create(
+    public async Task<ActionResult<DishDTO>> CreateAsync(
         int restaurantId,
         [FromBody] DishCreateDTO dto,
         CancellationToken cancellationToken)
@@ -116,7 +116,7 @@ public class DishesController : ControllerBase
         if (result.IsSuccess)
         {
             return CreatedAtAction(
-                nameof(GetById),
+                nameof(GetByIdAsync),
                 new { id = result.Value.Id },
                 result.Value);
         }
@@ -133,7 +133,7 @@ public class DishesController : ControllerBase
     [ProducesResponseType(typeof(DishDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<DishDTO>> Update(
+    public async Task<ActionResult<DishDTO>> UpdateAsync(
         int id,
         [FromBody] DishUpdateDTO dto,
         CancellationToken cancellationToken)
@@ -166,7 +166,7 @@ public class DishesController : ControllerBase
     [HttpDelete("api/v1/dishes/{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("API: Deleting dish with ID {DishId}", id);
 
