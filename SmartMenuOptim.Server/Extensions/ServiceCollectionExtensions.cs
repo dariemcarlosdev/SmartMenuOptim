@@ -92,6 +92,7 @@ public static class ServiceCollectionExtensions
 
         // State Containers (Scoped for per-circuit state in Blazor Server)
         services.AddScoped<RestaurantDetailState>();
+        services.AddScoped<RestaurantListState>();
 
         services.AddLogging();
         return services;

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
-using SmartMenuOptim.API.Controllers.v1;
+using SmartMenuOptim.API.Features.Ai;
+using SmartMenuOptim.API.Features.Ai.v1;
 using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Application.Dtos;
 using SmartMenuOptim.Domain.Repositories;
