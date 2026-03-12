@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.Application.Dtos.Dish;
 using SmartMenuOptim.Application.Services.Restaurant;
 
-namespace SmartMenuOptim.API.Controllers.v1;
+namespace SmartMenuOptim.API.Features.Restaurants.v1;
 
 /// <summary>
 /// REST API Controller for Dish management operations.
@@ -18,6 +18,7 @@ namespace SmartMenuOptim.API.Controllers.v1;
 /// </list>
 /// </remarks>
 [ApiController]
+[Route("api/v1")]
 [Produces("application/json")]
 public class DishesController : ControllerBase
 {
@@ -37,7 +38,7 @@ public class DishesController : ControllerBase
     /// <summary>
     /// Retrieves a dish by its unique identifier.
     /// </summary>
-    [HttpGet("api/v1/dishes/{id:int}")]
+    [HttpGet("dishes/{id:int}")]
     [ProducesResponseType(typeof(DishDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DishDTO>> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -54,7 +55,7 @@ public class DishesController : ControllerBase
     /// <summary>
     /// Retrieves all dishes for a restaurant.
     /// </summary>
-    [HttpGet("api/v1/restaurants/{restaurantId:int}/dishes")]
+    [HttpGet("restaurants/{restaurantId:int}/dishes")]
     [ProducesResponseType(typeof(IReadOnlyList<DishDTO>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<DishDTO>>> GetByRestaurantAsync(
         int restaurantId, CancellationToken cancellationToken)
@@ -71,7 +72,7 @@ public class DishesController : ControllerBase
     /// <summary>
     /// Retrieves all dishes assigned to a specific menu.
     /// </summary>
-    [HttpGet("api/v1/menus/{menuId:int}/dishes")]
+    [HttpGet("menus/{menuId:int}/dishes")]
     [ProducesResponseType(typeof(IReadOnlyList<DishDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<DishDTO>>> GetByMenuAsync(
@@ -98,7 +99,7 @@ public class DishesController : ControllerBase
     /// <summary>
     /// Creates a new dish for a restaurant.
     /// </summary>
-    [HttpPost("api/v1/restaurants/{restaurantId:int}/dishes")]
+    [HttpPost("restaurants/{restaurantId:int}/dishes")]
     [ProducesResponseType(typeof(DishDTO), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -129,7 +130,7 @@ public class DishesController : ControllerBase
     /// <summary>
     /// Updates an existing dish.
     /// </summary>
-    [HttpPut("api/v1/dishes/{id:int}")]
+    [HttpPut("dishes/{id:int}")]
     [ProducesResponseType(typeof(DishDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -163,7 +164,7 @@ public class DishesController : ControllerBase
     /// <summary>
     /// Soft-deletes a dish.
     /// </summary>
-    [HttpDelete("api/v1/dishes/{id:int}")]
+    [HttpDelete("dishes/{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)

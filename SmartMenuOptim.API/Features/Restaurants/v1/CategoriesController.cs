@@ -23,7 +23,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.Application.Services.Restaurant;
 
-namespace SmartMenuOptim.API.Controllers.v1;
+namespace SmartMenuOptim.API.Features.Restaurants.v1;
 
 /// <summary>
 /// REST API Controller for Category management operations.
@@ -40,6 +40,7 @@ namespace SmartMenuOptim.API.Controllers.v1;
 /// </list>
 /// </remarks>
 [ApiController]
+[Route("api/v1")]
 [Produces("application/json")]
 public class CategoriesController : ControllerBase
 {
@@ -62,7 +63,7 @@ public class CategoriesController : ControllerBase
     /// <param name="id">The category ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The category if found.</returns>
-    [HttpGet("api/v1/categories/{id:int}")]
+    [HttpGet("categories/{id:int}")]
     [ProducesResponseType(typeof(CategoryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CategoryDTO>> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -82,7 +83,7 @@ public class CategoriesController : ControllerBase
     /// <param name="restaurantId">The restaurant ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of categories ordered by display order.</returns>
-    [HttpGet("api/v1/restaurants/{restaurantId:int}/categories")]
+    [HttpGet("restaurants/{restaurantId:int}/categories")]
     [ProducesResponseType(typeof(IReadOnlyList<CategoryDTO>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<CategoryDTO>>> GetByRestaurantAsync(
         int restaurantId,
@@ -108,7 +109,7 @@ public class CategoriesController : ControllerBase
     /// <param name="dto">The category creation data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created category.</returns>
-    [HttpPost("api/v1/restaurants/{restaurantId:int}/categories")]
+    [HttpPost("restaurants/{restaurantId:int}/categories")]
     [ProducesResponseType(typeof(CategoryDTO), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -150,7 +151,7 @@ public class CategoriesController : ControllerBase
     /// <param name="dto">The category update data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The updated category.</returns>
-    [HttpPut("api/v1/categories/{id:int}")]
+    [HttpPut("categories/{id:int}")]
     [ProducesResponseType(typeof(CategoryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -199,7 +200,7 @@ public class CategoriesController : ControllerBase
     /// <response code="204">Category deleted successfully.</response>
     /// <response code="400">Cannot delete category with active dishes.</response>
     /// <response code="404">Category not found.</response>
-    [HttpDelete("api/v1/categories/{id:int}")]
+    [HttpDelete("categories/{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -230,7 +231,7 @@ public class CategoriesController : ControllerBase
     /// <param name="categoryOrders">Dictionary mapping category ID to new display order.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>No content on success.</returns>
-    [HttpPut("api/v1/restaurants/{restaurantId:int}/categories/reorder")]
+    [HttpPut("restaurants/{restaurantId:int}/categories/reorder")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ReorderCategoriesAsync(

@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
-namespace SmartMenuOptim.API.Controllers.v1
+namespace SmartMenuOptim.API.Features.Diagnostics.v1
 {
     /// <summary>
     /// This controller is used to check the configuration settings of the application.

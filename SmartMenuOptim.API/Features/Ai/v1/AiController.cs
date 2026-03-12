@@ -1,4 +1,4 @@
-﻿/*
+/*
     AiController.cs
 
     This controller provides AI-driven analytics and recommendation endpoints for the SmartMenuOptimizer application.
@@ -24,7 +24,7 @@ using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Repositories;
 
-namespace SmartMenuOptim.API.Controllers.v1
+namespace SmartMenuOptim.API.Features.Ai.v1
 {
     /*
      The AiController.cs file defines an ASP.NET Core API controller for AI-related operations in your application. It exposes endpoints for:
@@ -533,3 +533,4 @@ namespace SmartMenuOptim.API.Controllers.v1
         }
     }
 }
+

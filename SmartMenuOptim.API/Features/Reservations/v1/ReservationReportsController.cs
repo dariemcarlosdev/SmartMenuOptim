@@ -4,7 +4,7 @@ using SmartMenuOptim.Application.Services.Reservations;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Enums;
 
-namespace SmartMenuOptim.API.Controllers.v1;
+namespace SmartMenuOptim.API.Features.Reservations.v1;
 
 /// <summary>
 /// API controller for reservation reporting and statistics.

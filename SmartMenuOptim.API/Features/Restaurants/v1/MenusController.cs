@@ -24,7 +24,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.Application.Dtos.Restaurant;
 using SmartMenuOptim.Application.Services.Restaurant;
 
-namespace SmartMenuOptim.API.Controllers.v1;
+namespace SmartMenuOptim.API.Features.Restaurants.v1;
 
 /// <summary>
 /// REST API Controller for Menu management operations.
@@ -42,6 +42,7 @@ namespace SmartMenuOptim.API.Controllers.v1;
 /// </list>
 /// </remarks>
 [ApiController]
+[Route("api/v1")]
 [Produces("application/json")]
 public class MenusController : ControllerBase
 {
@@ -64,7 +65,7 @@ public class MenusController : ControllerBase
     /// <param name="id">The menu ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The menu if found.</returns>
-    [HttpGet("api/v1/menus/{id:int}")]
+    [HttpGet("menus/{id:int}")]
     [ProducesResponseType(typeof(MenuDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MenuDTO>> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -85,7 +86,7 @@ public class MenusController : ControllerBase
     /// <param name="activeOnly">If true, returns only active menus.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of menus.</returns>
-    [HttpGet("api/v1/restaurants/{restaurantId:int}/menus")]
+    [HttpGet("restaurants/{restaurantId:int}/menus")]
     [ProducesResponseType(typeof(IReadOnlyList<MenuDTO>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<MenuDTO>>> GetByRestaurantAsync(
         int restaurantId,
@@ -114,7 +115,7 @@ public class MenusController : ControllerBase
     /// <param name="dto">The menu creation data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created menu.</returns>
-    [HttpPost("api/v1/restaurants/{restaurantId:int}/menus")]
+    [HttpPost("restaurants/{restaurantId:int}/menus")]
     [ProducesResponseType(typeof(MenuDTO), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -147,7 +148,7 @@ public class MenusController : ControllerBase
     /// <param name="dto">The menu update data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The updated menu.</returns>
-    [HttpPut("api/v1/menus/{id:int}")]
+    [HttpPut("menus/{id:int}")]
     [ProducesResponseType(typeof(MenuDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -184,7 +185,7 @@ public class MenusController : ControllerBase
     /// <param name="id">The menu ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>No content on success.</returns>
-    [HttpDelete("api/v1/menus/{id:int}")]
+    [HttpDelete("menus/{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
@@ -208,7 +209,7 @@ public class MenusController : ControllerBase
     /// <param name="id">The menu ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>No content on success.</returns>
-    [HttpPost("api/v1/menus/{id:int}/activate")]
+    [HttpPost("menus/{id:int}/activate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -234,7 +235,7 @@ public class MenusController : ControllerBase
     /// <param name="id">The menu ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>No content on success.</returns>
-    [HttpPost("api/v1/menus/{id:int}/deactivate")]
+    [HttpPost("menus/{id:int}/deactivate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MakeUnavailableAsync(int id, CancellationToken cancellationToken)
@@ -261,7 +262,7 @@ public class MenusController : ControllerBase
     /// <param name="specialPrice">Optional special price for this menu.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>No content on success.</returns>
-    [HttpPost("api/v1/menus/{menuId:int}/dishes/{dishId:int}")]
+    [HttpPost("menus/{menuId:int}/dishes/{dishId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -293,7 +294,7 @@ public class MenusController : ControllerBase
     /// <param name="dishId">The dish ID to remove.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>No content on success.</returns>
-    [HttpDelete("api/v1/menus/{menuId:int}/dishes/{dishId:int}")]
+    [HttpDelete("menus/{menuId:int}/dishes/{dishId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveDishAsync(

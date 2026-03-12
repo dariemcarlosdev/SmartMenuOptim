@@ -48,7 +48,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.Application.Features.Restaurants.Services;
 
-namespace SmartMenuOptim.API.Features.Restaurant;
+namespace SmartMenuOptim.API.Features.Restaurants.v1;
 
 /// <summary>
 /// REST API Controller for Restaurant management operations.

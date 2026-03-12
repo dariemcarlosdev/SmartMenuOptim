@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Application.Dtos;
@@ -9,7 +9,7 @@ using SmartMenuOptim.Domain.Specifications.SaleRecordSpecifications;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace SmartMenuOptim.API.Controllers.v1
+namespace SmartMenuOptim.API.Features.Sales.v1
 {
     //For versioning, add [ApiVersion("1.0")] above [Route("api/[controller]")]
     //[ApiVersion(1)]
@@ -208,4 +208,3 @@ namespace SmartMenuOptim.API.Controllers.v1
         }
     }
 }
-

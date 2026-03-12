@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Repositories;
@@ -8,7 +8,7 @@ using SmartMenuOptim.Domain.Specifications.ReviewSpecifications;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace SmartMenuOptim.API.Controllers.v1
+namespace SmartMenuOptim.API.Features.Reviews.v1
 {
     //For versioning, add [ApiVersion("1.0")] above [Route("api/[controller]")]
     //[ApiVersion(1)]

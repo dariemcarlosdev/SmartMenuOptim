@@ -30,9 +30,4 @@
     <ProjectReference Include="..\SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\v2\" />
-    <Folder Include="Features\Restaurant\v2\" />
-  </ItemGroup>
-
 </Project>
