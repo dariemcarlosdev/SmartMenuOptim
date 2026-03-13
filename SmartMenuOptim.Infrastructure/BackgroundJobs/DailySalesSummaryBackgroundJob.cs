@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SmartMenuOptim.Domain.Events.SaleEvents;
+using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate.Events;
 
 namespace SmartMenuOptim.Infrastructure.BackgroundJobs;
 

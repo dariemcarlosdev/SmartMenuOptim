@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SmartMenuOptim.Application.Services.Reservations;
+using SmartMenuOptim.Application.Features.Reservations.Services;
 using SmartMenuOptim.Domain.Aggregates.TableAggregate;
 using SmartMenuOptim.Domain.Enums;
 

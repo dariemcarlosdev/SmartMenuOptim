@@ -1,8 +1,9 @@
+using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate.Errors;
 using System.ComponentModel.DataAnnotations.Schema;
-using SmartMenuOptim.Domain.Features.Restaurants;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Enums;
-using SmartMenuOptim.Domain.Events.LoyaltyEvents;
+using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate.Events;
 using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Common;
 

@@ -1,4 +1,5 @@
-using SmartMenuOptim.Domain.Features.Restaurants;
+using SmartMenuOptim.Domain.Aggregates.PromotionAggregate.Errors;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Exceptions;
 using System;
 

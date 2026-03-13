@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Application.Contracts;
-using SmartMenuOptim.Domain.Events.LoyaltyEvents;
+using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate.Events;
 
 namespace SmartMenuOptim.Application.Handlers.LoyaltyEventHandlers;
 

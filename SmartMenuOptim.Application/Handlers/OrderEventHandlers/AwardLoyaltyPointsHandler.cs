@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
-using SmartMenuOptim.Domain.Events.OrderEvents;
+using SmartMenuOptim.Domain.Aggregates.OrderAggregate.Events;
 using SmartMenuOptim.Domain.Repositories;
 
 namespace SmartMenuOptim.Application.Handlers.OrderEventHandlers;

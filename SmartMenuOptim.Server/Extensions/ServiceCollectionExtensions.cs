@@ -5,8 +5,9 @@ using Polly;
 using SmartMenuOptim.Domain.Extensions;
 using SmartMenuOptim.Server.Features.Restaurants.Services;
 using SmartMenuOptim.Server.Features.Restaurants.State;
-using SmartMenuOptim.Server.Services.Abstractions;
-using SmartMenuOptim.Server.Services.ClientServices;
+using SmartMenuOptim.Server.Features.Reviews.Services;
+using SmartMenuOptim.Server.Features.Sales.Services;
+using SmartMenuOptim.Server.Features.AI.Services;
 using SmartMenuOptim.Server.State;
 
 namespace SmartMenuOptim.Server.Extensions;
@@ -82,12 +83,12 @@ public static class ServiceCollectionExtensions
     /// <returns>The same instance of <see cref="IServiceCollection"/> that was provided, to allow for method chaining.</returns>
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
-        // UI Services
-        services.AddScoped<IAIService, AIService>();
-        services.AddScoped<ISaleRecordService, SaleRecordService>();
-        services.AddScoped<IReviewService, ReviewService>();
-
         // Client Services (HTTP-based adapters for API communication)
+        services.AddScoped<IAIClientService, AIClientService>();
+        services.AddScoped<ISaleRecordClientService, SaleRecordClientService>();
+        services.AddScoped<IReviewClientService, ReviewClientService>();
+
+        // Client Services (Restaurant feature)
         services.AddScoped<IRestaurantClientService, RestaurantClientService>();
 
         // State Containers (Scoped for per-circuit state in Blazor Server)

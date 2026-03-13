@@ -22,7 +22,7 @@ using SmartMenuOptim.Application.Features.Restaurants.Mappings;
 using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.ValueObjects;
-using RestaurantEntity = SmartMenuOptim.Domain.Features.Restaurants.Restaurant;
+using RestaurantEntity = SmartMenuOptim.Domain.Aggregates.RestaurantAggregate.Restaurant;
 
 namespace SmartMenuOptim.Application.Features.Restaurants.Services;
 

@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 using SmartMenuOptim.API;
 using SmartMenuOptim.Tests.IntegrationTests.Helpers;
 using SmartMenuOptim.Application.Dtos;
-using SmartMenuOptim.Application.Dtos.AI;
-using SmartMenuOptim.Application.Dtos.Sales;
-using SmartMenuOptim.Application.Dtos.Review;
+using SmartMenuOptim.Application.Features.AI.DTOs;
+using SmartMenuOptim.Application.Features.Sales.DTOs;
+using SmartMenuOptim.Application.Features.Reviews.DTOs;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {

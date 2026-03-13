@@ -13,11 +13,9 @@
  */
 
 using SmartMenuOptim.Application.Dtos;
-using SmartMenuOptim.Application.Dtos.Dish;
-using SmartMenuOptim.Application.Dtos.Restaurant;
 using SmartMenuOptim.Application.Features.Restaurants.DTOs;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
-using SmartMenuOptim.Domain.Features.Restaurants;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.ValueObjects;
 using DishEntity = SmartMenuOptim.Domain.Aggregates.DishAggregate.Dish;

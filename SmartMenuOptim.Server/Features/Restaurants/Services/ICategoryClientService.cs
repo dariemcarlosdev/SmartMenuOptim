@@ -1,5 +1,5 @@
 using SmartMenuOptim.Application.Common;
-using SmartMenuOptim.Application.Dtos.Dish;
+using SmartMenuOptim.Application.Features.Restaurants.DTOs;
 
 namespace SmartMenuOptim.Server.Features.Restaurants.Services;
 

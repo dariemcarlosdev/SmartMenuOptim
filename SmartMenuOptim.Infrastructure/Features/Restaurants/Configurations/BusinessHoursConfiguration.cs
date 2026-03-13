@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SmartMenuOptim.Domain.Features.Restaurants;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 
 namespace SmartMenuOptim.Infrastructure.Features.Restaurants.Configurations;
 

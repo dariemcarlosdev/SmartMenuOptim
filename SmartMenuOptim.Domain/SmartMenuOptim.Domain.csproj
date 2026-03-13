@@ -7,11 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Aggregates\RestaurantAggregate\**" />
-    <EmbeddedResource Remove="Aggregates\RestaurantAggregate\**" />
-    <None Remove="Aggregates\RestaurantAggregate\**" />
-  </ItemGroup>
-    <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.21" />
     <!-- MediatR Contracts for INotification - lightweight, no dependencies -->

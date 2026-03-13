@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using SmartMenuOptim.Application.Common;
-using SmartMenuOptim.Application.Dtos.Dish;
+using SmartMenuOptim.Application.Features.Restaurants.DTOs;
 using SmartMenuOptim.Server.Helpers;
 
 namespace SmartMenuOptim.Server.Features.Restaurants.Services;

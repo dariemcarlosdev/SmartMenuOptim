@@ -1,5 +1,7 @@
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
+using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate;
 
 namespace SmartMenuOptim.Domain.Services;
 

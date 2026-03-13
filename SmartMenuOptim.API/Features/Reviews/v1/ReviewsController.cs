@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
 using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.Services.Abstractions;
-using SmartMenuOptim.Domain.Specifications.ReviewSpecifications;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate.Specifications;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860

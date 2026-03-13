@@ -18,10 +18,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Application.Common;
-using SmartMenuOptim.Application.Contracts;
 using SmartMenuOptim.Application.Dtos;
+using SmartMenuOptim.Application.Features.AI.Contracts;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
+using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate;
 using SmartMenuOptim.Domain.Repositories;
 
 namespace SmartMenuOptim.API.Features.Ai.v1

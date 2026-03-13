@@ -1,5 +1,5 @@
-﻿using SmartMenuOptim.Domain.Aggregates.DishAggregate;
-using SmartMenuOptim.Domain.Features.Restaurants;
+using SmartMenuOptim.Domain.Aggregates.DishAggregate;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

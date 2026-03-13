@@ -1,5 +1,6 @@
 // SmartMenuOptim.Domain/Services/ReviewSentimentAnalysisService.cs
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
 using SmartMenuOptim.Domain.Enums;
 using SmartMenuOptim.Domain.Services.Abstractions;
 using SmartMenuOptim.Domain.Services.Models;

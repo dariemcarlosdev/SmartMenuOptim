@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Application.Contracts;
-using SmartMenuOptim.Domain.Events.SaleEvents;
+using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate.Events;
 
 namespace SmartMenuOptim.Application.Handlers.SaleEventHandlers;
 

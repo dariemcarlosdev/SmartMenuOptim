@@ -1,3 +1,4 @@
+using SmartMenuOptim.Domain.Aggregates.TableAggregate.Errors;
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Enums;

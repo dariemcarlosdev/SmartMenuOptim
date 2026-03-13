@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Application.Contracts;
-using SmartMenuOptim.Domain.Events.MenuEvents;
+using SmartMenuOptim.Domain.Aggregates.MenuAggregate.Events;
 
 namespace SmartMenuOptim.Application.Handlers.MenuEventHandlers;
 

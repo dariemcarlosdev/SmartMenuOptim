@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
-using SmartMenuOptim.Domain.Features.Restaurants;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
@@ -15,6 +15,8 @@ using SmartMenuOptim.Infrastructure.Persistence.Context;
 using SmartMenuOptim.Shared;
 using SmartMenuOptim.Shared.Constants;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
+using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate;
 
 namespace SmartMenuOptim.API.Data
 {

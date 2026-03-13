@@ -1,6 +1,9 @@
+using SmartMenuOptim.Domain.Aggregates.DishAggregate.Errors;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
+using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate;
 using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.ValueObjects;
 using System.ComponentModel.DataAnnotations;

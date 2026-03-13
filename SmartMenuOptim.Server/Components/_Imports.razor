@@ -12,11 +12,15 @@
 @using Markdig
 @* Application DTOs - organized by feature *@
 @using SmartMenuOptim.Application.Dtos
-@using SmartMenuOptim.Application.Dtos.AI
-@using SmartMenuOptim.Application.Dtos.Admin
 @using SmartMenuOptim.Application.Dtos.Common
-@using SmartMenuOptim.Application.Dtos.Customer
-@using SmartMenuOptim.Application.Dtos.Dish
-@using SmartMenuOptim.Application.Dtos.Review
-@using SmartMenuOptim.Application.Dtos.Sales
-@using SmartMenuOptim.Application.Dtos.Restaurant
+@using SmartMenuOptim.Application.Features.Admin.DTOs
+@using SmartMenuOptim.Application.Features.Customers.DTOs
+@using SmartMenuOptim.Application.Features.AI.DTOs
+@using SmartMenuOptim.Application.Features.Reviews.DTOs
+@using SmartMenuOptim.Application.Features.Sales.DTOs
+@using SmartMenuOptim.Application.Features.Restaurants.DTOs
+@* Feature Client Services *@
+@using SmartMenuOptim.Server.Features.Reviews.Services
+@using SmartMenuOptim.Server.Features.Sales.Services
+@using SmartMenuOptim.Server.Features.AI.Services
+@using SmartMenuOptim.Server.Features.Reviews.Models

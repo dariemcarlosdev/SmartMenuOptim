@@ -33,6 +33,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Dtos\Admin\" />
+    <Folder Include="Dtos\Customer\" />
+    <Folder Include="Dtos\Dish\" />
+    <Folder Include="Dtos\Restaurant\" />
     <Folder Include="Extensions\Mapping\" />
   </ItemGroup>
 

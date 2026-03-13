@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SmartMenuOptim.Application.Dtos.Dish;
-using SmartMenuOptim.Application.Services.Restaurant;
+using SmartMenuOptim.Application.Features.Restaurants.Services;
 
 namespace SmartMenuOptim.API.Features.Restaurants.v1;
 

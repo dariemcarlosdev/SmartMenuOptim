@@ -1,4 +1,4 @@
-using SmartMenuOptim.Application.Dtos.Restaurant;
+using SmartMenuOptim.Application.Features.Restaurants.DTOs;
 using SmartMenuOptim.Server.Features.Restaurants.Services;
 using SmartMenuOptim.Server.State;
 

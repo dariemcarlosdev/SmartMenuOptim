@@ -11,7 +11,6 @@
  */
 
 using SmartMenuOptim.Application.Dtos;
-using SmartMenuOptim.Application.Dtos.Restaurant;
 
 namespace SmartMenuOptim.Application.Features.Restaurants.DTOs;
 

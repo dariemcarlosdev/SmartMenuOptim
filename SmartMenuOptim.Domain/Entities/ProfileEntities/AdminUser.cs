@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using SmartMenuOptim.Domain.Features.Restaurants;
+using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 
 namespace SmartMenuOptim.Domain.Entities.ProfileEntities
@@ -187,11 +187,11 @@ namespace SmartMenuOptim.Domain.Entities.ProfileEntities
 
     permission system I'd like to explore further For example:
 
-    •	Adding more permission types
-    •	Creating helper methods for common permission combinations
-    •	Setting up default permission sets for different roles
-    •	Adding validation or authorization middleware   
-    •	Creating UI components for permission management
+    ï¿½	Adding more permission types
+    ï¿½	Creating helper methods for common permission combinations
+    ï¿½	Setting up default permission sets for different roles
+    ï¿½	Adding validation or authorization middleware   
+    ï¿½	Creating UI components for permission management
 
     ------------------------------------------------------------------------------------------------------
 

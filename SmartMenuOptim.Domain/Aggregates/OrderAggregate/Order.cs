@@ -1,8 +1,10 @@
+using SmartMenuOptim.Domain.Aggregates.OrderAggregate.Errors;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
-using SmartMenuOptim.Domain.Events.OrderEvents;
+using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
+using SmartMenuOptim.Domain.Aggregates.OrderAggregate.Events;
 using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Common;
 using SmartMenuOptim.Domain.ValueObjects;
