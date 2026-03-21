@@ -1,5 +1,6 @@
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
+using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
@@ -70,6 +71,16 @@ namespace SmartMenuOptim.Domain.Repositories
         /// Repository for business rules and configurations.
         /// </summary>
         IRepository<BusinessRule> BusinessRules { get; }
+
+        /// <summary>
+        /// Repository for orders (aggregate root).
+        /// </summary>
+        IRepository<Order> Orders { get; }
+
+        /// <summary>
+        /// Repository for order statuses (lookup entity).
+        /// </summary>
+        IRepository<OrderStatus> OrderStatuses { get; }
 
         /// <summary>
         /// Asynchronously commits all pending changes to the database as a single transaction.

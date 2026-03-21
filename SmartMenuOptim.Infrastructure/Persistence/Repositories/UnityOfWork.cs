@@ -1,5 +1,6 @@
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 using SmartMenuOptim.Domain.Aggregates.MenuAggregate;
+using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 using SmartMenuOptim.Domain.Aggregates.RestaurantAggregate;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Entities.ProfileEntities;
@@ -33,6 +34,8 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
         public IRepository<ApplicationUser> ApplicationUsers { get; }
         public IRepository<StaffMember> StaffMembers { get; }
         public IRepository<BusinessRule> BusinessRules { get; }
+        public IRepository<Order> Orders { get; }
+        public IRepository<OrderStatus> OrderStatuses { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UnityOfWork"/> class with the provided database context.
@@ -54,6 +57,8 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
             ApplicationUsers = new Repository<ApplicationUser>(_context);
             StaffMembers = new Repository<StaffMember>(_context);
             BusinessRules = new Repository<BusinessRule>(_context);
+            Orders = new Repository<Order>(_context);
+            OrderStatuses = new Repository<OrderStatus>(_context);
         }
 
 

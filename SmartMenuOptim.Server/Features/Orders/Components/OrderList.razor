@@ -1,0 +1,270 @@
+@page "/orders"
+
+<PageTitle>Orders - SmartMenuOptimizer</PageTitle>
+
+<div class="container-fluid mt-4">
+    @* Header *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-receipt me-2"></i>Orders
+            </h2>
+            <p class="text-muted mb-0">View and manage customer orders</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateNew">
+            <i class="bi bi-plus-lg me-1"></i> New Order
+        </button>
+    </div>
+
+    @* Restaurant Selector *@
+    @if (_restaurantsLoading)
+    {
+        <div class="d-flex align-items-center gap-2 mb-3 text-muted">
+            <span class="spinner-border spinner-border-sm"></span>
+            <span>Loading restaurants...</span>
+        </div>
+    }
+    else if (_restaurants is not null && _restaurants.Any())
+    {
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <label class="fw-semibold text-muted small mb-0" for="restaurantSelect">
+                <i class="bi bi-shop me-1"></i>Restaurant:
+            </label>
+            <select id="restaurantSelect"
+                    class="form-select form-select-sm"
+                    style="max-width: 300px;"
+                    value="@_selectedRestaurantId"
+                    @onchange="OnRestaurantChanged">
+                @foreach (var restaurant in _restaurants)
+                {
+                    <option value="@restaurant.Id">@restaurant.Name</option>
+                }
+            </select>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>No restaurants found. <a href="/restaurants" class="alert-link">Add a restaurant</a> first.</span>
+        </div>
+    }
+
+    @* Loading State *@
+    @if (_loading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading orders...</span>
+            </div>
+        </div>
+    }
+    @* Error State *@
+    else if (_error is not null)
+    {
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                <strong>Error loading orders:</strong> @_error
+                <button class="btn btn-link p-0 ms-2" @onclick="LoadOrdersAsync">Try again</button>
+            </div>
+        </div>
+    }
+    @* Empty State *@
+    else if (_orders is null || !_orders.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-receipt display-1 text-muted mb-3"></i>
+                <h4>No orders found</h4>
+                <p class="text-muted mb-3">No orders yet for this restaurant</p>
+                <button class="btn btn-primary" @onclick="CreateNew">
+                    <i class="bi bi-plus-lg me-1"></i> Create Order
+                </button>
+            </div>
+        </div>
+    }
+    @* Order Table *@
+    else
+    {
+        @* Status Filter Bar *@
+        @if (_statuses is not null && _statuses.Any())
+        {
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="text-muted small fw-semibold">Filter:</span>
+                <button class="btn btn-sm @(_selectedStatusFilter is null ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => SetStatusFilter(null)">
+                    All
+                </button>
+                @foreach (var status in _statuses)
+                {
+                    var statusId = status.Id;
+                    <button class="btn btn-sm @(_selectedStatusFilter == statusId ? "btn-primary" : "btn-outline-secondary")"
+                            @onclick="() => SetStatusFilter(statusId)">
+                        @status.Name
+                    </button>
+                }
+            </div>
+        }
+
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order #</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th>Items</th>
+                            <th class="text-end">Total</th>
+                            <th>Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_filteredOrders is not null && _filteredOrders.Any())
+                        {
+                            @foreach (var order in _filteredOrders)
+                            {
+                                <tr>
+                                    <td>
+                                        <a href="@($"/orders/{order.Id}")" class="text-decoration-none fw-semibold">
+                                            #@order.Id
+                                        </a>
+                                    </td>
+                                    <td>@(order.CustomerName ?? "—")</td>
+                                    <td>
+                                        <span class="badge" style="background-color: @(order.StatusColorCode ?? "#6c757d")">
+                                            @order.StatusName
+                                        </span>
+                                    </td>
+                                    <td>@order.ItemCount item(s)</td>
+                                    <td class="text-end fw-semibold">@order.TotalAmount.ToString("C")</td>
+                                    <td>@order.OrderDate.ToString("MMM dd, yyyy h:mm tt")</td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" @onclick="() => ViewDetails(order.Id)" title="View details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            @if (!order.IsTerminal)
+                                            {
+                                                @* Inline status update dropdown *@
+                                                @if (_statuses is not null && _statuses.Any())
+                                                {
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button"
+                                                                class="btn btn-outline-success dropdown-toggle"
+                                                                data-bs-toggle="dropdown"
+                                                                aria-expanded="false"
+                                                                title="Change status"
+                                                                disabled="@_updatingStatus">
+                                                            <i class="bi bi-arrow-repeat"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            @foreach (var status in _statuses.Where(s => s.Name != order.StatusName))
+                                                            {
+                                                                var sid = status.Id;
+                                                                var oid = order.Id;
+                                                                <li>
+                                                                    <button class="dropdown-item" @onclick="() => UpdateStatusAsync(oid, sid)">
+                                                                        @status.Name
+                                                                    </button>
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                }
+                                                <button class="btn btn-outline-warning" @onclick="() => ConfirmCancel(order)" title="Cancel order" disabled="@_cancelling">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" @onclick="() => ConfirmDelete(order)" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-funnel me-1"></i>
+                                    No orders match the selected filter.
+                                    <button class="btn btn-link p-0 ms-1" @onclick="() => SetStatusFilter(null)">Clear filter</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* Delete Confirmation Modal *@
+    @if (_showDeleteModal && _orderToDelete is not null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Delete</h5>
+                        <button type="button" class="btn-close" @onclick="CancelDelete" disabled="@_deleting"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete order <strong>#@_orderToDelete.Id</strong>?</p>
+                        <p class="text-muted small">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelDelete" disabled="@_deleting">Cancel</button>
+                        <button type="button" class="btn btn-danger" @onclick="DeleteOrderAsync" disabled="@_deleting">
+                            @if (_deleting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    @* Cancel Confirmation Modal *@
+    @if (_showCancelModal && _orderToCancel is not null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cancel Order #@_orderToCancel.Id</h5>
+                        <button type="button" class="btn-close" @onclick="DismissCancel" disabled="@_cancelling"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to cancel this order?</p>
+                        <div class="mb-3">
+                            <label class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" rows="3"
+                                      placeholder="Enter the reason for cancellation..."
+                                      @bind="_cancelReasonInput" disabled="@_cancelling"></textarea>
+                            @if (_cancelReasonInvalid)
+                            {
+                                <div class="text-danger small mt-1">Please enter a reason (at least 3 characters).</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="DismissCancel" disabled="@_cancelling">Close</button>
+                        <button type="button" class="btn btn-danger" @onclick="CancelOrderAsync" disabled="@_cancelling">
+                            @if (_cancelling)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Confirm Cancellation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

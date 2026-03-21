@@ -163,7 +163,7 @@ namespace SmartMenuOptim.Application.Common
     /// OFFSET/FETCH in SQL) to avoid loading all data into memory. The TotalCount should be
     /// calculated efficiently (e.g., using COUNT query) without loading actual data.</para>
     /// </remarks>
-    public class PaginatedResponseDto<T>
+    public class PaginatedResponse<T>
     {
         /// <summary>
         /// Gets or sets the list of items for the current page.
@@ -331,9 +331,9 @@ namespace SmartMenuOptim.Application.Common
         /// <para>Factory method that automatically calculates TotalPages based on TotalCount and PageSize.</para>
         /// <para>Recommended over manual property assignment to ensure consistency.</para>
         /// </remarks>
-        public static PaginatedResponseDto<T> Create(List<T> data, int totalCount, int page, int pageSize)
+        public static PaginatedResponse<T> Create(List<T> data, int totalCount, int page, int pageSize)
         {
-            return new PaginatedResponseDto<T>
+            return new PaginatedResponse<T>
             {
                 Data = data ?? new List<T>(),
                 TotalCount = totalCount,
@@ -351,9 +351,9 @@ namespace SmartMenuOptim.Application.Common
         /// <remarks>
         /// <para>Useful for initial state or when no data is available.</para>
         /// </remarks>
-        public static PaginatedResponseDto<T> Empty(int pageSize = 10)
+        public static PaginatedResponse<T> Empty(int pageSize = 10)
         {
-            return new PaginatedResponseDto<T>
+            return new PaginatedResponse<T>
             {
                 Data = new List<T>(),
                 TotalCount = 0,

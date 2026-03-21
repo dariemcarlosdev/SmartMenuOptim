@@ -107,7 +107,6 @@ namespace SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 /// // Adding items to the order
 /// order.AddItem(
 ///     dishId: 789,
-///     dishName: "Margherita Pizza",
 ///     unitPrice: 12.99m,
 ///     quantity: 2,
 ///     specialInstructions: "Extra cheese"
@@ -115,19 +114,18 @@ namespace SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 /// 
 /// order.AddItem(
 ///     dishId: 790,
-///     dishName: "Caesar Salad",
 ///     unitPrice: 8.99m,
 ///     quantity: 1
 /// );
 /// // TotalAmount automatically calculated: $34.97
 /// 
 /// // Assigning a staff member to handle the order
-/// order.AssignStaffHandler(staffId: 101);
+/// order.AssignStaffMember(staffId: 101);
 /// 
 /// // Changing order status through lifecycle
-/// order.ChangeStatus(confirmedStatusId);
-/// order.ChangeStatus(preparingStatusId);
-/// order.ChangeStatus(readyStatusId);
+/// order.UpdateStatus(confirmedStatusId);
+/// order.UpdateStatus(preparingStatusId);
+/// order.UpdateStatus(readyStatusId);
 /// 
 /// // Modifying an existing item
 /// var itemId = order.Items.First().Id;
@@ -373,13 +371,11 @@ public class Order : TenantEntityBase, IValidatableObject
     /// way to add OrderItem child entities. Direct manipulation of the collection
     /// is prevented through encapsulation.
     /// </remarks>
-    public void AddItem(int dishId, string dishName, decimal unitPrice, int quantity, string? specialInstructions = null)
+    public void AddItem(int dishId, decimal unitPrice, int quantity, string? specialInstructions = null)
     {
         // Guard clauses: invalid parameters are programming errors, not business rules.
         if (dishId <= 0)
             throw new ArgumentException("Valid dish ID is required.", nameof(dishId));
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(dishName, nameof(dishName));
 
         if (unitPrice < 0)
             throw new ArgumentOutOfRangeException(nameof(unitPrice), unitPrice, "Unit price cannot be negative.");
@@ -404,15 +400,18 @@ public class Order : TenantEntityBase, IValidatableObject
     /// <summary>
     /// Removes an item from the order.
     /// </summary>
+    /// <param name="orderItemId">The ID of the order item to remove.</param>
+    /// <exception cref="OrderDomainException">Thrown if the order item is not found in this order.</exception>
     public void RemoveItem(int orderItemId)
     {
+        // Domain rule: item must exist in this order.
         var item = _orderItems.FirstOrDefault(oi => oi.Id == orderItemId);
-        if (item != null)
-        {
-            _orderItems.Remove(item);
-            RecalculateTotals();
-            UpdatedAt = DateTime.UtcNow;
-        }
+        if (item == null)
+            throw new OrderDomainException($"Order item '{orderItemId}' not found in this order.");
+
+        _orderItems.Remove(item);
+        RecalculateTotals();
+        UpdatedAt = DateTime.UtcNow;
     }
     
     /// <summary>
@@ -507,7 +506,8 @@ public class Order : TenantEntityBase, IValidatableObject
     /// </summary>
     /// <param name="confirmedStatusId">The order status ID for confirmed orders.</param>
     /// <param name="orderType">The type of order (e.g., "DineIn", "TakeOut", "Delivery").</param>
-    /// <exception cref="InvalidOperationException">Thrown if order has no items or is already placed.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="confirmedStatusId"/> is not a valid positive ID.</exception>
+    /// <exception cref="OrderDomainException">Thrown if the order has no items.</exception>
     /// <remarks>
     /// This method triggers:
     /// - Loyalty points calculation and accrual
@@ -517,6 +517,10 @@ public class Order : TenantEntityBase, IValidatableObject
     /// </remarks>
     public void Place(int confirmedStatusId, string? orderType = null)
     {
+        // Guard clause: invalid status ID is a programming error, not a business rule.
+        if (confirmedStatusId <= 0)
+            throw new ArgumentException("Valid confirmed status ID is required.", nameof(confirmedStatusId));
+
         if (!_orderItems.Any())
             throw new OrderDomainException("Cannot place an order without items.");
         
@@ -544,7 +548,7 @@ public class Order : TenantEntityBase, IValidatableObject
     /// <param name="cancelledBy">Who initiated the cancellation.</param>
     /// <param name="cancelledByStaffId">The staff member ID if cancelled by staff.</param>
     /// <param name="loyaltyPointsToReverse">Points to reverse if pre-awarded.</param>
-    /// <exception cref="InvalidOperationException">Thrown if order is in a terminal state.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="cancelledStatusId"/> is not a valid positive ID or <paramref name="reason"/> is null/empty.</exception>
     /// <remarks>
     /// This method triggers:
     /// - Loyalty points reversal (if pre-awarded)
@@ -559,6 +563,10 @@ public class Order : TenantEntityBase, IValidatableObject
         int? cancelledByStaffId = null,
         int loyaltyPointsToReverse = 0)
     {
+        // Guard clause: invalid status ID is a programming error, not a business rule.
+        if (cancelledStatusId <= 0)
+            throw new ArgumentException("Valid cancelled status ID is required.", nameof(cancelledStatusId));
+
         // Guard clause: missing cancellation reason is a programming error, not a business rule.
         ArgumentException.ThrowIfNullOrWhiteSpace(reason, nameof(reason));
         
@@ -587,6 +595,7 @@ public class Order : TenantEntityBase, IValidatableObject
     /// <param name="completedStatusId">The order status ID for completed orders.</param>
     /// <param name="loyaltyPointsEarned">Total loyalty points earned from this order.</param>
     /// <param name="orderType">The type of order.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="completedStatusId"/> is not a valid positive ID.</exception>
     /// <remarks>
     /// This method triggers:
     /// - Final loyalty points confirmation
@@ -596,6 +605,10 @@ public class Order : TenantEntityBase, IValidatableObject
     /// </remarks>
     public void Complete(int completedStatusId, int loyaltyPointsEarned = 0, string orderType = "DineIn")
     {
+        // Guard clause: invalid status ID is a programming error, not a business rule.
+        if (completedStatusId <= 0)
+            throw new ArgumentException("Valid completed status ID is required.", nameof(completedStatusId));
+
         OrderStatusId = completedStatusId;
         UpdatedAt = DateTime.UtcNow;
         
@@ -619,7 +632,7 @@ public class Order : TenantEntityBase, IValidatableObject
     /// <summary>
     /// Validates that the order maintains multi-tenant boundaries and consistency across all relationships.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when tenant consistency is violated.</exception>
+    /// <exception cref="OrderDomainException">Thrown when tenant consistency is violated.</exception>
     /// <remarks>
     /// This method should be called after navigation properties are loaded to ensure:
     /// - Restaurant navigation property matches RestaurantId
@@ -677,13 +690,13 @@ public class Order : TenantEntityBase, IValidatableObject
         {
             var inconsistentItems = _orderItems
                 .Where(oi => oi.RestaurantId != RestaurantId)
-                .Select(oi => new { oi.Id, oi.DishId, oi.Dish.Name, oi.RestaurantId })
+                .Select(oi => new { oi.Id, oi.DishId, DishName = oi.Dish?.Name, oi.RestaurantId })
                 .ToList();
 
             if (inconsistentItems.Any())
             {
                 var itemInfo = string.Join(", ", inconsistentItems.Select(oi => 
-                    $"{oi.Name} (OrderItem ID: {oi.Id}, Dish ID: {oi.DishId}, RestaurantId: {oi.RestaurantId})"));
+                    $"{oi.DishName ?? "Unknown Dish"} (OrderItem ID: {oi.Id}, Dish ID: {oi.DishId}, RestaurantId: {oi.RestaurantId})"));
                 
                 throw new OrderDomainException(
                     $"Order contains items from different restaurants. " +

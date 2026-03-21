@@ -1,0 +1,230 @@
+@page "/orders/{Id:int}"
+@using SmartMenuOptim.Application.Features.Orders.DTOs
+@using SmartMenuOptim.Server.Components.Shared
+
+<PageTitle>Order Details - SmartMenuOptimizer</PageTitle>
+
+<div class="container mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/orders">Orders</a></li>
+            <li class="breadcrumb-item active">Order #@Id</li>
+        </ol>
+    </nav>
+
+    @* Loading State *@
+    <LoadingSpinner IsLoading="_loading" Message="Loading order..." />
+
+    @* Error State *@
+    @if (!_loading && _error is not null)
+    {
+        <ErrorAlert Message="@_error"
+                    BackLinkUrl="/orders"
+                    BackLinkText="Back to orders"
+                    IsDismissible="true"
+                    OnDismiss="DismissError" />
+    }
+
+    @* Order Not Found *@
+    @if (!_loading && _error is null && _order is null)
+    {
+        <NotFoundAlert Message="Order not found."
+                       BackLinkUrl="/orders"
+                       BackLinkText="Back to orders" />
+    }
+
+    @* Order Details *@
+    @if (!_loading && _order is not null)
+    {
+        @* Header with Status and Actions *@
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <h2 class="mb-0">Order #@_order.Id</h2>
+                    <span class="badge fs-6" style="background-color: @(_order.StatusColorCode ?? "#6c757d")">
+                        @_order.StatusName
+                    </span>
+                </div>
+                <p class="text-muted mb-0">
+                    Placed on @_order.OrderDate.ToString("MMMM dd, yyyy 'at' h:mm tt")
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                @if (!_order.IsTerminal)
+                {
+                    <button class="btn btn-outline-danger" @onclick="ShowCancelModal" disabled="@(_updatingStatus || _cancelling)">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Order
+                    </button>
+                }
+                <a href="/orders" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Orders
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            @* Left Column — Order Info *@
+            <div class="col-lg-8">
+                @* Order Items Table *@
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bag me-2"></i>Order Items</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Dish</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in _order.Items)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@item.DishName</td>
+                                        <td class="text-center">@item.Quantity</td>
+                                        <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                        <td class="text-end fw-semibold">@item.Subtotal.ToString("C")</td>
+                                        <td class="text-muted small">@(item.SpecialInstructions ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Total</td>
+                                    <td class="text-end fw-bold fs-5">@_order.Items.Sum(i => i.Subtotal).ToString("C")</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                @* Special Instructions *@
+                @if (!string.IsNullOrWhiteSpace(_order.SpecialInstructions))
+                {
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-chat-text me-2"></i>Special Instructions</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">@_order.SpecialInstructions</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* Right Column — Summary *@
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5 text-muted">Status</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge" style="background-color: @(_order.StatusColorCode ?? "#6c757d")">
+                                    @_order.StatusName
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-5 text-muted">Customer</dt>
+                            <dd class="col-sm-7">@(_order.CustomerName ?? "—")</dd>
+
+                            <dt class="col-sm-5 text-muted">Items</dt>
+                            <dd class="col-sm-7">@_order.Items.Count item(s)</dd>
+
+                            <dt class="col-sm-5 text-muted">Staff</dt>
+                            <dd class="col-sm-7">@(_order.HandledByStaffName ?? "Unassigned")</dd>
+
+                            <dt class="col-sm-5 text-muted">Created</dt>
+                            <dd class="col-sm-7">@_order.CreatedAt.ToString("MMM dd, yyyy")</dd>
+
+                            @if (_order.UpdatedAt.HasValue)
+                            {
+                                <dt class="col-sm-5 text-muted">Updated</dt>
+                                <dd class="col-sm-7">@_order.UpdatedAt.Value.ToString("MMM dd, yyyy")</dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+
+                @* Status Update Card *@
+                @if (!_order.IsTerminal && _statuses is not null && _statuses.Any())
+                {
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Update Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <select class="form-select" @bind="_selectedStatusId" disabled="@_updatingStatus">
+                                    <option value="0">— Select new status —</option>
+                                    @foreach (var status in _statuses.Where(s => s.Id != _order.OrderStatusId))
+                                    {
+                                        <option value="@status.Id">@status.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="btn btn-primary w-100"
+                                    @onclick="UpdateStatusAsync"
+                                    disabled="@(_updatingStatus || _selectedStatusId == 0)">
+                                @if (_updatingStatus)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                <i class="bi bi-check-lg me-1"></i> Apply Status
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Cancel Confirmation Modal *@
+        @if (_showCancelModal)
+        {
+            <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Cancel Order #@_order.Id</h5>
+                            <button type="button" class="btn-close" @onclick="HideCancelModal" disabled="@_cancelling"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to cancel this order?</p>
+                            <div class="mb-3">
+                                <label class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                                <textarea class="form-control" rows="3"
+                                          placeholder="Enter the reason for cancellation..."
+                                          @bind="_cancelReason" disabled="@_cancelling"></textarea>
+                                @if (_cancelReasonInvalid)
+                                {
+                                    <div class="text-danger small mt-1">Please enter a reason (at least 3 characters).</div>
+                                }
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="HideCancelModal" disabled="@_cancelling">
+                                Close
+                            </button>
+                            <button type="button" class="btn btn-danger" @onclick="CancelOrderAsync" disabled="@_cancelling">
+                                @if (_cancelling)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                Confirm Cancellation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

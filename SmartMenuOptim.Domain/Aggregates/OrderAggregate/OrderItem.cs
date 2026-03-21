@@ -26,7 +26,7 @@ namespace SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 /// 
 /// <code>
 /// // ✅ CORRECT - Through parent aggregate
-/// order.AddItem(dishId, "Burger", 12.99m, 2, "No onions");
+/// order.AddItem(dishId, 12.99m, 2, "No onions");
 /// order.UpdateItemQuantity(orderItemId, 3);
 /// 
 /// // ❌ WRONG - Direct instantiation

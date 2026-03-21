@@ -926,7 +926,6 @@ namespace SmartMenuOptim.API.Data
                             {
                                 order.AddItem(
                                     dishId: dish.Id,
-                                    dishName: dish.Name,
                                     unitPrice: dish.DishPrice,
                                     quantity: 1,
                                     specialInstructions: null

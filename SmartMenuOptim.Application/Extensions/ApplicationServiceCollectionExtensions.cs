@@ -7,6 +7,7 @@ using SmartMenuOptim.Application.Handlers.SaleEventHandlers;
 using SmartMenuOptim.Application.Features.Admin.Services;
 using SmartMenuOptim.Application.Features.Reservations.Services;
 using SmartMenuOptim.Application.Features.Restaurants.Services;
+using SmartMenuOptim.Application.Features.Orders.Services;
 using SmartMenuOptim.Application.Features.AI.Contracts;
 using SmartMenuOptim.Application.Features.AI.Services;
 using SmartMenuOptim.Domain.Services.Abstractions;
@@ -58,6 +59,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IDishService, DishService>();
+
+        // Order Management Application Services (Phase 4)
+        services.AddScoped<IOrderService, OrderService>();
 
         return services;
     }
