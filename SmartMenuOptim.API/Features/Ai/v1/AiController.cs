@@ -96,7 +96,7 @@ namespace SmartMenuOptim.API.Features.Ai.v1
         /// - **RESTful Conventions**: Uses HTTP GET with query parameters for filtering, sorting, and pagination.
         /// - **Optional Parameters**: All parameters are optional with sensible defaults to ensure backward compatibility.
         /// - **Input Validation**: Parameters are validated and constrained (e.g., page >= 1, pageSize <= 100) to prevent abuse and ensure data integrity.
-        /// - **Consistent Response Format**: Returns a standardized <see cref="PaginatedResponseDto{T}"/> with data and metadata (total count, pages, etc.).
+        /// - **Consistent Response Format**: Returns a standardized <see cref="PaginatedResponse{T}"/> with data and metadata (total count, pages, etc.).
         /// - **Error Handling**: Invalid inputs are corrected to defaults rather than throwing errors, improving user experience.
         /// - **Query Parameter Naming**: Uses clear, descriptive names (e.g., sortBy, sortOrder) following common API conventions.
         ///
@@ -136,7 +136,7 @@ namespace SmartMenuOptim.API.Features.Ai.v1
         /// - Tenant isolation is maintained through RestaurantId filtering in underlying queries.
         /// </remarks>
         [HttpGet("underperforming")]
-        public async Task<ActionResult<PaginatedResponseDto<UnderperformingDishDTO>>> GetUnderperformingDishesAsync(
+        public async Task<ActionResult<PaginatedResponse<UnderperformingDishDTO>>> GetUnderperformingDishesAsync(
             [FromQuery] int? page = null,
             [FromQuery] int? pageSize = null,
             [FromQuery] string? sortBy = null,
@@ -345,7 +345,7 @@ namespace SmartMenuOptim.API.Features.Ai.v1
                 .ToList();
 
             // Return paginated response
-            var response = new PaginatedResponseDto<UnderperformingDishDTO>
+            var response = new PaginatedResponse<UnderperformingDishDTO>
             {
                 Data = paginatedDishes,
                 TotalCount = totalCount,

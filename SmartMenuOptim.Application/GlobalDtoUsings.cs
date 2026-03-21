@@ -52,3 +52,12 @@ global using InsightResponseDTO = SmartMenuOptim.Application.Features.AI.DTOs.In
 
 // AI Contracts (already in Features/AI/Contracts/)
 global using IAImprovementStrategyService = SmartMenuOptim.Application.Features.AI.Contracts.IAImprovementStrategyService;
+
+// Order DTOs (migrated to Features/Orders/DTOs/)
+global using OrderDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderDTO;
+global using OrderDetailDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderDetailDTO;
+global using OrderItemDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderItemDTO;
+global using OrderCreateDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderCreateDTO;
+global using OrderItemCreateDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderItemCreateDTO;
+global using OrderUpdateDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderUpdateDTO;
+global using OrderStatusDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderStatusDTO;

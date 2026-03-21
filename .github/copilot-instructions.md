@@ -86,6 +86,13 @@ refactor(domain): apply DDD patterns to Menu aggregate
 
 ## Code Generation
 
+### Reference Implementation
+- The **Restaurant Management module** is the canonical reference implementation for all feature modules
+- Before generating code for any feature layer, consult `docs/08-Patterns/REFERENCE_IMPLEMENTATION_GUIDE.md`
+- Match the Restaurant module's file structure, naming, documentation style, and error handling patterns
+- Use mutable POCOs (not records) for DTOs — required for Blazor two-way binding
+- Follow the established phase order: Domain → EF/Infra → Event Handlers → DTOs & Service → API → Blazor UI → Integration
+
 ### .NET/Blazor Specific
 - Target .NET 8 or .NET 9 as appropriate
 - Use nullable reference types throughout

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
+using SmartMenuOptim.Application.Features.Orders.DTOs;
 using SmartMenuOptim.Application.Features.Restaurants.DTOs;
+using SmartMenuOptim.Server.Features.Orders.Services;
 using SmartMenuOptim.Server.Features.Restaurants.State;
 
 namespace SmartMenuOptim.Server.Features.Restaurants.Components;
@@ -21,6 +23,7 @@ public partial class RestaurantList : ComponentBase, IDisposable
 {
     [Inject] private RestaurantListState State { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IOrderClientService OrderClientService { get; set; } = default!;
 
     // Expose state properties for the view
     private IReadOnlyList<RestaurantDTO>? _restaurants => State.Restaurants;
@@ -30,10 +33,14 @@ public partial class RestaurantList : ComponentBase, IDisposable
     private RestaurantDTO? _restaurantToDelete => State.RestaurantToDelete;
     private bool _deleting => State.IsDeleting;
 
+    // Order counts per restaurant (loaded after restaurants)
+    private Dictionary<int, (int Total, int Active)> _orderCounts = [];
+
     protected override async Task OnInitializedAsync()
     {
         State.OnStateChanged += HandleStateChanged;
         await State.LoadAsync();
+        await LoadOrderCountsAsync();
     }
 
     private void HandleStateChanged() => InvokeAsync(StateHasChanged);
@@ -42,7 +49,35 @@ public partial class RestaurantList : ComponentBase, IDisposable
     // DATA LOADING
     // ═══════════════════════════════════════════════════════════════════════
 
-    private async Task LoadRestaurantsAsync() => await State.LoadAsync();
+    private async Task LoadRestaurantsAsync()
+    {
+        await State.LoadAsync();
+        await LoadOrderCountsAsync();
+    }
+
+    /// <summary>
+    /// Loads order counts for all restaurants in parallel.
+    /// </summary>
+    private async Task LoadOrderCountsAsync()
+    {
+        if (_restaurants is null || !_restaurants.Any()) return;
+
+        var tasks = _restaurants.Select(async r =>
+        {
+            var result = await OrderClientService.GetByRestaurantAsync(r.Id);
+            var orders = result is { IsSuccess: true, Value: not null } ? result.Value : (IReadOnlyList<OrderDTO>)[];
+            return (RestaurantId: r.Id, Total: orders.Count, Active: orders.Count(o => !o.IsTerminal));
+        });
+
+        var results = await Task.WhenAll(tasks);
+        _orderCounts = results.ToDictionary(r => r.RestaurantId, r => (r.Total, r.Active));
+    }
+
+    private int GetTotalOrders(int restaurantId) =>
+        _orderCounts.TryGetValue(restaurantId, out var counts) ? counts.Total : 0;
+
+    private int GetActiveOrders(int restaurantId) =>
+        _orderCounts.TryGetValue(restaurantId, out var counts) ? counts.Active : 0;
 
     // ═══════════════════════════════════════════════════════════════════════
     // NAVIGATION

@@ -9,6 +9,7 @@ global using SmartMenuOptim.Application.Features.Customers.DTOs;
 global using SmartMenuOptim.Application.Features.Reviews.DTOs;
 global using SmartMenuOptim.Application.Features.Sales.DTOs;
 global using SmartMenuOptim.Application.Features.Restaurants.DTOs;
+global using SmartMenuOptim.Application.Features.Orders.DTOs;
 
 // Type aliases for backward compatibility
 global using UserBaseDTO = SmartMenuOptim.Application.Dtos.Common.UserBaseDTO;
@@ -26,4 +27,13 @@ global using RestaurantDTO = SmartMenuOptim.Application.Features.Restaurants.DTO
 global using AiRecommendationRequestDTO = SmartMenuOptim.Application.Features.AI.DTOs.AiRecommendationRequestDTO;
 global using AiRecommendationResponseDTO = SmartMenuOptim.Application.Features.AI.DTOs.AiRecommendationResponseDTO;
 global using InsightResponseDTO = SmartMenuOptim.Application.Features.AI.DTOs.InsightResponseDTO;
+
+// Order DTO aliases
+global using OrderDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderDTO;
+global using OrderDetailDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderDetailDTO;
+global using OrderItemDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderItemDTO;
+global using OrderCreateDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderCreateDTO;
+global using OrderItemCreateDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderItemCreateDTO;
+global using OrderUpdateDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderUpdateDTO;
+global using OrderStatusDTO = SmartMenuOptim.Application.Features.Orders.DTOs.OrderStatusDTO;
 

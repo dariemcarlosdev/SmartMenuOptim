@@ -7,12 +7,15 @@
 @using SmartMenuOptim.Application.Common
 @using SmartMenuOptim.Application.Dtos
 @using SmartMenuOptim.Application.Features.Restaurants.DTOs
+@using SmartMenuOptim.Application.Features.Orders.DTOs
 @using SmartMenuOptim.Server.Features.Sales.Services
 @using SmartMenuOptim.Server.Features.Restaurants.Services
+@using SmartMenuOptim.Server.Features.Orders.Services
 @using SmartMenuOptim.Server.Components.Shared
 @inject NavigationManager NavigationManager
 @inject ISaleRecordClientService SaleRecordService
 @inject IRestaurantClientService RestaurantClientService
+@inject IOrderClientService OrderClientService
 
 <PageTitle>Dashboard - SmartMenuOptimizer</PageTitle>
 
@@ -126,6 +129,139 @@
                 <p class="text-muted mb-2">No restaurants found.</p>
                 <a href="/restaurants" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-plus-lg me-1"></i>Add your first restaurant
+                </a>
+            </div>
+        }
+    </DetailCard>
+
+    @* ═══════════════════════════════════════════════════════════════════ *@
+    @* ORDER METRICS SECTION                                              *@
+    @* ═══════════════════════════════════════════════════════════════════ *@
+
+    <DetailCard HeaderTitle="Order Metrics" HeaderIcon="bi-cart-check" HeaderClass="bg-info text-white">
+        <LoadingSpinner IsLoading="ordersLoading" Message="Loading order metrics..." ContainerClass="py-3" />
+
+        @if (!ordersLoading && allOrders is not null && allOrders.Any())
+        {
+            @* Summary Stats Row *@
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-3">
+                    <div class="d-flex align-items-center p-3 border rounded">
+                        <div class="bg-info text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
+                            <i class="bi bi-cart fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-0 text-info">@allOrders.Count</div>
+                            <div class="text-muted small">Total Orders</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="d-flex align-items-center p-3 border rounded">
+                        <div class="bg-success text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
+                            <i class="bi bi-currency-dollar fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-0 text-success">@OrderTotalRevenue.ToString("C")</div>
+                            <div class="text-muted small">Total Revenue</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="d-flex align-items-center p-3 border rounded">
+                        <div class="bg-warning text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
+                            <i class="bi bi-calculator fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-0 text-warning">@OrderAverageValue.ToString("C")</div>
+                            <div class="text-muted small">Avg Order Value</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="d-flex align-items-center p-3 border rounded">
+                        <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
+                            <i class="bi bi-hourglass-split fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-0 text-primary">@ActiveOrderCount</div>
+                            <div class="text-muted small">Active Orders</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Status Breakdown *@
+            <h6 class="mb-2"><i class="bi bi-pie-chart me-1"></i>Status Breakdown</h6>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                @foreach (var statusGroup in allOrders.GroupBy(o => o.StatusName).OrderByDescending(g => g.Count()))
+                {
+                    var colorCode = statusGroup.First().StatusColorCode;
+                    var badgeStyle = !string.IsNullOrWhiteSpace(colorCode)
+                        ? $"background-color:{colorCode}; color:#fff;"
+                        : "";
+                    <span class="badge @(string.IsNullOrWhiteSpace(colorCode) ? "bg-secondary" : "")" style="@badgeStyle">
+                        @statusGroup.Key: @statusGroup.Count()
+                    </span>
+                }
+            </div>
+
+            @* Per-Restaurant Order Summary *@
+            <h6 class="mb-2"><i class="bi bi-shop me-1"></i>Orders by Restaurant</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Restaurant</th>
+                            <th class="text-end">Orders</th>
+                            <th class="text-end">Revenue</th>
+                            <th class="text-end">Avg Value</th>
+                            <th class="text-end">Items</th>
+                            <th class="text-center">Active</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in allOrders.GroupBy(o => o.RestaurantId).OrderByDescending(g => g.Sum(o => o.TotalAmount)))
+                        {
+                            var restaurantName = restaurants?.FirstOrDefault(r => r.Id == group.Key)?.Name ?? $"Restaurant #{group.Key}";
+                            var revenue = group.Sum(o => o.TotalAmount);
+                            var avgValue = group.Average(o => o.TotalAmount);
+                            var totalItems = group.Sum(o => o.ItemCount);
+                            var activeCount = group.Count(o => !o.IsTerminal);
+
+                            <tr>
+                                <td>
+                                    <a href="/orders?restaurantId=@group.Key" class="text-decoration-none fw-semibold">
+                                        <i class="bi bi-shop me-1 text-muted"></i>@restaurantName
+                                    </a>
+                                </td>
+                                <td class="text-end">@group.Count()</td>
+                                <td class="text-end">@revenue.ToString("C")</td>
+                                <td class="text-end">@avgValue.ToString("C")</td>
+                                <td class="text-end">@totalItems</td>
+                                <td class="text-center">
+                                    @if (activeCount > 0)
+                                    {
+                                        <span class="badge bg-info">@activeCount</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (!ordersLoading)
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-cart display-4 text-muted mb-3 d-block"></i>
+                <p class="text-muted mb-2">No orders found.</p>
+                <a href="/orders/new" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>Place your first order
                 </a>
             </div>
         }
@@ -320,7 +456,9 @@
 @code {
     private List<SaleRecordDTO>? saleRecords;
     private IReadOnlyList<RestaurantDTO>? restaurants;
+    private List<OrderDTO>? allOrders;
     private bool restaurantsLoading = true;
+    private bool ordersLoading = true;
     private bool isloading = true;
     private string? expandedRestaurant;
     private bool _showGuide;
@@ -338,6 +476,24 @@
 
         saleRecords = salesTask.Result;
         isloading = false;
+
+        // Load orders for each restaurant (after restaurants are loaded)
+        if (restaurants is not null && restaurants.Any())
+        {
+            var orderTasks = restaurants.Select(r => OrderClientService.GetByRestaurantAsync(r.Id));
+            var orderResults = await Task.WhenAll(orderTasks);
+
+            allOrders = orderResults
+                .Where(r => r is { IsSuccess: true, Value: not null })
+                .SelectMany(r => r.Value)
+                .ToList();
+        }
+        else
+        {
+            allOrders = [];
+        }
+
+        ordersLoading = false;
     }
 
     private void ToggleRestaurant(string restaurantName)
@@ -358,6 +514,14 @@
     private int SummarySaleRecords => expandedRestaurant is null
         ? saleRecords?.Count ?? 0
         : saleRecords?.Count(r => r.RestaurantName == expandedRestaurant) ?? 0;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ORDER METRICS COMPUTED PROPERTIES
+    // ═══════════════════════════════════════════════════════════════════
+
+    private decimal OrderTotalRevenue => allOrders?.Sum(o => o.TotalAmount) ?? 0;
+    private decimal OrderAverageValue => allOrders is not null && allOrders.Any() ? allOrders.Average(o => o.TotalAmount) : 0;
+    private int ActiveOrderCount => allOrders?.Count(o => !o.IsTerminal) ?? 0;
 
     private int SummaryDishesSold => expandedRestaurant is null
         ? saleRecords?.Sum(r => r.QuantitySold) ?? 0

@@ -128,13 +128,19 @@
 
                             @* Stats *@
                             <div class="d-flex gap-3 small text-muted border-top pt-2 mt-2">
-                                <span title="Max simultaneous orders">
+                                <a href="/orders?restaurantId=@restaurant.Id"
+                                   class="text-decoration-none d-inline-flex align-items-center gap-1"
+                                   title="View all orders for this restaurant">
+                                    <i class="bi bi-receipt"></i>
+                                    <span class="fw-semibold">@GetTotalOrders(restaurant.Id)</span> orders
+                                    @if (GetActiveOrders(restaurant.Id) > 0)
+                                    {
+                                        <span class="badge bg-info ms-1">@GetActiveOrders(restaurant.Id) active</span>
+                                    }
+                                </a>
+                                <span title="Max simultaneous orders capacity">
                                     <i class="bi bi-clock-history me-1"></i>
-                                    @restaurant.MaxSimultaneousOrders orders
-                                </span>
-                                <span title="Timezone">
-                                    <i class="bi bi-globe me-1"></i>
-                                    @restaurant.TimeZoneId
+                                    Max @restaurant.MaxSimultaneousOrders concurrent
                                 </span>
                             </div>
                         </div>

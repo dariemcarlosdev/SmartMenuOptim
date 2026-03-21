@@ -5,6 +5,8 @@ using Polly;
 using SmartMenuOptim.Domain.Extensions;
 using SmartMenuOptim.Server.Features.Restaurants.Services;
 using SmartMenuOptim.Server.Features.Restaurants.State;
+using SmartMenuOptim.Server.Features.Orders.Services;
+using SmartMenuOptim.Server.Features.Orders.State;
 using SmartMenuOptim.Server.Features.Reviews.Services;
 using SmartMenuOptim.Server.Features.Sales.Services;
 using SmartMenuOptim.Server.Features.AI.Services;
@@ -91,9 +93,16 @@ public static class ServiceCollectionExtensions
         // Client Services (Restaurant feature)
         services.AddScoped<IRestaurantClientService, RestaurantClientService>();
 
+        // Client Services (Order feature)
+        services.AddScoped<IOrderClientService, OrderClientService>();
+
         // State Containers (Scoped for per-circuit state in Blazor Server)
         services.AddScoped<RestaurantDetailState>();
         services.AddScoped<RestaurantListState>();
+
+        // State Containers (Order feature)
+        services.AddScoped<OrderListState>();
+        services.AddScoped<OrderDetailState>();
 
         services.AddLogging();
         return services;
