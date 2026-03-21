@@ -113,7 +113,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>Order #</th>
-                            <th>Customer</th>
+                            <th>Customer ID</th>
                             <th>Status</th>
                             <th>Items</th>
                             <th class="text-end">Total</th>
@@ -132,7 +132,7 @@
                                             #@order.Id
                                         </a>
                                     </td>
-                                    <td>@(order.CustomerName ?? "—")</td>
+                                    <td>@order.CustomerId</td>
                                     <td>
                                         <span class="badge" style="background-color: @(order.StatusColorCode ?? "#6c757d")">
                                             @order.StatusName
