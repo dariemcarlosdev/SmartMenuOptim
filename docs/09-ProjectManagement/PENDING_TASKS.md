@@ -1,4 +1,4 @@
-# 📋 Pending Tasks Tracker
+# 📋 Pending Tasks Tracker( NEED TO BE SEGMENTED PER FEATURE AND PRIORITY)
 
 > **SmartMenuOptimizer - Task Backlog & Follow-up Items**  
 > **Version**: 1.7  

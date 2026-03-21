@@ -10,6 +10,7 @@
 
 | Pattern | Type | Purpose | Key Files |
 |---------|------|---------|-----------|
+| **[Reference Implementation Guide](./REFERENCE_IMPLEMENTATION_GUIDE.md)** | **Cross-Layer** | **Restaurant module as canonical pattern for all feature modules** | **All layers** |
 | [State Container](./STATE_CONTAINER_PATTERN.md) | Behavioral | Centralized state management | `ComponentStateBase.cs`, `*State.cs` |
 | [State Container — Prompt Guide](./STATE_CONTAINER_PATTERN_PROMPT_GUIDE.md) | Behavioral | Reusable implementation templates | All layers |
 | [Code-Behind](./CODE_BEHIND_PATTERN.md) | Structural | Separation of markup and logic | `.razor` + `.razor.cs` |

@@ -1,4 +1,4 @@
-# ADR-005: Vertical Slice & Aggregate-Centric Architecture
+copil@# ADR-005: Vertical Slice & Aggregate-Centric Architecture
 
 > **Architecture Decision Record**  
 > **Status**: Accepted · **Date**: 2026-03-12  

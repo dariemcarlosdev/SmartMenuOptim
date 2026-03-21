@@ -1,9 +1,9 @@
 # 📊 MVP Feature Prioritization
 
 > **SmartMenuOptimizer - Minimum Viable Product Strategy**  
-> **Version**: 2.3  
-> **Created**: 2025-02-08  
-> **Last Updated**: 2026-03-12
+> **Version**: 2.4  
+> **Created**: 2026-02-08  
+> **Last Updated**: 2026-03-14
 
 ---
 
@@ -12,12 +12,22 @@
 1. [Executive Summary](#-executive-summary)
 2. [MVP Constraints & Strategy](#-mvp-constraints--strategy)
 3. [Feature Analysis](#-feature-analysis)
-4. [Implementation Status](#-implementation-status)
+4. [Implementation Status (Per Feature)](#-implementation-status-per-feature)
+   - [Restaurant Management](#️-restaurant-management--mvp-complete)
+   - [Menu & Dish Management](#-menu--dish-management--complete)
+   - [Order Management](#-order-management--pending)
+   - [Review Management](#-review-management--partial)
+   - [Sales Data Management](#-sales-data-management--complete)
+   - [AI Engine](#-ai-engine--complete)
+   - [Shared Infrastructure & Cross-Cutting](#-shared-infrastructure--cross-cutting)
 5. [Priority Recommendations](#-priority-recommendations)
 6. [MVP Data Flow](#-mvp-data-flow)
-7. [Implementation Roadmap](#-implementation-roadmap)
+7. [Implementation Roadmap (Per Feature)](#-implementation-roadmap-per-feature)
+   - [Restaurant Management Roadmap](#️-restaurant-management-roadmap--mvp-complete)
+   - [Order Management Roadmap](#-order-management-roadmap--phase-6)
+   - [Review Enhancement Roadmap](#-review-enhancement-roadmap--phase-7)
 8. [Deferred Features](#-deferred-features)
-9. [Success Metrics](#-success-metrics)
+9. [Success Metrics (Per Feature)](#-success-metrics-per-feature)
 
 ---
 
@@ -124,112 +134,234 @@ The MVP strategy centers on demonstrating the **AI value proposition**:
 
 ---
 
-## ✅ Implementation Status
+## ✅ Implementation Status (Per Feature)
 
-### Domain Layer (Complete)
+### 🍽️ Restaurant Management — ✅ MVP Complete
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| `Restaurant` aggregate | ✅ Complete | Full DDD with value objects, business hours (`Aggregates/RestaurantAggregate/`) |
-| `Menu` aggregate | ✅ Complete | Full DDD with MenuDish join entity (`Aggregates/MenuAggregate/`) |
-| `Dish` aggregate | ✅ Complete | Full DDD with relationships (`Aggregates/DishAggregate/`) |
-| `Order` aggregate | ✅ Complete | Full DDD implementation (`Aggregates/OrderAggregate/`) |
-| `Review` aggregate | ✅ Complete | Promoted from entity to aggregate (`Aggregates/ReviewAggregate/`) |
-| `SaleRecord` aggregate | ✅ Complete | Promoted from entity to aggregate (`Aggregates/SaleRecordAggregate/`) |
-| `Category` entity | ✅ Complete | In Entities/RestaurantEntities |
+#### Domain
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `Restaurant` aggregate | ✅ Complete | `Aggregates/RestaurantAggregate/` |
+| `Category` entity | ✅ Complete | `Entities/RestaurantEntities/` |
 | `BusinessHours` child entity | ✅ Complete | Part of Restaurant aggregate |
-| Value Objects | ✅ Complete | Address, Email, PhoneNumber, Money, Rating, Percentage, etc. |
-| Domain Services | ✅ Complete | MenuOptimization, Pricing, Reservation, ReviewSentimentAnalysis, etc. |
-| Domain Events | ✅ Complete | Co-located per aggregate: Order, Menu, Sale, Loyalty events |
-| Domain Errors | ✅ Complete | Co-located per aggregate: `{Aggregate}/Errors/` |
-| Specifications | ✅ Complete | Co-located per aggregate: `{Aggregate}/Specifications/` |
-| Aggregate-Centric Structure | ✅ Complete | [ADR-005](../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md) |
+| Value Objects (Address, Email, PhoneNumber) | ✅ Complete | Shared value objects |
+| Domain Errors | ✅ Complete | `RestaurantAggregate/Errors/` |
+| Specifications | ✅ Complete | `RestaurantAggregate/Specifications/` |
 
-### Infrastructure Layer (Complete)
+#### Infrastructure
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `RestaurantConfiguration` (enhanced) | ✅ Complete | `Features/Restaurants/Configurations/` |
+| `BusinessHoursConfiguration` | ✅ Complete | `Features/Restaurants/Configurations/` |
+| `CategoryConfiguration` | ✅ Complete | `Persistence/Configurations/` |
+
+#### Application
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `RestaurantDTO` / `RestaurantCreateDTO` / `RestaurantUpdateDTO` | ✅ Complete | `Features/Restaurants/DTOs/` |
+| `RestaurantDetailDTO` / `AddressDTO` / `BusinessHoursDTO` | ✅ Complete | `Features/Restaurants/DTOs/` |
+| `CategoryDTO` / `CategoryCreateDTO` / `CategoryUpdateDTO` | ✅ Complete | `Features/Restaurants/DTOs/` |
+| `IRestaurantService` / `RestaurantService` | ✅ Complete | `Features/Restaurants/Services/` |
+| `ICategoryService` / `CategoryService` | ✅ Complete | `Services/Restaurant/` |
+| `RestaurantMappingExtensions` | ✅ Complete | `Features/Restaurants/Mappings/` |
+
+#### API
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `RestaurantsController` | ✅ Complete | `Features/Restaurants/v1/` |
+| `CategoriesController` | ✅ Complete | `Features/Restaurants/v1/` |
+
+#### Blazor Server
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `AppDbContext` | ✅ Complete | With value converters, `ApplyConfigurationsFromAssembly` |
-| `RestaurantConfiguration` | ✅ Enhanced | Full config with value objects, indexes (`Features/Restaurants/`) |
-| `BusinessHoursConfiguration` | ✅ Complete | Separate config file (`Features/Restaurants/`) |
-| `MenuConfiguration` | ✅ Complete | Separate config file |
-| `MenuDishConfiguration` | ✅ Complete | Join entity configuration |
-| `CategoryConfiguration` | ✅ Complete | Separate config file |
-| `DishConfiguration` | ✅ Complete | Entity configuration |
-| `OrderConfiguration` | ✅ Complete | Entity configuration |
+| `RestaurantList.razor` | ✅ Complete | Card grid, delete modal, loading/error states |
+| `RestaurantForm.razor` | ✅ Complete | Create/Edit with validation |
+| `RestaurantDetail.razor` | ✅ Complete | `Features/Restaurants/Components/` |
+| `CategoryList.razor` | ✅ Complete | Category management |
+| `RestaurantClientService` / `CategoryClientService` | ✅ Complete | Client services |
+| `RestaurantListState` / `RestaurantDetailState` | ✅ Complete | State containers |
+
+---
+
+### 📋 Menu & Dish Management — ✅ Complete
+
+#### Domain
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `Menu` aggregate | ✅ Complete | `Aggregates/MenuAggregate/` |
+| `Dish` aggregate | ✅ Complete | `Aggregates/DishAggregate/` |
+| `MenuDish` join entity | ✅ Complete | Part of Menu aggregate |
+| Domain Events (Menu) | ✅ Complete | Co-located per aggregate |
+| Domain Errors | ✅ Complete | `MenuAggregate/Errors/`, `DishAggregate/Errors/` |
+| Domain Services (MenuOptimization, Pricing) | ✅ Complete | Domain services |
+
+#### Infrastructure
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `MenuConfiguration` | ✅ Complete | `Persistence/Configurations/` |
+| `MenuDishConfiguration` | ✅ Complete | `Persistence/Configurations/` |
+| `DishConfiguration` (enhanced) | ✅ Complete | `Persistence/Configurations/` |
+
+#### Application
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `MenuDTO` / `MenuCreateDTO` / `MenuUpdateDTO` | ✅ Complete | Menu CRUD DTOs |
+| `DishDTO` / `DishCreateDTO` / `DishUpdateDTO` | ✅ Complete | Dish CRUD DTOs |
+| `IMenuService` / `MenuService` | ✅ Complete | `Services/Restaurant/` |
+| `IDishService` / `DishService` | ✅ Complete | `Services/Restaurant/` |
+
+#### API
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `MenusController` | ✅ Complete | `Features/Restaurants/v1/` |
+| `DishesController` | ✅ Complete | `Features/Restaurants/v1/` |
+
+#### Blazor Server
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `MenuList.razor` | ✅ Complete | Card grid, status toggle, delete modal |
+| `MenuEditor.razor` | ✅ Complete | Create/Edit with availability hours |
+| `DishList.razor` | ✅ Complete | Table view, category filter, menu dish management |
+| `DishForm.razor` | ✅ Complete | Create/Edit with dietary info, live preview |
+| `MenuClientService` / `DishClientService` | ✅ Complete | Client services |
+| `MenuListState` / `MenuEditorState` | ✅ Complete | State containers |
+
+---
+
+### 📦 Order Management — ⏳ Pending
+
+#### Domain (Complete)
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `Order` aggregate | ✅ Complete | `Aggregates/OrderAggregate/` |
+| Domain Events | ✅ Complete | Co-located in aggregate |
+| Domain Errors | ✅ Complete | `OrderAggregate/Errors/` |
+| `OrderConfiguration` | ✅ Complete | Infrastructure config |
+
+#### Application / API / Blazor (Pending)
+
+| Component | Status | Target Location |
+|-----------|--------|------------------|
+| Order DTOs | ⏳ Pending | `Application/Features/Orders/DTOs/` |
+| `IOrderService` / `OrderService` | ⏳ Pending | `Application/Features/Orders/Services/` |
+| `OrdersController` | ⏳ Pending | `API/Features/Orders/v1/` |
+| Order Blazor pages | ⏳ Pending | `Server/Features/Orders/` |
+
+---
+
+### ⭐ Review Management — 🟡 Partial
+
+#### Domain
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `Review` aggregate | ✅ Complete | `Aggregates/ReviewAggregate/` (promoted from entity) |
+| Domain Services (ReviewSentimentAnalysis) | ✅ Complete | Domain services |
+
+#### API
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `ReviewsController` | ✅ Complete | `Features/Reviews/v1/` |
+
+#### Blazor Server
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Reviews page | ✅ Complete | Review management with filters, statistics |
+| Sentiment AI integration | 🟡 Expand | Deeper AI sentiment analysis integration pending |
+
+---
+
+### 📊 Sales Data Management — ✅ Complete
+
+#### Domain
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `SaleRecord` aggregate | ✅ Complete | `Aggregates/SaleRecordAggregate/` (promoted from entity) |
+| Domain Events (Sale) | ✅ Complete | Co-located in aggregate |
+
+#### API
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `SaleRecordsController` | ✅ Complete | `Features/Sales/v1/` |
+
+---
+
+### 🤖 AI Engine — ✅ Complete
+
+#### API
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `AiController` | ✅ Complete | `Features/Ai/v1/` |
+
+#### Blazor Server
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Dashboard | ✅ Complete | Main dashboard with AI integration |
+| Insights | ✅ Complete | AI insights display |
+| Underperformance | ✅ Complete | Underperforming dishes analysis |
+
+---
+
+### 🔧 Shared Infrastructure & Cross-Cutting
+
+#### Infrastructure (Shared)
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `AppDbContext` | ✅ Complete | Value converters, `ApplyConfigurationsFromAssembly` |
 | `Repository<T>` | ✅ Complete | Generic repository |
 | `UnitOfWork` | ✅ Complete | Transaction management |
 | Value Converters | ✅ Complete | All value objects mapped (Address, Money, Email, Phone, etc.) |
 | Interceptors | ✅ Complete | `AuditInterceptor`, `TenantInterceptor` |
 | Middlewares | ✅ Complete | `ExceptionHandling`, `RateLimiting`, `TenantResolver` |
+| `ReservationReportsController` | ✅ Complete | `Features/Reservations/v1/` |
+| `ConfigCheckController` | ✅ Complete | `Features/Diagnostics/v1/` |
 
-### Application Layer (Complete)
+#### Application (Shared)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `RestaurantDTO` | ✅ Enhanced | Full properties (`Features/Restaurants/DTOs/`) |
-| `RestaurantCreateDTO` | ✅ Complete | With validation attributes (`Features/Restaurants/DTOs/`) |
-| `RestaurantUpdateDTO` | ✅ Complete | With validation attributes (`Features/Restaurants/DTOs/`) |
-| `AddressDTO` | ✅ Complete | Value object DTO (`Features/Restaurants/DTOs/`) |
-| `BusinessHoursDTO` | ✅ Complete | Operating hours DTO (`Features/Restaurants/DTOs/`) |
-| `RestaurantDetailDTO` | ✅ Complete | Full details with relations (`Features/Restaurants/DTOs/`) |
-| `MenuDTO` | ✅ Complete | Menu data transfer |
-| `MenuCreateDTO` / `MenuUpdateDTO` | ✅ Complete | Menu CRUD DTOs |
-| `DishDTO` / `DishCreateDTO` / `DishUpdateDTO` | ✅ Complete | Dish CRUD DTOs |
-| `CategoryDTO` / `CategoryCreateDTO` / `CategoryUpdateDTO` | ✅ Complete | Category CRUD DTOs |
-| `IRestaurantService` | ✅ Complete | Service interface (`Features/Restaurants/Services/`) |
-| `RestaurantService` | ✅ Complete | Service implementation (`Features/Restaurants/Services/`) |
-| `IMenuService` / `MenuService` | ✅ Complete | Menu CRUD service |
-| `ICategoryService` / `CategoryService` | ✅ Complete | Category CRUD service |
-| `IDishService` / `DishService` | ✅ Complete | Dish CRUD service |
-| `RestaurantMappingExtensions` | ✅ Complete | Entity-DTO mappings (`Features/Restaurants/Mappings/`) |
 | `Result` / `ResultExtensions` | ✅ Complete | Result pattern for error handling |
 | `PaginatedResponse` | ✅ Complete | Pagination support |
 | `ApplicationError` | ✅ Complete | Standardized error handling |
 | Event Handlers | ✅ Complete | Order, Menu, Sale, Loyalty event handlers |
 
-### API Layer (Complete)
+#### API (Shared)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `AiController` | ✅ Complete | AI recommendations (`Features/Ai/v1/`) |
-| `ReviewsController` | ✅ Complete | Review CRUD (`Features/Reviews/v1/`) |
-| `SaleRecordsController` | ✅ Complete | Sales data (`Features/Sales/v1/`) |
-| `RestaurantsController` | ✅ Complete | Full CRUD (`Features/Restaurants/v1/`) |
-| `MenusController` | ✅ Complete | Full CRUD (`Features/Restaurants/v1/`) |
-| `CategoriesController` | ✅ Complete | Full CRUD (`Features/Restaurants/v1/`) |
-| `DishesController` | ✅ Complete | Full CRUD (`Features/Restaurants/v1/`) |
-| `ReservationReportsController` | ✅ Complete | Reservation reports (`Features/Reservations/v1/`) |
-| `ConfigCheckController` | ✅ Complete | Diagnostics (`Features/Diagnostics/v1/`) |
 | `ApiControllerBase` | ✅ Complete | Base controller with common patterns |
 | `ApiResponse` | ✅ Complete | Standardized API response wrapper |
 | `ValidateModelActionFilter` | ✅ Complete | Model validation filter |
 | `ExceptionActionFilter` | ✅ Complete | Global exception handling filter |
 
-### Blazor Server (Mostly Complete)
+#### Blazor Server (Shared)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Dashboard | ✅ Complete | Main dashboard |
-| Insights | ✅ Complete | AI insights display |
-| Reviews | ✅ Complete | Review management with filters, statistics |
-| Underperformance | ✅ Complete | Underperforming dishes |
-| `RestaurantList.razor` | ✅ Complete | Card grid, delete modal, loading/error states |
-| `RestaurantForm.razor` | ✅ Complete | Create/Edit with validation |
-| `RestaurantDetail.razor` | ✅ Complete | Full details view (`Features/Restaurants/Components/`) |
-| `CategoryList.razor` | ✅ Complete | Category management |
-| `MenuList.razor` | ✅ Complete | Card grid, status toggle, delete modal |
-| `MenuEditor.razor` | ✅ Complete | Create/Edit with availability hours |
-| `DishList.razor` | ✅ Complete | Table view, category filter, menu dish management |
-| `DishForm.razor` | ✅ Complete | Create/Edit with dietary info, live preview |
-| **Client Services** | ✅ Complete | `RestaurantClientService`, `MenuClientService`, `DishClientService`, `CategoryClientService` |
-| **State Containers** | ✅ Complete | `RestaurantListState`, `RestaurantDetailState`, `MenuListState`, `MenuEditorState` |
-| **Shared Components** | ✅ Complete | `ErrorAlert`, `LoadingSpinner`, `NotFoundAlert`, `DetailCard`, `StatItem` |
+| Shared Components | ✅ Complete | `ErrorAlert`, `LoadingSpinner`, `NotFoundAlert`, `DetailCard`, `StatItem` |
 | `ApiErrorHelper` | ✅ Complete | Centralized API error handling |
 | `ProblemDetailsResponseDto` | ✅ Complete | RFC 7807 error model |
 | `ClientResult` / `ClientResultExtensions` | ✅ Complete | Client-side Result pattern |
 
-### Cross-Cutting Concerns
+#### Architecture Patterns
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -343,9 +475,11 @@ Restaurant Management → Order Management → Review Management (expand)
 
 ---
 
-## 📅 Implementation Roadmap
+## 📅 Implementation Roadmap (Per Feature)
 
-### Phase 1: DTOs ✅ Complete (2026-02-08)
+### 🍽️ Restaurant Management Roadmap — ✅ MVP Complete
+
+#### Phase 1: DTOs ✅ (2026-02-08)
 
 | Task | Status | Files Created |
 |------|--------|---------------|
@@ -357,7 +491,7 @@ Restaurant Management → Order Management → Review Management (expand)
 | Create MenuDTO | ✅ | `Application\Dtos\Restaurant\MenuDTO.cs` |
 | Enhance RestaurantDTO | ✅ | `Application\Features\Restaurants\DTOs\RestaurantDTO.cs` |
 
-### Phase 2: Service Layer ✅ Complete (2026-02-28)
+#### Phase 2: Service Layer ✅ (2026-02-28)
 
 | Task | Status | Files Created |
 |------|--------|---------------|
@@ -370,7 +504,7 @@ Restaurant Management → Order Management → Review Management (expand)
 | Register services in DI | ✅ | `Application\Extensions\ApplicationServiceCollectionExtensions.cs` |
 | FluentValidation | ⏭️ Skipped | Deferred to post-MVP (DataAnnotations for now) |
 
-### Phase 3: API Layer ✅ Complete (2026-02-28)
+#### Phase 3: API Layer ✅ (2026-02-28)
 
 | Task | Status | Files Created |
 |------|--------|---------------|
@@ -381,7 +515,7 @@ Restaurant Management → Order Management → Review Management (expand)
 | Add Swagger/XML documentation | ✅ | XML comments in controllers |
 | RFC 7807 ProblemDetails | ✅ | Error responses follow standard |
 
-### Phase 3.5: EF Core Configurations ✅ Complete (2026-02-28)
+#### Phase 3.5: EF Core Configurations ✅ (2026-02-28)
 
 | Task | Status | Files Created |
 |------|--------|---------------|
@@ -393,7 +527,7 @@ Restaurant Management → Order Management → Review Management (expand)
 | DishConfiguration (enhanced) | ✅ | `Infrastructure\Persistence\Configurations\` |
 | `ApplyConfigurationsFromAssembly` | ✅ | Added to `AppDbContext` |
 
-### Phase 4: Blazor UI ✅ Complete (2026-02-28)
+#### Phase 4: Blazor UI ✅ (2026-02-28)
 
 | Task | Status | Files Created |
 |------|--------|---------------|
@@ -409,7 +543,7 @@ Restaurant Management → Order Management → Review Management (expand)
 | Client Services | ✅ | `RestaurantClientService`, `MenuClientService`, `DishClientService`, `CategoryClientService` |
 | State Containers | ✅ | `RestaurantListState`, `RestaurantDetailState`, `MenuListState`, `MenuEditorState` |
 
-### Phase 4.5: Architecture Patterns ✅ Complete (2026-03-01)
+#### Phase 4.5: Architecture Patterns ✅ (2026-03-01)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -420,7 +554,7 @@ Restaurant Management → Order Management → Review Management (expand)
 | API Error Handling | ✅ | `ApiErrorHelper`, `ProblemDetailsResponseDto` |
 | Response Pattern Standardization | ✅ | `ApiResponse`, `ApiControllerBase` |
 
-### Phase 5: Integration & Testing ✅ Complete (MVP)
+#### Phase 5: Integration & Testing ✅ (MVP Complete — 2026-03-12)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -431,7 +565,9 @@ Restaurant Management → Order Management → Review Management (expand)
 | Integration tests | ⏸️ Deferred | Post-MVP — will add with CQRS refactoring |
 | UI testing | ⏸️ Deferred | Post-MVP — manual test scenarios |
 
-### Phase 6: Order Management ⏳ Pending
+---
+
+### 📦 Order Management Roadmap — ⏳ Phase 6
 
 | Task | Status | Target Location |
 |------|--------|-----------------|
@@ -441,14 +577,26 @@ Restaurant Management → Order Management → Review Management (expand)
 | Create OrderController | ⏳ Pending | `API\Features\Orders\v1\` |
 | Create Order Blazor pages | ⏳ Pending | `Server\Features\Orders\` |
 
+---
+
+### ⭐ Review Enhancement Roadmap — ⏳ Phase 7
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Expand existing Review UI | ⏳ Pending | Enhanced review management |
+| Integration with AI sentiment | ⏳ Pending | Deeper sentiment analysis |
+| UI polish & documentation | ⏳ Pending | Final MVP polish |
+
+---
+
 ### Updated Timeline
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      MVP TIMELINE (Updated 2026-03-12)           │
+│                   MVP TIMELINE (Updated 2026-03-14)              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ COMPLETED                                                   │
+│  ✅ RESTAURANT MANAGEMENT — MVP COMPLETE                        │
 │  ├── Phase 1: DTOs (2026-02-08)                                 │
 │  ├── Phase 2: Services (2026-02-28)                             │
 │  ├── Phase 3: API Controllers (2026-02-28)                      │
@@ -462,15 +610,14 @@ Restaurant Management → Order Management → Review Management (expand)
 │  ├── Integration tests (with CQRS refactoring)                  │
 │  └── UI testing (manual test scenarios)                         │
 │                                                                 │
-│  ⏳ NEXT PRIORITY                                                │
-│  ├── Phase 6: Order Management                                  │
-│  │   ├── Order DTOs, Services, API                              │
-│  │   └── Blazor UI + AI integration                             │
-│  │                                                               │
-│  └── Phase 7: Review Enhancement & Polish                       │
-│      ├── Expand existing Review UI                              │
-│      ├── Integration with AI sentiment                          │
-│      └── UI polish & documentation                              │
+│  ⏳ ORDER MANAGEMENT — Phase 6                                   │
+│  ├── Order DTOs, Services, API                                  │
+│  └── Blazor UI + AI integration                                 │
+│                                                                 │
+│  ⏳ REVIEW ENHANCEMENT — Phase 7                                 │
+│  ├── Expand existing Review UI                                  │
+│  ├── Integration with AI sentiment                              │
+│  └── UI polish & documentation                                  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -505,17 +652,32 @@ These features require significant Azure infrastructure:
 
 ---
 
-## 📈 Success Metrics
+## 📈 Success Metrics (Per Feature)
 
-### MVP Success Criteria
+### 🍽️ Restaurant Management
 
 | Metric | Target | Current Status | Measurement |
 |--------|--------|----------------|-------------|
 | **Restaurant CRUD** | 100% functional | ✅ Complete | All operations work |
+| **Category Management** | 100% functional | ✅ Complete | Full CRUD with restaurants |
+
+### 📋 Menu & Dish Management
+
+| Metric | Target | Current Status | Measurement |
+|--------|--------|----------------|-------------|
 | **Menu Management** | 100% functional | ✅ Complete | Create/Edit menus and dishes |
 | **Dish Management** | 100% functional | ✅ Complete | Create/Edit dishes with categories |
-| **Category Management** | 100% functional | ✅ Complete | Full CRUD with restaurants |
+
+### 📦 Order Management
+
+| Metric | Target | Current Status | Measurement |
+|--------|--------|----------------|-------------|
 | **Order Flow** | Basic flow working | ⏳ Pending | Place and track orders |
+
+### 🤖 AI Engine & Demo Quality
+
+| Metric | Target | Current Status | Measurement |
+|--------|--------|----------------|-------------|
 | **AI Recommendations** | Visible improvements | ✅ Functional | Recommendations based on data |
 | **Demo Quality** | Compelling presentation | ✅ Complete | Dashboard + AI integrated, demo data seeded (`DbSeeder.cs`) |
 
@@ -552,6 +714,7 @@ These features require significant Azure infrastructure:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.4 | 2026-03-14 | Refactored Implementation Status, Roadmap, and Success Metrics into per-feature subsections for better traceability |
 | 2.3 | 2026-03-12 | Vertical Slice Architecture complete across all layers; Domain aggregate-centric reorganization; [ADR-005](../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md) created |
 | 2.2 | 2026-03-12 | Phase 5 MVP complete: seed data confirmed done (`DbSeeder.cs`); unit/integration/UI tests deferred to post-MVP; Restaurant Management → MVP Complete |
 | 2.1 | 2026-03-12 | Marked Dashboard integration and AI recommendations integration as complete (already wired in Dashboard.razor + Insights.razor); updated progress 91% → 93% |

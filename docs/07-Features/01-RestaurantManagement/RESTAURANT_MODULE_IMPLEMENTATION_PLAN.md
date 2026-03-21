@@ -2,8 +2,41 @@
 
 > **SmartMenuOptimizer - Restaurant Management Feature**  
 > **Priority**: 1 (MVP Critical - Foundation)  
-> **Version**: 2.4  
-> **Last Updated**: 2026-03-09
+> **Version**: 2.5  
+> **Last Updated**: 2026-03-14
+
+---
+
+## 📐 Document Structure Reference
+
+> Use this section as a **template** when creating similar implementation plan documents for other feature modules.
+
+```
+# <Feature Name> Implementation Guide
+
+  > Metadata block (Priority, Version, Last Updated)
+
+  ## 📐 Document Structure Reference      ← This template section
+  ## Overview                             ← Feature purpose & architecture context
+
+  ## Project Structure                    ← Layer-by-layer path reference table
+  ## 1. Domain Layer                      ← Aggregates, entities, value objects
+  ## 2. Application Layer DTOs            ← Data transfer objects by purpose
+  ## 3. Service Layer                     ← Interfaces, implementations, mappings
+  ## 4. API Controllers                   ← Endpoints by controller & route
+  ## 5. Blazor Components                 ← UI components by route
+  ## 6. EF Core Configurations            ← Entity configuration by table
+  ## 7. Validation Strategy               ← Validation layers (DTO, API, Domain, VO)
+  ## 8. Performance Optimization          ← Indexes & caching strategy
+
+  ## Implementation Checklist             ← Per-phase task checklist with status
+  ## Related Documentation                ← Links to trackers, ADRs, standards
+  ## Version History                      ← Document changelog
+```
+
+**Naming Convention**: `<MODULE>_MODULE_IMPLEMENTATION_PLAN.md`  
+**Section Numbering**: Domain (1) → DTOs (2) → Services (3) → API (4) → UI (5) → EF (6) → Validation (7) → Performance (8)  
+**Phase Checklist Format**: `### Phase N: <Layer> ✅ COMPLETE | ⏳ IN PROGRESS`
 
 ---
 
@@ -21,8 +54,8 @@ Restaurant Management is the **foundational feature** - all other features depen
 
 | Layer | Path | Purpose |
 |-------|------|---------|
-| **Domain** | `SmartMenuOptim.Domain/Features/Restaurants/` | Restaurant, BusinessHours |
-| **Domain** | `SmartMenuOptim.Domain/Features/Restaurants/Errors/` | RestaurantDomainException |
+| **Domain** | `SmartMenuOptim.Domain/Aggregates/RestaurantAggregate/` | Restaurant, BusinessHours |
+| **Domain** | `SmartMenuOptim.Domain/Aggregates/RestaurantAggregate/Errors/` | RestaurantDomainException |
 | **Domain** | `SmartMenuOptim.Domain/Aggregates/MenuAggregate/` | Menu, MenuDish |
 | **Domain** | `SmartMenuOptim.Domain/Aggregates/DishAggregate/` | Dish |
 | **Domain** | `SmartMenuOptim.Domain/Entities/RestaurantEntities/` | Category |
@@ -30,13 +63,15 @@ Restaurant Management is the **foundational feature** - all other features depen
 | **Application** | `SmartMenuOptim.Application/Features/Restaurants/DTOs/` | DTOs for data transfer |
 | **Application** | `SmartMenuOptim.Application/Features/Restaurants/Services/` | Business services |
 | **Application** | `SmartMenuOptim.Application/Features/Restaurants/Mappings/` | Mapping extensions |
-| **Infrastructure** | `SmartMenuOptim.Infrastructure/Features/Restaurants/Configurations/` | EF Core configurations |
+| **Infrastructure** | `SmartMenuOptim.Infrastructure/Features/Restaurants/Configurations/` | Restaurant & BusinessHours EF configs |
+| **Infrastructure** | `SmartMenuOptim.Infrastructure/Persistence/Configurations/` | Menu, MenuDish, Category, Dish EF configs |
 | **Infrastructure** | `SmartMenuOptim.Infrastructure/Persistence/Repositories/` | Repository implementations |
-| **API** | `SmartMenuOptim.API/Features/Restaurants/` | REST API endpoints |
+| **API** | `SmartMenuOptim.API/Features/Restaurants/v1/` | REST API endpoints (versioned) |
 | **UI** | `SmartMenuOptim.Server/Features/Restaurants/Components/` | Blazor components |
 | **UI** | `SmartMenuOptim.Server/Features/Restaurants/Services/` | Client HTTP services |
 | **UI** | `SmartMenuOptim.Server/Features/Restaurants/State/` | State containers |
-| **Tests** | `SmartMenuOptim.Tests/UnitTests/Restaurant/` | Unit tests |
+| **Tests** | `SmartMenuOptim.Tests/UnitTests/Controllers/` | Controller unit tests |
+| **Tests** | `SmartMenuOptim.Tests/UnitTests/Services/` | Service unit tests |
 
 ---
 
@@ -269,6 +304,7 @@ Location: `Application/Extensions/RestaurantMappingExtensions.cs`
 | 2.2 | 2025-02-28 | Added validation strategy section |
 | 2.3 | 2025-06-13 | Removed code examples, converted to reference guide |
 | 2.4 | 2026-03-09 | Phase 7: Dashboard integration, AI recommendations integration, demo data seeding |
+| 2.5 | 2026-03-14 | Added 📐 Document Structure Reference template section |
 
 ---
 

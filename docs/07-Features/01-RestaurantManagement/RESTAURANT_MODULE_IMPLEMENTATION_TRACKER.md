@@ -2,8 +2,45 @@
 
 > **Priority**: 1 (Critical — MVP Foundation)  
 > **Status**: ✅ MVP Complete (tests deferred to post-MVP)  
-> **Started**: 2026-02-08 · **Last Updated**: 2026-03-12  
+> **Started**: 2026-02-08 · **Last Updated**: 2026-03-14
 > **Architecture**: [ADR-005 — Vertical Slice + Aggregate-Centric](../../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md)
+
+---
+
+## 📐 Document Structure Reference
+
+> Use this section as a **template** when creating similar implementation tracker documents for other feature modules.
+
+```
+# <Feature Name> — Implementation Tracker
+
+  > Metadata block (Priority, Status, Started, Last Updated, Architecture)
+
+  ## 📐 Document Structure Reference      ← This template section
+  ## 📊 Progress                          ← Phase completion bars & overall MVP count
+  ## 📋 Why Priority N?                   ← Business justification & MVP scope table
+
+  ## 🏗️ Architecture                      ← Data flow diagram & key files by layer
+  ## 📅 Implementation Phases             ← Detailed per-phase breakdown
+    ### Phase 1: DTOs                     ← Data transfer objects
+    ### Phase 2: Services                 ← Application services & DI
+    ### Phase 3: API Controllers          ← REST endpoints
+    ### Phase 3.5: EF Configurations      ← Entity Framework setup (if applicable)
+    ### Phase 4: Blazor UI                ← Razor components
+    ### Phase 4.5: Architecture Patterns  ← Code-behind, state, client services
+    ### Phase 5: Integration & Testing    ← Dashboard, AI, seeding, tests
+
+  ## 🔌 API Endpoints                     ← Full endpoint reference by resource
+  ## 🗄️ Database                          ← Migration & schema notes
+  ## ⚠️ Known Issues                      ← Tracked bugs with resolutions
+  ## 📝 Key Decisions                     ← Architecture & design choices
+  ## 📚 Related Docs                      ← Links to guides, ADRs, patterns
+  ## 🔄 Version History                   ← Document changelog
+```
+
+**Naming Convention**: `<MODULE>_MODULE_IMPLEMENTATION_TRACKER.md`  
+**Phase Numbering**: Sequential integers; use `.5` for bonus/refactoring phases  
+**Progress Bar Format**: `Phase N: Name  [██████████] 100%  ✅  YYYY-MM-DD  (notes)`
 
 ---
 
@@ -233,6 +270,7 @@ No migrations required — all tables already exist: `Restaurants`, `Menus`, `Di
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1 | 2026-03-14 | Added 📐 Document Structure Reference template section for reuse across feature modules |
 | 2.0 | 2026-03-12 | Condensed document: removed duplicated folder trees and task logs; all info preserved in compact form |
 | 1.9 | 2026-03-12 | Vertical Slice + Aggregate-centric refactoring complete |
 | 1.8 | 2026-03-12 | Phase 5 MVP complete — tests deferred |
