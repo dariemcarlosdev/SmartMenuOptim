@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Hosting;
 using SmartMenuOptim.Domain.Services.Abstractions;
 
-namespace SmartMenuOptim.Infrastructure.BackgroundJobs;
+namespace SmartMenuOptim.Infrastructure.Features.Reservations.BackgroundJobs;
 
 /// <summary>
 /// Background service that periodically cleans up expired and no-show reservations.

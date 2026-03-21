@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate.Events;
 
-namespace SmartMenuOptim.Infrastructure.BackgroundJobs;
+namespace SmartMenuOptim.Infrastructure.Features.Sales.BackgroundJobs;
 
 /// <summary>
 /// Background service that generates daily sales summaries at the end of each business day.

@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SmartMenuOptim.Domain.Aggregates.DishAggregate;
 
-namespace SmartMenuOptim.Infrastructure.Persistence.Configurations;
+namespace SmartMenuOptim.Infrastructure.Features.Restaurants.Configurations;
 
 /// <summary>
 /// EF Core configuration for the Dish aggregate root.
