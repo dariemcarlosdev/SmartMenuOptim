@@ -92,6 +92,7 @@ public static class ServiceCollectionExtensions
 
         // Client Services (Restaurant feature)
         services.AddScoped<IRestaurantClientService, RestaurantClientService>();
+        services.AddScoped<IDishClientService, DishClientService>();
 
         // Client Services (Order feature)
         services.AddScoped<IOrderClientService, OrderClientService>();

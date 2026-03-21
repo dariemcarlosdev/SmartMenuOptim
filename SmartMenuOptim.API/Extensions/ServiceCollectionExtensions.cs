@@ -24,7 +24,11 @@ public static class ServiceCollectionExtensions
     public static WebApplicationBuilder ApiServiceCollection(this WebApplicationBuilder builder)
     {
         // 1. Add Controllers
-        builder.Services.AddControllers();
+        builder.Services.AddControllers(options =>
+        {
+            // Keep "Async" suffix in action names so nameof(GetByIdAsync) works with CreatedAtAction.
+            options.SuppressAsyncSuffixInActionNames = false;
+        });
         
         // 2. Add API versioning (currently commented out, but available for future use)
         // builder.Services.AddApiVersioningServices();
