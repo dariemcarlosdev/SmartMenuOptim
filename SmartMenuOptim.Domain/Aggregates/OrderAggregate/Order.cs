@@ -5,6 +5,7 @@ using SmartMenuOptim.Domain.Entities.ProfileEntities;
 using SmartMenuOptim.Domain.Entities.RestaurantEntities;
 using SmartMenuOptim.Domain.Aggregates.ReviewAggregate;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate.Events;
+using SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate.Events;
 using SmartMenuOptim.Domain.Exceptions;
 using SmartMenuOptim.Domain.Common;
 using SmartMenuOptim.Domain.ValueObjects;
@@ -590,7 +591,8 @@ public class Order : TenantEntityBase, IValidatableObject
     
     /// <summary>
     /// Completes the order after successful fulfillment.
-    /// Raises <see cref="OrderCompletedEvent"/> for downstream processing.
+    /// Raises <see cref="OrderCompletedEvent"/> for downstream processing and
+    /// <see cref="SaleRecordedEvent"/> for each order item to trigger sale record creation.
     /// </summary>
     /// <param name="completedStatusId">The order status ID for completed orders.</param>
     /// <param name="loyaltyPointsEarned">Total loyalty points earned from this order.</param>
@@ -602,6 +604,11 @@ public class Order : TenantEntityBase, IValidatableObject
     /// - Customer thank-you notification
     /// - Review request scheduling
     /// - Sales analytics finalization
+    /// - Sale record creation for each order item (via <see cref="SaleRecordedEvent"/>)
+    /// 
+    /// <para><strong>Note:</strong> For accurate dish name and category data in sale events,
+    /// ensure <c>OrderItem.Dish</c> and <c>Dish.Category</c> navigation properties are loaded
+    /// before calling this method.</para>
     /// </remarks>
     public void Complete(int completedStatusId, int loyaltyPointsEarned = 0, string orderType = "DineIn")
     {
@@ -610,8 +617,9 @@ public class Order : TenantEntityBase, IValidatableObject
             throw new ArgumentException("Valid completed status ID is required.", nameof(completedStatusId));
 
         OrderStatusId = completedStatusId;
-        UpdatedAt = DateTime.UtcNow;
-        
+        var completedAt = DateTime.UtcNow;
+        UpdatedAt = completedAt;
+
         AddDomainEvent(new OrderCompletedEvent(
             orderId: Id,
             restaurantId: RestaurantId,
@@ -619,10 +627,29 @@ public class Order : TenantEntityBase, IValidatableObject
             finalTotal: TotalAmount,
             itemCount: _orderItems.Count,
             orderPlacedAt: OrderDate,
-            completedAt: DateTime.UtcNow,
+            completedAt: completedAt,
             orderType: orderType,
             loyaltyPointsEarned: loyaltyPointsEarned
         ));
+
+        // Raise a SaleRecordedEvent for each order item to create sale records
+        foreach (var item in _orderItems)
+        {
+            AddDomainEvent(new SaleRecordedEvent(
+                saleRecordId: 0, // Assigned upon persistence
+                restaurantId: RestaurantId,
+                orderId: Id,
+                dishId: item.DishId,
+                dishName: item.Dish?.Name.Value ?? string.Empty,
+                categoryName: item.Dish?.Category?.Name ?? string.Empty,
+                quantitySold: item.Quantity,
+                unitPrice: item.UnitPrice,
+                totalAmount: item.Subtotal,
+                saleDateTime: completedAt,
+                processedByStaffId: HandledByStaffId,
+                orderType: orderType
+            ));
+        }
     }
     
     // ===================================================================

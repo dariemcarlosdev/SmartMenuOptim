@@ -398,6 +398,17 @@ public class OrderService : IOrderService
         {
             _logger.LogInformation("Updating status of order {OrderId} to status {StatusId}", id, newStatusId);
 
+            // Look up the target status to determine if it's a terminal state
+            var targetStatus = await _unitOfWork.OrderStatuses
+                .Query()
+                .FirstOrDefaultAsync(s => s.Id == newStatusId && !s.IsDeleted, cancellationToken);
+
+            if (targetStatus is null)
+            {
+                _logger.LogWarning("Order status with ID {StatusId} not found", newStatusId);
+                return Result<OrderDTO>.Failure($"Order status with ID {newStatusId} not found.");
+            }
+
             var order = await _unitOfWork.Orders
                 .Query()
                 .IgnoreQueryFilters()
@@ -405,6 +416,8 @@ public class OrderService : IOrderService
                 .Include(o => o.Customer)
                 .Include(o => o.HandledBy)
                 .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
+                        .ThenInclude(d => d.Category)
                 .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted, cancellationToken);
 
             if (order is null)
@@ -413,12 +426,27 @@ public class OrderService : IOrderService
                 return Result<OrderDTO>.Failure($"Order with ID {id} not found.");
             }
 
-            order.UpdateStatus(newStatusId);
+            // Use domain methods for terminal statuses to raise proper domain events
+            if (targetStatus.Name == "Completed")
+            {
+                order.Complete(completedStatusId: newStatusId);
+            }
+            else if (targetStatus.Name == "Cancelled")
+            {
+                order.Cancel(
+                    cancelledStatusId: newStatusId,
+                    reason: "Status changed to Cancelled",
+                    cancelledBy: CancellationSource.Staff);
+            }
+            else
+            {
+                order.UpdateStatus(newStatusId);
+            }
 
             _unitOfWork.Orders.Update(order);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Order {OrderId} status updated to {StatusId}", id, newStatusId);
+            _logger.LogInformation("Order {OrderId} status updated to {StatusName} ({StatusId})", id, targetStatus.Name, newStatusId);
 
             return Result<OrderDTO>.Success(order.ToDto());
         }

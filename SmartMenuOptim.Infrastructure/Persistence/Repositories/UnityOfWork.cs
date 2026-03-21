@@ -67,23 +67,37 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Repositories
         /// </summary>
         /// <returns>The number of state entries written to the database.</returns>
         /// <remarks>
-        /// Call this method after performing create, update, or delete operations to persist changes.
+        /// <para>Call this method after performing create, update, or delete operations to persist changes.</para>
+        /// 
+        /// <para><strong>Transaction Handling:</strong></para>
+        /// <para>If a transaction is already active on the connection (e.g., when called from a domain event
+        /// handler dispatched during <c>AppDbContext.SaveChangesAsync</c>), this method participates in the
+        /// existing transaction instead of starting a new one. This prevents
+        /// <see cref="InvalidOperationException"/> ("The connection is already in a transaction")
+        /// while ensuring all changes remain atomic within the outer transaction boundary.</para>
         /// </remarks>
-        public async Task<int> SaveChangesAsync(){
+        public async Task<int> SaveChangesAsync()
+        {
+            // If a transaction is already active (e.g., called from within a domain event handler
+            // dispatched by AppDbContext.SaveChangesAsync), participate in the existing transaction
+            // instead of starting a new one to avoid nested transaction conflicts.
+            if (_context.Database.CurrentTransaction != null)
+            {
+                return await _context.SaveChangesAsync();
+            }
 
-            // Here we can implement transaction management if needed.
-            // Transaction ensures all operations either succeed or fail together. It is useful when multiple related changes must be atomic and maintain data integrity.
+            // No active transaction — wrap in an explicit transaction for atomicity.
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
                     var result = await _context.SaveChangesAsync();
-                    await transaction.CommitAsync(); // CommitAsync ensures all changes are saved to the database.
+                    await transaction.CommitAsync();
                     return result;
                 }
                 catch
                 {
-                    await transaction.RollbackAsync(); // RollbackAsync reverts all changes if an error occurs, maintaining data integrity.
+                    await transaction.RollbackAsync();
                     throw;
                 }
             }
