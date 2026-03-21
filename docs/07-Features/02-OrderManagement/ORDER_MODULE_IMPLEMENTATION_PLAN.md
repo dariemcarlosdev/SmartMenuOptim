@@ -2,8 +2,8 @@
 
 > **SmartMenuOptimizer — Order Management Feature**  
 > **Priority**: 2 (MVP High — Depends on Restaurant Foundation)  
-> **Version**: 3.4  
-> **Last Updated**: 2026-03-15  
+> **Version**: 3.6  
+> **Last Updated**: 2026-03-21  
 > **Architecture**: [ADR-005 — Vertical Slice + Aggregate-Centric](../../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md)
 
 ---
@@ -59,12 +59,14 @@ Order Management is the **second priority feature** — it depends on the Restau
 | **Domain** | `SmartMenuOptim.Domain/Aggregates/OrderAggregate/` | Order (Aggregate Root), OrderItem (Child Entity) |
 | **Domain** | `SmartMenuOptim.Domain/Aggregates/OrderAggregate/Errors/` | OrderDomainException |
 | **Domain** | `SmartMenuOptim.Domain/Events/` | OrderPlacedEvent, OrderCompletedEvent, OrderCancelledEvent |
+| **Domain** | `SmartMenuOptim.Domain/Aggregates/SaleRecordAggregate/Events/` | SaleRecordedEvent (cross-aggregate, raised per item on completion) |
 | **Domain** | `SmartMenuOptim.Domain/Entities/RestaurantEntities/` | OrderStatus (lookup entity) |
 | **Domain** | `SmartMenuOptim.Domain/ValueObjects/` | Money (used in events) |
 | **Application** | `SmartMenuOptim.Application/Features/Orders/DTOs/` | DTOs for data transfer |
 | **Application** | `SmartMenuOptim.Application/Features/Orders/Services/` | Business services (+ existing pricing stub) |
 | **Application** | `SmartMenuOptim.Application/Features/Orders/Mappings/` | Mapping extensions |
 | **Application** | `SmartMenuOptim.Application/Handlers/OrderEventHandlers/` | Domain event handlers (6 existing) |
+| **Application** | `SmartMenuOptim.Application/Handlers/SaleEventHandlers/` | `SaleRecordedHandler` — persists SaleRecord + analytics |
 | **Infrastructure** | `SmartMenuOptim.Infrastructure/Persistence/Configurations/` | OrderConfiguration (consider move to `Features/Orders/Configurations/`) |
 | **Infrastructure** | `SmartMenuOptim.Infrastructure/Persistence/Repositories/` | Generic Repository (shared) |
 | **API** | `SmartMenuOptim.API/Features/Orders/v1/` | REST API endpoints (versioned) |
@@ -91,6 +93,7 @@ Order Management is the **second priority feature** — it depends on the Restau
 |-------|---------|----------------|
 | `OrderPlacedEvent` | `Order.Place()` | `OrderId`, `RestaurantId`, `CustomerId`, `TotalAmount`, `CurrencyCode`, `ItemCount`, `OrderType` |
 | `OrderCompletedEvent` | `Order.Complete()` | `OrderId`, `FinalTotal`, `FulfillmentTimeMinutes` (computed), `LoyaltyPointsEarned`, `AppliedPromotions` |
+| `SaleRecordedEvent` *(cross-aggregate)* | `Order.Complete()` — one per `OrderItem` | `OrderId`, `DishId`, `DishName`, `CategoryName`, `QuantitySold`, `UnitPrice`, `TotalAmount`, `OrderType` |
 | `OrderCancelledEvent` | `Order.Cancel()` | `OrderId`, `CancellationReason`, `CancelledBy` (enum), `RequiresRefund`, `LoyaltyPointsToReverse` |
 
 ### 1.3 Domain Errors
@@ -115,6 +118,7 @@ Cancelled ←──────────────────────�
 | `StaffMember` | FK `HandledByStaffId` — optional handler |
 | `Dish` | Referenced by `OrderItem.DishId` |
 | `TenantEntityBase` | Base class — provides `RestaurantId` |
+| `SaleRecordedEvent` | Cross-aggregate event raised per `OrderItem` on `Complete()` — triggers `SaleRecord` persistence |
 | `Money` | Used in events for currency-aware amounts |
 
 ### 1.6 Domain Review (2026-03-14)
@@ -160,7 +164,7 @@ Additional cleanup:
 | Component | Notes |
 |-----------|-------|
 | `Repository<T>` | Generic repository — works with `Order` out of the box |
-| `UnityOfWork` | Transaction management — no Order-specific changes needed |
+| `UnityOfWork` | Transaction-aware `SaveChangesAsync` — detects `CurrentTransaction` to prevent nested transaction conflicts when domain event handlers persist entities (ORD-003 fix) |
 
 > **Note**: Consider moving `OrderConfiguration.cs` from `Persistence/Configurations/` to `Features/Orders/Configurations/` to follow vertical slice convention.
 
@@ -178,8 +182,28 @@ All handlers extend `ResilientEventHandlerBase<TEvent>` with retry logic + dead 
 | `UpdateOrderAnalyticsHandler` | `OrderPlacedEvent` | Invalidates analytics cache, logs metrics |
 | `OrderCompletedHandler` | `OrderCompletedEvent` | Logs completion metrics, invalidates cache, schedules review request |
 | `OrderCancelledHandler` | `OrderCancelledEvent` | Reverses loyalty points, sends cancellation notification |
+| `SaleRecordedHandler` | `SaleRecordedEvent` | Persists `SaleRecord` entity via `IUnityOfWork`, logs sale analytics, invalidates analytics cache |
 
-### 3.1 Pricing Stub
+### 3.1 Cross-Aggregate Event Flow: Order → SaleRecord
+
+When an order is completed, the `Order.Complete()` method raises a `SaleRecordedEvent` for each `OrderItem`.
+The `SaleRecordedHandler` creates and persists `SaleRecord` entities, connecting order completion to the
+SaleRecord aggregate for revenue tracking, dish performance analytics, and AI-powered menu optimization.
+
+```
+UI sets status → "Completed"
+  → OrderService.UpdateStatusAsync() detects terminal status name
+    → order.Complete() raises OrderCompletedEvent + SaleRecordedEvent per item
+      → AppDbContext.SaveChangesAsync() persists order, then dispatches events
+        → SaleRecordedHandler creates SaleRecord → persists to DB (within same transaction)
+        → OrderCompletedHandler sends notifications, invalidates cache
+```
+
+> **Transaction Note**: `SaleRecordedHandler` calls `_unitOfWork.SaveChangesAsync()` which detects the
+> active transaction from the outer save and participates in it (no nested `BeginTransactionAsync`).
+> Both Order and SaleRecord changes commit or rollback atomically.
+
+### 3.2 Pricing Stub
 
 | File | Status |
 |------|--------|
@@ -217,7 +241,7 @@ All handlers extend `ResilientEventHandlerBase<TEvent>` with retry logic + dead 
 | `GetByStatusAsync(int restaurantId, int statusId)` | `Result<IReadOnlyList<OrderDTO>>` | Filter by status |
 | `GetStatusesAsync(int restaurantId)` | `Result<IReadOnlyList<OrderStatusDTO>>` | Get available statuses |
 | `CreateAsync(OrderCreateDTO dto)` | `Result<OrderDTO>` | Create new order |
-| `UpdateStatusAsync(int id, int newStatusId)` | `Result<OrderDTO>` | Change order status |
+| `UpdateStatusAsync(int id, int newStatusId)` | `Result<OrderDTO>` | Change order status — detects "Completed" → `Complete()`, "Cancelled" → `Cancel()` with domain events; loads `Dish` + `Category` nav props for sale event data |
 | `CancelAsync(int id, string reason)` | `Result` | Cancel order |
 | `DeleteAsync(int id)` | `Result` | Soft delete |
 
@@ -599,7 +623,7 @@ Used on both List and Detail pages:
 - [x] Order Aggregate Root (Tier 1 Rich DDD — ~800 lines)
 - [x] OrderItem Child Entity (~200 lines)
 - [x] OrderStatus Lookup Entity
-- [x] Domain Events (OrderPlacedEvent, OrderCompletedEvent, OrderCancelledEvent)
+- [x] Domain Events (OrderPlacedEvent, OrderCompletedEvent, OrderCancelledEvent, cross-aggregate SaleRecordedEvent per item)
 - [x] OrderDomainException
 - [x] Order Lifecycle (Place, Cancel, Complete with domain events)
 - [x] Domain Review — exception correctness, guard clause consistency, null safety (8 fixes applied)
@@ -617,6 +641,7 @@ Used on both List and Detail pages:
 - [x] UpdateOrderAnalyticsHandler (OrderPlacedEvent)
 - [x] OrderCompletedHandler (OrderCompletedEvent)
 - [x] OrderCancelledHandler (OrderCancelledEvent)
+- [x] SaleRecordedHandler (SaleRecordedEvent) — persists SaleRecord entity + analytics logging + cache invalidation
 
 ### Phase 4: Application Layer — DTOs & Service ✅ COMPLETE (2026-03-14)
 - [x] OrderDTO, OrderDetailDTO, OrderItemDTO
@@ -664,9 +689,15 @@ Used on both List and Detail pages:
 - [x] Full CRUD from List page (view, inline status update, cancel with reason, delete)
 - [x] Full CRUD from Detail page (status update card, cancel with reason modal)
 
-### Phase 7: Integration & Testing ⏳ IN PROGRESS (2026-03-15)
+### Phase 7: Integration & Testing ✅ COMPLETE (2026-03-15)
 - [x] Dashboard integration — Order Metrics section on `Dashboard.razor` (summary stats, status breakdown, per-restaurant table)
-- [ ] Manual UI testing checklist
+- [x] Manual UI testing checklist
+
+### Phase 8: Event-Driven Sale Record Creation ✅ COMPLETE (2026-03-21)
+- [x] `Order.Complete()` raises `SaleRecordedEvent` per `OrderItem` (Domain layer — cross-aggregate event)
+- [x] `OrderService.UpdateStatusAsync()` detects terminal statuses and calls `Complete()`/`Cancel()` domain methods with `Dish`+`Category` includes
+- [x] `SaleRecordedHandler` injects `IUnityOfWork`, creates `SaleRecord` via constructor + `Money` value object, persists to database
+- [x] `UnityOfWork.SaveChangesAsync()` made transaction-aware — checks `CurrentTransaction` to prevent nested transaction crash (ORD-003)
 
 ---
 
@@ -689,7 +720,9 @@ Used on both List and Detail pages:
 
 | Version | Date | Description |
 |---------|------|-------------|
-| 3.4 | 2026-03-15 | Phase 7 dashboard integration complete — Order Metrics section added to `Dashboard.razor`; Phase 7 checklist updated to ⏳ In Progress (1/2 done) |
+| 3.6 | 2026-03-21 | **§9 Bugs & Fixes** — added dedicated section documenting ORD-003a/b/c bug chain: root causes, error messages, call chains, before/after code, fix dependency diagram, and files changed summary. Expanded from single ORD-003 to 3 traceable sub-issues for future reference. |
+| 3.5 | 2026-03-21 | **Phase 8: Event-Driven Sale Records**
+| 3.4 | 2026-03-15 | Phase 7 dashboard integration complete
 | 3.3 | 2026-03-15 | Phase 7 MVP scope reduced — removed unit tests and integration tests from MVP checklist (deferred to Post-MVP `ORD-TEST-001`/`002`); Phase 7 now 2 items: dashboard integration + manual UI testing checklist |
 | 3.2 | 2026-03-15 | Phase 5 MVP complete — §5.4.6 pagination implemented (`PaginatedRequest` + `GET /orders/paginated`); §5.4.6 status updated to ✅; Phase 5 section header and checklist updated; §5 header changed from ⏳ to ✅ |
 | 3.1 | 2026-03-15 | Updated cross-references — Pending Task Tracker renamed to Post-MVP Task Tracker (v2.0); PERF/TD items reclassified as Post-MVP; Related Documentation table updated |
