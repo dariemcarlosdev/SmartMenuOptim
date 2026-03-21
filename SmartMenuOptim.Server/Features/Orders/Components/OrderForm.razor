@@ -44,12 +44,14 @@
                         }
                         else if (_restaurants is not null && _restaurants.Any())
                         {
-                            <InputSelect class="form-select" @bind-Value="_model.RestaurantId">
+                            <select class="form-select"
+                                    value="@_model.RestaurantId"
+                                    @onchange="OnRestaurantChanged">
                                 @foreach (var restaurant in _restaurants)
                                 {
                                     <option value="@restaurant.Id">@restaurant.Name</option>
                                 }
-                            </InputSelect>
+                            </select>
                         }
                         else
                         {
@@ -58,8 +60,27 @@
                         <ValidationMessage For="() => _model.RestaurantId" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Customer ID</label>
-                        <InputNumber class="form-control" @bind-Value="_model.CustomerId" />
+                        <label class="form-label">Customer</label>
+                        @if (_customersLoading)
+                        {
+                            <div class="d-flex align-items-center gap-2 form-control bg-light">
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span class="text-muted">Loading...</span>
+                            </div>
+                        }
+                        else if (_customers is not null && _customers.Any())
+                        {
+                            <InputSelect class="form-select" @bind-Value="_model.CustomerId">
+                                @foreach (var customer in _customers)
+                                {
+                                    <option value="@customer.Id">@customer.Name</option>
+                                }
+                            </InputSelect>
+                        }
+                        else
+                        {
+                            <div class="text-danger small">No customers available.</div>
+                        }
                         <ValidationMessage For="() => _model.CustomerId" />
                     </div>
                 </div>
@@ -91,8 +112,27 @@
                         var index = i;
                         <div class="row align-items-end mb-3 pb-3 @(index < _model.Items.Count - 1 ? "border-bottom" : "")">
                             <div class="col-md-4">
-                                <label class="form-label">Dish ID</label>
-                                <InputNumber class="form-control" @bind-Value="_model.Items[index].DishId" />
+                                <label class="form-label">Dish</label>
+                                @if (_dishesLoading)
+                                {
+                                    <div class="d-flex align-items-center gap-2 form-control bg-light">
+                                        <span class="spinner-border spinner-border-sm"></span>
+                                        <span class="text-muted">Loading...</span>
+                                    </div>
+                                }
+                                else if (_dishes is not null && _dishes.Any())
+                                {
+                                    <InputSelect class="form-select" @bind-Value="_model.Items[index].DishId">
+                                        @foreach (var dish in _dishes)
+                                        {
+                                            <option value="@dish.Id">@dish.Name — @dish.Price.ToString("C")</option>
+                                        }
+                                    </InputSelect>
+                                }
+                                else
+                                {
+                                    <div class="text-muted small">No dishes available for this restaurant.</div>
+                                }
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Quantity</label>

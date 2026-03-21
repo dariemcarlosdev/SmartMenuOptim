@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Features.Customers.DTOs;
 using SmartMenuOptim.Application.Features.Orders.DTOs;
 using SmartMenuOptim.Application.Features.Orders.Mappings;
 using SmartMenuOptim.Domain.Aggregates.OrderAggregate;
@@ -279,6 +280,33 @@ public class OrderService : IOrderService
         {
             _logger.LogError(ex, "Error retrieving order statuses for restaurant {RestaurantId}", restaurantId);
             return Result<IReadOnlyList<OrderStatusDTO>>.Failure("An error occurred while retrieving order statuses.");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result<IReadOnlyList<CustomerLookupDTO>>> GetCustomerLookupsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Retrieving customer lookups");
+
+            var customers = await _unitOfWork.Customers
+                .Query()
+                .OrderBy(c => c.Name)
+                .Select(c => new CustomerLookupDTO
+                {
+                    Id = c.Id,
+                    Name = c.Name
+                })
+                .ToListAsync(cancellationToken);
+
+            _logger.LogDebug("Retrieved {Count} customer lookups", customers.Count);
+            return Result<IReadOnlyList<CustomerLookupDTO>>.Success(customers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving customer lookups");
+            return Result<IReadOnlyList<CustomerLookupDTO>>.Failure("An error occurred while retrieving customers.");
         }
     }
 

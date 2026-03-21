@@ -16,6 +16,7 @@
 
 using System.Net.Http.Json;
 using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Features.Customers.DTOs;
 using SmartMenuOptim.Application.Features.Orders.DTOs;
 using SmartMenuOptim.Server.Helpers;
 
@@ -256,6 +257,29 @@ public class OrderClientService : IOrderClientService
         {
             _logger.LogError(ex, "Unexpected error deleting order {Id}", id);
             return Result.Failure("An unexpected error occurred.");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<IReadOnlyList<CustomerLookupDTO>>> GetCustomerLookupsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("BackendAPI");
+            var customers = await client.GetFromJsonAsync<List<CustomerLookupDTO>>(
+                $"{ApiBasePath}/customers/lookup", cancellationToken);
+
+            return Result.Success<IReadOnlyList<CustomerLookupDTO>>(customers ?? []);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP error loading customer lookups");
+            return Result.Failure<IReadOnlyList<CustomerLookupDTO>>("Unable to connect to the server. Please try again.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error loading customer lookups");
+            return Result.Failure<IReadOnlyList<CustomerLookupDTO>>("An unexpected error occurred.");
         }
     }
 }

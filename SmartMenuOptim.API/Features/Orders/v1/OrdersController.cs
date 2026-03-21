@@ -34,6 +34,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Features.Customers.DTOs;
 using SmartMenuOptim.Application.Features.Orders.DTOs;
 using SmartMenuOptim.Application.Features.Orders.Services;
 
@@ -183,6 +184,28 @@ public class OrdersController : ControllerBase
         _logger.LogDebug("API: Getting order statuses for restaurant {RestaurantId}", restaurantId);
 
         var result = await _orderService.GetStatusesAsync(restaurantId, cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : Problem(result.Error, statusCode: StatusCodes.Status500InternalServerError);
+    }
+
+    /// <summary>
+    /// Retrieves a lightweight list of all customers for dropdown/lookup scenarios.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of customer lookups (Id + Name).</returns>
+    /// <response code="200">Returns the list of customer lookups.</response>
+    /// <response code="500">Internal server error.</response>
+    [HttpGet("customers/lookup")]
+    [ProducesResponseType(typeof(IReadOnlyList<CustomerLookupDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IReadOnlyList<CustomerLookupDTO>>> GetCustomerLookupsAsync(
+        CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("API: Getting customer lookups for order form");
+
+        var result = await _orderService.GetCustomerLookupsAsync(cancellationToken);
 
         return result.IsSuccess
             ? Ok(result.Value)

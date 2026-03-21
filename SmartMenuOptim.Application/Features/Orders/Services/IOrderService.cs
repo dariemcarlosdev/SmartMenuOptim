@@ -1,4 +1,5 @@
 using SmartMenuOptim.Application.Common;
+using SmartMenuOptim.Application.Features.Customers.DTOs;
 using SmartMenuOptim.Application.Features.Orders.DTOs;
 
 namespace SmartMenuOptim.Application.Features.Orders.Services;
@@ -76,6 +77,13 @@ public interface IOrderService
     /// <param name="cancellationToken">Cancellation token for async operation.</param>
     /// <returns>Result containing a list of OrderStatusDTOs.</returns>
     Task<Result<IReadOnlyList<OrderStatusDTO>>> GetStatusesAsync(int restaurantId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a lightweight list of all customers for dropdown/lookup scenarios.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for async operation.</param>
+    /// <returns>Result containing a list of CustomerLookupDTOs.</returns>
+    Task<Result<IReadOnlyList<CustomerLookupDTO>>> GetCustomerLookupsAsync(CancellationToken cancellationToken = default);
 
     // ═══════════════════════════════════════════════════════════════════════
     // COMMANDS

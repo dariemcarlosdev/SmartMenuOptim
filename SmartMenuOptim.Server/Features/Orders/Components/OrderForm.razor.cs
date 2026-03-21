@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using SmartMenuOptim.Application.Features.Customers.DTOs;
 using SmartMenuOptim.Application.Features.Orders.DTOs;
 using SmartMenuOptim.Application.Features.Restaurants.DTOs;
 using SmartMenuOptim.Server.Features.Orders.Services;
@@ -19,6 +20,7 @@ public partial class OrderForm : ComponentBase
 {
     [Inject] private IOrderClientService OrderService { get; set; } = default!;
     [Inject] private IRestaurantClientService RestaurantClientService { get; set; } = default!;
+    [Inject] private IDishClientService DishClientService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private ILogger<OrderForm> Logger { get; set; } = default!;
 
@@ -34,17 +36,69 @@ public partial class OrderForm : ComponentBase
     private IReadOnlyList<RestaurantDTO>? _restaurants;
     private bool _restaurantsLoading = true;
 
+    // Customer dropdown state
+    private IReadOnlyList<CustomerLookupDTO>? _customers;
+    private bool _customersLoading = true;
+
+    // Dish dropdown state (filtered by selected restaurant)
+    private IReadOnlyList<DishDTO>? _dishes;
+    private bool _dishesLoading;
+
     protected override async Task OnInitializedAsync()
     {
-        var result = await RestaurantClientService.GetAllAsync();
-        _restaurants = result.IsSuccess ? result.Value : [];
+        // Load restaurants and customers in parallel
+        var restaurantTask = RestaurantClientService.GetAllAsync();
+        var customerTask = OrderService.GetCustomerLookupsAsync();
+
+        await Task.WhenAll(restaurantTask, customerTask);
+
+        var restaurantResult = restaurantTask.Result;
+        _restaurants = restaurantResult.IsSuccess ? restaurantResult.Value : [];
         _restaurantsLoading = false;
 
-        // Auto-select first restaurant
+        var customerResult = customerTask.Result;
+        _customers = customerResult.IsSuccess ? customerResult.Value : [];
+        _customersLoading = false;
+
+        // Auto-select first restaurant and load its dishes
         if (_restaurants is not null && _restaurants.Any())
         {
             _model.RestaurantId = _restaurants.First().Id;
+            await LoadDishesAsync(_model.RestaurantId);
         }
+
+        // Auto-select first customer
+        if (_customers is not null && _customers.Any())
+        {
+            _model.CustomerId = _customers.First().Id;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // RESTAURANT CHANGE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private async Task OnRestaurantChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var restaurantId) && restaurantId > 0)
+        {
+            _model.RestaurantId = restaurantId;
+
+            // Clear existing items since dishes belong to the previous restaurant
+            _model.Items.Clear();
+
+            await LoadDishesAsync(restaurantId);
+        }
+    }
+
+    private async Task LoadDishesAsync(int restaurantId)
+    {
+        _dishesLoading = true;
+        _dishes = null;
+
+        var result = await DishClientService.GetByRestaurantIdAsync(restaurantId);
+        _dishes = result.IsSuccess ? result.Value : [];
+        _dishesLoading = false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -53,7 +107,15 @@ public partial class OrderForm : ComponentBase
 
     private void AddItem()
     {
-        _model.Items.Add(new OrderItemCreateDTO { Quantity = 1 });
+        var newItem = new OrderItemCreateDTO { Quantity = 1 };
+
+        // Auto-select first available dish
+        if (_dishes is not null && _dishes.Any())
+        {
+            newItem.DishId = _dishes.First().Id;
+        }
+
+        _model.Items.Add(newItem);
     }
 
     private void RemoveItem(int index)
