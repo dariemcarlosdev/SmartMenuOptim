@@ -1,23 +1,38 @@
 # Design Patterns Index
 
-> **SmartMenuOptim.Server - Blazor Server Patterns**
+> **SmartMenuOptimizer - Design Patterns & Architecture Reference**
 > 
-> This directory contains documentation for all design patterns applied in the Blazor Server project.
+> This directory contains documentation for all design patterns applied across the project,
+> organized into three categories: Blazor/UI, Architecture, and Event-Driven.
 
 ---
 
 ## Pattern Catalog
 
+### 01 — Blazor & UI Patterns
+
 | Pattern | Type | Purpose | Key Files |
 |---------|------|---------|-----------|
-| **[Reference Implementation Guide](./REFERENCE_IMPLEMENTATION_GUIDE.md)** | **Cross-Layer** | **Restaurant module as canonical pattern for all feature modules** | **All layers** |
-| [State Container](./STATE_CONTAINER_PATTERN.md) | Behavioral | Centralized state management | `ComponentStateBase.cs`, `*State.cs` |
-| [State Container — Prompt Guide](./STATE_CONTAINER_PATTERN_PROMPT_GUIDE.md) | Behavioral | Reusable implementation templates | All layers |
-| [Code-Behind](./CODE_BEHIND_PATTERN.md) | Structural | Separation of markup and logic | `.razor` + `.razor.cs` |
-| [Client Service Adapter](./CLIENT_SERVICE_ADAPTER_PATTERN.md) | Structural | HTTP API abstraction | `I*ClientService.cs`, `*ClientService.cs` |
-| [Response/Result Pattern](./RESPONSE_RESULT_PATTERN.md) | Cross-Layer | Standardized responses across layers | `DomainResult`, `Result`, `ClientResult` |
-| [Reusable UI Components](./REUSABLE_UI_COMPONENTS_PATTERN.md) | Structural | DRY UI patterns | `Components/Shared/*.razor` |
-| [Observer](./OBSERVER_PATTERN.md) | Behavioral | State change notifications | `OnStateChanged` event |
+| [Blazor Component Clean Architecture](./01-BlazorUI/BLAZOR_COMPONENT_CLEAN_ARCHITECTURE_PATTERN.md) | Comprehensive | Full Blazor component pattern guide | All Blazor layers |
+| [State Container — Prompt Guide](./01-BlazorUI/BLAZOR_STATE_CONTAINER_PATTERN_PROMPT_GUIDE.md) | Behavioral | State management templates | `ComponentStateBase.cs`, `*State.cs` |
+| [Code-Behind](./01-BlazorUI/CODE_BEHIND_PATTERN.md) | Structural | Separation of markup and logic | `.razor` + `.razor.cs` |
+| [Reusable UI Components](./01-BlazorUI/REUSABLE_UI_COMPONENTS_PATTERN.md) | Structural | DRY UI patterns | `Components/Shared/*.razor` |
+
+### 02 — Architecture Patterns
+
+| Pattern | Type | Purpose | Key Files |
+|---------|------|---------|-----------|
+| **[Reference Implementation Guide](./02-Architecture/REFERENCE_IMPLEMENTATION_GUIDE.md)** | **Cross-Layer** | **Restaurant module as canonical pattern** | **All layers** |
+| [Client Service Adapter](./02-Architecture/CLIENT_SERVICE_ADAPTER_PATTERN.md) | Structural | HTTP API abstraction | `I*ClientService.cs`, `*ClientService.cs` |
+| [Response/Result Pattern](./02-Architecture/RESPONSE_RESULT_PATTERN.md) | Cross-Layer | Standardized responses across layers | `DomainResult`, `Result`, `ClientResult` |
+
+### 03 — Event-Driven Patterns
+
+| Pattern | Type | Purpose | Key Files |
+|---------|------|---------|-----------|
+| [Event-Driven Architecture](./03-EventDriven/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) | Architectural | Domain event publishing & handling | `IHasDomainEvents`, `MediatR` |
+| [Observer Deep Dive](./03-EventDriven/OBSERVER_PATTERN_DEEP_DIVE.md) | Behavioral | State change notifications | `OnStateChanged` event |
+| [Event-Driven Improvement Tracker](./03-EventDriven/EVENT_DRIVEN_IMPROVEMENT_TRACKER.md) | Tracker | Planned event system enhancements | — |
 
 ---
 
@@ -76,25 +91,25 @@
 
 ### Creating a New Feature
 
-1. **Create Client Service** ([Guide](./CLIENT_SERVICE_ADAPTER_PATTERN.md))
+1. **Create Client Service** ([Guide](./02-Architecture/CLIENT_SERVICE_ADAPTER_PATTERN.md))
    ```
    Services/Interfaces/I{Entity}ClientService.cs
    Services/{Entity}ClientService.cs
    ```
 
-2. **Create State Container** ([Guide](./STATE_CONTAINER_PATTERN.md))
+2. **Create State Container** ([Guide](./01-BlazorUI/BLAZOR_STATE_CONTAINER_PATTERN_PROMPT_GUIDE.md))
    ```
    State/{Entity}DetailState.cs
    State/{Entity}ListState.cs
    ```
 
-3. **Create Component** ([Guide](./CODE_BEHIND_PATTERN.md))
+3. **Create Component** ([Guide](./01-BlazorUI/CODE_BEHIND_PATTERN.md))
    ```
    Components/Pages/{Entity}/{Entity}Detail.razor
    Components/Pages/{Entity}/{Entity}Detail.razor.cs
    ```
 
-4. **Use Shared Components** ([Guide](./REUSABLE_UI_COMPONENTS_PATTERN.md))
+4. **Use Shared Components** ([Guide](./01-BlazorUI/REUSABLE_UI_COMPONENTS_PATTERN.md))
    ```razor
    <LoadingSpinner IsLoading="_loading" />
    <ErrorAlert Message="@_error" />
@@ -126,7 +141,7 @@
 
 For a complete guide combining all patterns with AI prompts:
 
-📄 **[BLAZOR_COMPONENT_CLEAN_ARCHITECTURE_PATTERN.md](./BLAZOR_COMPONENT_CLEAN_ARCHITECTURE_PATTERN.md)**
+📄 **[BLAZOR_COMPONENT_CLEAN_ARCHITECTURE_PATTERN.md](./01-BlazorUI/BLAZOR_COMPONENT_CLEAN_ARCHITECTURE_PATTERN.md)**
 
 ---
 
@@ -134,14 +149,20 @@ For a complete guide combining all patterns with AI prompts:
 
 ```
 docs/08-Patterns/
-├── README.md                                    # This file
-├── BLAZOR_COMPONENT_CLEAN_ARCHITECTURE_PATTERN.md  # Comprehensive guide
-├── STATE_CONTAINER_PATTERN.md                   # State management
-├── CODE_BEHIND_PATTERN.md                       # Markup/logic separation
-├── CLIENT_SERVICE_ADAPTER_PATTERN.md            # HTTP abstraction
-├── RESPONSE_RESULT_PATTERN.md                   # Error handling & cross-layer responses
-├── REUSABLE_UI_COMPONENTS_PATTERN.md            # Shared components
-└── OBSERVER_PATTERN.md                          # Change notifications
+├── README.md                                          # This file
+├── 01-BlazorUI/
+│   ├── BLAZOR_COMPONENT_CLEAN_ARCHITECTURE_PATTERN.md # Comprehensive Blazor guide
+│   ├── BLAZOR_STATE_CONTAINER_PATTERN_PROMPT_GUIDE.md # State management templates
+│   ├── CODE_BEHIND_PATTERN.md                         # Markup/logic separation
+│   └── REUSABLE_UI_COMPONENTS_PATTERN.md              # Shared components
+├── 02-Architecture/
+│   ├── REFERENCE_IMPLEMENTATION_GUIDE.md              # Canonical feature pattern
+│   ├── CLIENT_SERVICE_ADAPTER_PATTERN.md              # HTTP abstraction
+│   └── RESPONSE_RESULT_PATTERN.md                     # Cross-layer responses
+└── 03-EventDriven/
+    ├── EVENT_DRIVEN_ARCHITECTURE_PATTERN.md            # Domain events guide
+    ├── OBSERVER_PATTERN_DEEP_DIVE.md                   # Change notifications
+    └── EVENT_DRIVEN_IMPROVEMENT_TRACKER.md             # Enhancement tracker
 ```
 
 ---
@@ -154,5 +175,5 @@ docs/08-Patterns/
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: 2025-03-01*
+*Document Version: 2.0*  
+*Last Updated: 2026-03-22*

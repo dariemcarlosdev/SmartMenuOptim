@@ -1,10 +1,25 @@
 # 🏗️ Restaurant Module — Reference Implementation Guide
 
 > **SmartMenuOptimizer — Canonical Patterns for Feature Module Implementation**  
-> **Version**: 1.0  
+> **Version**: 1.1  
 > **Created**: 2026-03-14  
-> **Last Updated**: 2026-03-14  
-> **Architecture**: [ADR-005 — Vertical Slice + Aggregate-Centric](../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md)
+> **Last Updated**: 2026-03-21
+
+---
+
+> **🤖 For AI Agents — Document Guide**
+>
+> | Aspect | Details |
+> |--------|---------|
+> | **Document Type** | Reference Implementation Guide — the **single source of truth** for implementing any feature module |
+> | **Use As** | Read this **before** generating code for any new feature. Every layer (Domain → UI) has a pattern table with exact conventions to follow |
+> | **Architecture** | [ADR-005 — Vertical Slice + Aggregate-Centric](../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md) |
+> | **Golden Path** | Restaurant module = canonical reference. Match its file structure, naming, docs style, error handling — then adapt domain logic |
+> | **Event-Driven Pattern** | Phase 3 implements domain event handlers; for event creation, handler templates, lifecycle, and resilience rules, see [EVENT_DRIVEN_ARCHITECTURE_PATTERN.md](EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) |
+> | **Phase Order** | Domain (1) → EF/Infra (2) → Event Handlers (3) → DTOs & Service (4) → API (5) → Blazor UI (6) → Integration (7) → Event-Driven Cross-Aggregate (8, if applicable) |
+> | **Key Sections** | § Quick Reference (file map), § Layer-by-Layer Patterns (§1–10), § Implementation Phase Order, § Documentation Per Module, § Cross-Cutting Conventions |
+> | **Companion Docs** | [Event-Driven Architecture Pattern](EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) (events/handlers) · [Domain Events Guide](../../SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md) (event catalog) · [Order Plan](../07-Features/02-OrderManagement/ORDER_MODULE_IMPLEMENTATION_PLAN.md) (§5.4 API best practices) |
+> | **Do Not** | Skip phases; mix layer concerns; use records for DTOs (Blazor needs mutable POCOs); throw for expected failures (use `Result<T>`) |
 
 ---
 
@@ -196,12 +211,19 @@ All modules follow this phase order (matching the [Implementation Tracker](../07
 ```
 Phase 1: Domain Layer          ← Aggregates, entities, events, exceptions
 Phase 2: EF Core & Infra       ← Configurations, DbContext, seed data, UoW repositories
-Phase 3: Event Handlers         ← Domain event handlers (if applicable)
+Phase 3: Event Handlers         ← Domain event handlers (see EVENT_DRIVEN_ARCHITECTURE_PATTERN.md)
 Phase 4: DTOs & Service         ← DTOs, mappings, service interface + implementation, DI, global usings
-Phase 5: API Controllers        ← REST endpoints, Swagger docs, API global usings
+Phase 5: API Controllers        ← REST endpoints, Swagger docs, API global usings (see Order Plan §5.4 for API best practices)
 Phase 6: Blazor UI              ← Components, client services, state containers, NavMenu
 Phase 7: Integration & Testing  ← Dashboard, unit tests, integration tests
+Phase 8: Event-Driven Cross-Agg ← Cross-aggregate events (e.g., Order → SaleRecord) — if applicable
 ```
+
+> **For AI Agents — Phase 3 & 8 Event Implementation**: When a phase involves domain events,
+> follow the templates, checklists, and anti-patterns in
+> [EVENT_DRIVEN_ARCHITECTURE_PATTERN.md](EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) §6 (skeletons),
+> §12 (checklist), §14 (anti-patterns). The `IHasDomainEvents` interface enables automatic
+> event collection — no `AppDbContext` changes needed for new aggregates.
 
 > **Critical**: Complete each phase fully before starting the next. Each phase should compile cleanly (`run_build` ✅).
 
@@ -213,9 +235,9 @@ Every feature module MUST have these three tracking documents:
 
 | Document | Naming Convention | Purpose |
 |----------|-------------------|---------|
-| **Implementation Plan** | `{MODULE}_MODULE_IMPLEMENTATION_PLAN.md` | Structural reference — sections match phases, with detailed specs per layer |MVP vs Post-MVP, priority categorization
-| **Implementation Tracker** | `{MODULE}_MODULE_IMPLEMENTATION_TRACKER.md` | Progress tracking — phase bars, task tables, version history |MVP vs Post-MVP, priority categorization
-| **Pending Task Tracker** | `{MODULE}_PENDING_TASK_TRACKER.md` | Backlog — MVP vs Post-MVP, priority categorization |
+| **Implementation Plan** | `{MODULE}_MODULE_IMPLEMENTATION_PLAN.md` | Structural reference — sections match phases, with detailed specs per layer |
+| **Implementation Tracker** | `{MODULE}_MODULE_IMPLEMENTATION_TRACKER.md` | Progress tracking — phase bars, task tables, version history |
+| **Post-MVP Task Tracker** | `{MODULE}_POST_MVP_TASK_TRACKER.md` | Deferred backlog — Post-MVP tasks only, grouped by concern |
 
 All three use the `📐 Document Structure Reference` template section defined in the Restaurant Tracker.
 
@@ -239,8 +261,8 @@ All three use the `📐 Document Structure Reference` template section defined i
 
 | Module | Status | Notes |
 |--------|--------|-------|
-| **Restaurant Management** | ✅ MVP Complete | Canonical reference — all patterns established here |
-| **Order Management** | 🟡 Phase 4 Complete | Following Restaurant patterns — Phase 5 next |
+| **Restaurant Management** | ✅ MVP Complete | Canonical reference — all CRUD + state + API patterns established here |
+| **Order Management** | ✅ MVP Complete | Full lifecycle with domain events, cross-aggregate SaleRecord events (Phase 8), inline CRUD pattern. See [Order Plan §5.4](../07-Features/02-OrderManagement/ORDER_MODULE_IMPLEMENTATION_PLAN.md) for canonical API best practices (12 subsections) |
 
 ---
 
@@ -248,10 +270,14 @@ All three use the `📐 Document Structure Reference` template section defined i
 
 | Document | Location |
 |----------|----------|
+| **Event-Driven Architecture Pattern** | **`docs/08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md`** |
+| Domain Events Guide | `SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md` |
+| Events Clean Architecture | `SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md` |
 | Restaurant Tracker | `docs/07-Features/01-RestaurantManagement/RESTAURANT_MODULE_IMPLEMENTATION_TRACKER.md` |
 | Restaurant Plan | `docs/07-Features/01-RestaurantManagement/RESTAURANT_MODULE_IMPLEMENTATION_PLAN.md` |
 | Order Tracker | `docs/07-Features/02-OrderManagement/ORDER_MODULE_IMPLEMENTATION_TRACKER.md` |
 | Order Plan | `docs/07-Features/02-OrderManagement/ORDER_MODULE_IMPLEMENTATION_PLAN.md` |
+| Order Post-MVP Tracker | `docs/07-Features/02-OrderManagement/ORDER_POST_MVP_TASK_TRACKER.md` |
 | Vertical Slice ADR | `docs/02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md` |
 | Interface Placement ADR | `docs/02-Architecture/ADR-004-INTERFACE-PLACEMENT-RULES.md` |
 | Blazor Patterns Index | `docs/08-Patterns/README.md` |
@@ -263,7 +289,8 @@ All three use the `📐 Document Structure Reference` template section defined i
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2026-03-14 | Initial creation — consolidated scattered Restaurant references into single authoritative guide |
+| 1.1 | 2026-03-21 | AI agent optimization — added `🤖 For AI Agents` guide block; added Phase 8 (event-driven cross-aggregate); linked EVENT_DRIVEN_ARCHITECTURE_PATTERN.md in Phase 3/8 directive and Related Docs; updated Order module to ✅ MVP Complete; fixed `Pending Task Tracker` naming to `Post-MVP Task Tracker`; added Domain Events Guide and Events Clean Architecture to Related Docs |
+| 1.0 | 2026-03-14 | Initial creation
 
 ---
 

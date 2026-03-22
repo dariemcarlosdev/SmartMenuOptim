@@ -1,3 +1,33 @@
+---
+title: Event-Driven Architecture Pattern Framework
+project: SmartMenuOptimizer
+layer: Cross-cutting (Domain → Application → Infrastructure)
+version: "1.3"
+created: "2026-03-21"
+updated: "2026-03-21"
+status: reference-implementation
+tags: [event-driven, domain-events, DDD, MediatR, clean-architecture, resilience, dead-letter-queue]
+audience: [ai-agent, developer]
+related:
+  - SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md
+  - SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md
+  - docs/08-Patterns/EVENT_DRIVEN_IMPROVEMENT_TRACKER.md
+  - docs/08-Patterns/REFERENCE_IMPLEMENTATION_GUIDE.md
+  - docs/07-Features/02-OrderManagement/ORDER_POST_MVP_TASK_TRACKER.md
+  - docs/07-Features/01-RestaurantManagement/RESTAURANT_PENDING_TASK_TRACKER.md
+actual_file_locations:
+  IDomainEvent: SmartMenuOptim.Domain/Common/IDomainEvent.cs
+  IHasDomainEvents: SmartMenuOptim.Domain/Common/IHasDomainEvents.cs
+  DomainEventBase: SmartMenuOptim.Domain/Common/DomainEventBase.cs
+  IDomainEventDispatcher: SmartMenuOptim.Application/Contracts/IDomainEventDispatcher.cs
+  IDeadLetterQueueService: SmartMenuOptim.Application/Contracts/IDeadLetterQueueService.cs
+  ResilientEventHandlerBase: SmartMenuOptim.Application/Handlers/ResilientEventHandlerBase.cs
+  MediatRDomainEventDispatcher: SmartMenuOptim.Infrastructure/EventDispatching/MediatRDomainEventDispatcher.cs
+  InMemoryDeadLetterQueueService: SmartMenuOptim.Infrastructure/Services/DeadLetterQueue/InMemoryDeadLetterQueueService.cs
+  AppDbContext: SmartMenuOptim.Infrastructure/Persistence/Context/AppDbContext.cs
+  DI_Registration: SmartMenuOptim.Infrastructure/Extensions/InfrastructureServiceCollectionExtensions.cs
+---
+
 # Event-Driven Architecture Pattern — SmartMenuOptimizer Framework
 
 ## 📋 Document Information
@@ -5,12 +35,20 @@
 | Field | Value |
 |-------|-------|
 | **Document Title** | Event-Driven Architecture Pattern Framework |
-| **Version** | 1.1 |
+| **Version** | 1.3 |
 | **Created** | 2026-03-21 |
 | **Updated** | 2026-03-21 |
 | **Author** | SmartMenuOptimizer Architecture Team |
 | **Status** | Reference Implementation ✅ |
 | **Scope** | Domain → Application → Infrastructure (full stack) |
+
+> **For AI Agents — Document Role**: This is the **canonical reference** for all event-driven
+> implementation in SmartMenuOptimizer. When implementing any event, handler, or aggregate
+> event collection, follow the templates and checklists in this document. For event schemas
+> and catalog details, cross-reference [DOMAIN_EVENTS_GUIDE.md](../../SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md).
+> For layer-placement rules (what goes where), cross-reference [EVENTS_CLEAN.md](../../SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md).
+> The `actual_file_locations` block in the YAML frontmatter maps each artifact to its exact
+> file path in the codebase — use it for direct file access.
 
 ---
 
@@ -156,6 +194,7 @@ public abstract class DomainEventBase : IDomainEvent
     public virtual string EventType => GetType().Name;
     public virtual int EventVersion => 1;
     public string? CorrelationId { get; init; }
+    public string? CausationId { get; init; }
 }
 ```
 
@@ -166,6 +205,7 @@ public abstract class DomainEventBase : IDomainEvent
 | `EventType` | Derived from class name — serialization routing |
 | `EventVersion` | Schema evolution — override when event shape changes |
 | `CorrelationId` | Distributed tracing — links related events across boundaries |
+| `CausationId` | Causal chain — links this event to the event that caused it |
 
 ### 5.3 `IDomainEventDispatcher` (Application)
 
@@ -523,7 +563,7 @@ services.AddSingleton<IDeadLetterQueueService, InMemoryDeadLetterQueueService>()
 
 ## 11. Current Event Catalog
 
-### Domain Events (10 implemented)
+### Domain Events (9 implemented)
 
 | Event | Aggregate | Category Folder | Handlers |
 |-------|-----------|-----------------|----------|
@@ -552,6 +592,21 @@ services.AddSingleton<IDeadLetterQueueService, InMemoryDeadLetterQueueService>()
 ## 12. Implementation Checklist — New Feature
 
 Use this checklist when adding a new event-driven feature:
+
+> **For AI Agents — Template Placeholder Substitution Rules**:
+>
+> | Placeholder | Meaning | Example |
+> |-------------|---------|---------|
+> | `{Agg}` | Aggregate name (PascalCase) — the DDD aggregate root | `Order`, `Menu`, `CustomerLoyalty`, `SaleRecord` |
+> | `{Name}` | Entity/concept name (PascalCase) — may equal `{Agg}` or be a child entity | `Order`, `Dish`, `Loyalty`, `Sale` |
+> | `{name}` | camelCase of `{Name}` — used for constructor parameters | `order`, `dish`, `loyalty`, `sale` |
+> | `{Action}` | Past-tense verb describing what happened (PascalCase) | `Placed`, `Cancelled`, `Completed`, `Added`, `Removed` |
+> | `{Category}` | Logical grouping for handler folders — usually the aggregate domain | `Order`, `Menu`, `Loyalty`, `Sale` |
+>
+> **Example substitution**: For "dish removed from menu":
+> - Event: `{Name}` = `Dish`, `{Action}` = `RemovedFromMenu` → `DishRemovedFromMenuEvent`
+> - Folder: `{Agg}` = `Menu` → `Aggregates/MenuAggregate/Events/`
+> - Handler folder: `{Category}` = `Menu` → `Handlers/MenuEventHandlers/`
 
 ### Phase 1: Domain Layer
 
@@ -678,12 +733,26 @@ OrderPlacedEvent
 
 ## 18. Related Documentation
 
-| Document | Location |
-|----------|----------|
-| Domain Events Guide | `SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md` |
-| Events Clean Architecture | `SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md` |
-| Reference Implementation Guide | `docs/08-Patterns/REFERENCE_IMPLEMENTATION_GUIDE.md` |
-| Response Result Pattern | `docs/08-Patterns/RESPONSE_RESULT_PATTERN.md` |
+| Document | Location | Relationship |
+|----------|----------|--------------|
+| Domain Events Guide | `SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md` | Event schemas, catalog, aggregate patterns |
+| Events Clean Architecture | `SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md` | Layer placement rules (what belongs where) |
+| Event-Driven Improvement Tracker | `docs/08-Patterns/EVENT_DRIVEN_IMPROVEMENT_TRACKER.md` | Completed & planned improvements to this pattern |
+| Reference Implementation Guide | `docs/08-Patterns/REFERENCE_IMPLEMENTATION_GUIDE.md` | Restaurant module as canonical code reference |
+| Response Result Pattern | `docs/08-Patterns/RESPONSE_RESULT_PATTERN.md` | Error handling pattern used by handlers |
+| Order Post-MVP Task Tracker | `docs/07-Features/02-OrderManagement/ORDER_POST_MVP_TASK_TRACKER.md` | Order event flows & CQRS tasks referencing this pattern |
+| Restaurant Pending Task Tracker | `docs/07-Features/01-RestaurantManagement/RESTAURANT_PENDING_TASK_TRACKER.md` | Menu event flows & REST-CQRS-007 domain events task |
+
+---
+
+## 19. Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.3 | 2026-03-21 | Code verification pass — added missing `CausationId` property to §5.2 `DomainEventBase` snippet (was present in actual code at line 65 but missing from doc) |
+| 1.2 | 2026-03-21 | AI agent optimization
+| 1.1 | 2026-03-21 | Added `IHasDomainEvents` auto-discovery pattern (§5.4, §6.2, §8.2); updated §3/§4/§8 to reflect interface-based collection; added §12 Phase 3 note on no `AppDbContext` changes needed |
+| 1.0 | 2026-03-21 | Initial creation — consolidated from codebase analysis; 18 sections covering full event lifecycle |
 
 ---
 
