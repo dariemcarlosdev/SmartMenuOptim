@@ -58,6 +58,31 @@ This document is the **canonical reference** for implementing event-driven featu
 
 ---
 
+## 1.1 When to Use This Pattern
+
+Use the Event-Driven Architecture pattern when **something that happened in one part of the system needs to trigger reactions in other parts**, without those parts knowing about each other.
+
+✅ **Use when:**
+- An aggregate's state change must trigger side effects in other aggregates or bounded contexts
+- You need loose coupling between the "what happened" (domain) and "what should we do about it" (application/infrastructure)
+- Multiple independent reactions must occur for the same business event
+- You want to add new behaviors (handlers) without modifying existing aggregate code
+
+❌ **Avoid when:**
+- Simple CRUD with no side effects — direct service calls are simpler
+- Synchronous request/response with tight latency constraints (events add indirection)
+- Single consumer only and coupling is acceptable — a direct method call is clearer
+
+### Real-World Scenarios
+
+| # | Scenario | Event | Handlers & Reactions |
+|---|----------|-------|---------------------|
+| 1 | **Order placed at a restaurant** | `OrderPlacedEvent` | ① Create a `SaleRecord` for financial reporting ② Award loyalty points to the customer ③ Notify the kitchen display system ④ Update real-time dashboard counters. Each handler is independent — if loyalty service is down, the sale record is still created. |
+| 2 | **Menu item price changed** | `DishPriceChangedEvent` | ① Recalculate active menu totals ② Invalidate cached pricing on the POS terminal ③ Log the change for audit trail ④ Trigger an AI recommendation refresh if the price swing is > 15%. Adding new reactions (e.g., push notification to regular customers) requires only a new handler — the `Menu` aggregate is untouched. |
+| 3 | **Daily sales summary generated** | `DailySalesSummarizedEvent` | ① Email the manager a PDF report ② Feed data into the menu-optimization ML model ③ Update the analytics dashboard snapshot ④ Archive raw sale records to cold storage. The background job that generates the summary doesn't know or care about any of these consumers. |
+
+---
+
 ## 2. Architectural Overview
 
 ```

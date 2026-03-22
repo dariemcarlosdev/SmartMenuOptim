@@ -10,6 +10,25 @@
 
 ---
 
+## When to Use This Tracker
+
+Use this document as the **single source of truth** for planned, in-progress, and completed improvements to the event-driven infrastructure. It bridges the gap between the architectural pattern documentation (the "what" and "how") and the actual engineering backlog (the "when" and "who").
+
+✅ **Consult this tracker when:**
+- You are about to implement a new event or handler and want to know if any infrastructure improvements should be applied first
+- A bug report traces back to event dispatch, ordering, or persistence and you need to see if a known fix is already planned
+- You are preparing for production and need to verify which resilience patterns are in place vs. pending
+
+### Real-World Scenarios
+
+| # | Scenario | How This Tracker Helps |
+|---|----------|----------------------|
+| 1 | **A developer adds a new `ReservationCancelledEvent` handler** | Before writing the handler, they check item #2 (nested transaction fix) and item #4 (dispatcher error visibility) to decide whether to use `_unitOfWork.SaveChangesAsync()` or `_dbContext.SaveChangesAsync()` directly, and whether to mark the handler as critical. Without checking, they'd likely hit the BUG-005 nested transaction crash at runtime. |
+| 2 | **The team plans to deploy to Azure with multiple instances** | The tech lead reviews items #3 (Outbox Pattern) and #5 (Handler Idempotency) to scope the pre-production work. The tracker shows these are "High effort" and should be tackled together, preventing a partial implementation that could cause duplicate events across instances. |
+| 3 | **A QA engineer reports that loyalty points were awarded twice after a retry** | The developer finds item #5 (Handler Idempotency) which explains the root cause: no `EventId` deduplication. The tracker provides the exact fix steps and links to the `DomainEventBase.EventId` property, saving hours of investigation. |
+
+---
+
 ## ✅ Completed
 
 ### 1. `IHasDomainEvents` Interface — Automatic Aggregate Discovery

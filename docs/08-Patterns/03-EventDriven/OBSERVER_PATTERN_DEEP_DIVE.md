@@ -22,6 +22,31 @@ The Observer Pattern establishes a one-to-many dependency between objects. When 
 
 ---
 
+## When to Use This Pattern
+
+Use the Observer pattern when **one object's state change must automatically notify and update multiple dependent objects** — without tight coupling between them.
+
+✅ **Use when:**
+- Multiple UI components need to react to the same state change
+- Asynchronous operations (API calls, background tasks) must refresh the UI on completion
+- You want clean separation between state management and rendering logic
+- Components at different places in the component tree share the same data source
+
+❌ **Avoid when:**
+- State is local to a single component — use `@bind` or local fields instead
+- Parent→child data flow only — use `[Parameter]` and `EventCallback`
+- You need complex state transitions with undo/redo — consider a state machine or Redux-style store
+
+### Real-World Scenarios
+
+| # | Scenario | How Observer Applies |
+|---|----------|---------------------|
+| 1 | **Restaurant dashboard with live order count** | The `OrderListState` container fetches orders from the API. Three independent components observe it: a counter badge in the navbar, the order table on the main page, and a summary card in the sidebar. When a new order arrives and `SetData()` is called, all three re-render automatically via `OnStateChanged`. No component knows the others exist. |
+| 2 | **Menu editing with unsaved-changes indicator** | A `MenuEditState` container tracks whether the user has modified any dish. The "Save" button component, the browser-tab title component, and a "discard changes" banner all subscribe to `OnStateChanged`. When the user types a new price, the state container updates and all three UI elements reflect the change instantly — the button enables, the tab shows "●", and the banner appears. |
+| 3 | **Multi-step order form with validation summary** | An `OrderFormState` holds the current order being built (customer, dishes, quantities). A step-indicator component, the running total component, and a validation-error list component each subscribe. As the user adds dishes or changes quantities, every observer updates in sync — the total recalculates, the step indicator advances, and validation errors clear — all from a single `NotifyStateChanged()` call. |
+
+---
+
 ## Implementation
 
 ### State Container (Subject/Observable)
