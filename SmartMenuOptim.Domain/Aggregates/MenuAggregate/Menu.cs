@@ -209,10 +209,10 @@ namespace SmartMenuOptim.Domain.Aggregates.MenuAggregate;
 /// </list>
 /// </remarks>
 [Table("Menus")]
-public class Menu : TenantEntityBase, IValidatableObject
+public class Menu : TenantEntityBase, IValidatableObject, IHasDomainEvents
 {
     // === Private Collections for Aggregate Pattern ===
-    
+
     private readonly List<MenuDish> _menuDishes = new();
     private readonly List<IDomainEvent> _domainEvents = new();
     

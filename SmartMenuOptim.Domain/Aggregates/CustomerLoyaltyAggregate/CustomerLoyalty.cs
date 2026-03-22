@@ -155,7 +155,7 @@ namespace SmartMenuOptim.Domain.Aggregates.CustomerLoyaltyAggregate;
 ///   <item><description><strong>Transaction Logging:</strong> Every point operation creates a corresponding transaction record for complete auditability</description></item>
 /// </list>
 /// </remarks>
-public class CustomerLoyalty : TenantEntityBase
+public class CustomerLoyalty : TenantEntityBase, IHasDomainEvents
 {
     // === Private Collections ===
     private readonly List<LoyaltyTransaction> _transactions = new();

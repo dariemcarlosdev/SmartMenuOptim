@@ -125,7 +125,7 @@ namespace SmartMenuOptim.Domain.Aggregates.SaleRecordAggregate
     /// </list>
     /// </remarks>
     [Table("SaleRecords")]
-    public class SaleRecord : TenantEntityBase
+    public class SaleRecord : TenantEntityBase, IHasDomainEvents
     {
         // ===================================================================
         // PRIVATE FIELDS

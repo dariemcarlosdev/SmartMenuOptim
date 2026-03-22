@@ -1535,72 +1535,32 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
         }
         
         /// <summary>
-        /// Collects all domain events from tracked aggregates.
+        /// Collects all domain events from tracked aggregates that implement <see cref="IHasDomainEvents"/>.
         /// </summary>
         /// <returns>A list of domain events to be dispatched after persistence.</returns>
         /// <remarks>
-        /// This method iterates through all tracked entities that implement domain events
-        /// and collects their pending events. Currently supports:
-        /// - Order aggregate
-        /// - CustomerLoyalty aggregate
-        /// - Menu aggregate
-        /// - SaleRecord entity
-        /// 
-        /// New aggregates that raise domain events should be added here.
+        /// <para><strong>Open/Closed Principle:</strong></para>
+        /// <para>This method uses <c>ChangeTracker.Entries&lt;IHasDomainEvents&gt;()</c> to automatically
+        /// discover every tracked aggregate that raises domain events. New aggregates only need to
+        /// implement <see cref="IHasDomainEvents"/> — no changes to this method are required.</para>
         /// </remarks>
         private List<IDomainEvent> CollectDomainEvents()
         {
-            var domainEvents = new List<IDomainEvent>();
-            
-            // Collect from Order aggregates
-            var orderEntries = ChangeTracker.Entries<Order>()
+            var aggregatesWithEvents = ChangeTracker.Entries<IHasDomainEvents>()
                 .Where(e => e.Entity.DomainEvents.Any())
                 .Select(e => e.Entity)
                 .ToList();
-            
-            foreach (var order in orderEntries)
-            {
-                domainEvents.AddRange(order.DomainEvents);
-            }
-            
-            // Collect from CustomerLoyalty aggregates
-            var loyaltyEntries = ChangeTracker.Entries<CustomerLoyalty>()
-                .Where(e => e.Entity.DomainEvents.Any())
-                .Select(e => e.Entity)
+
+            var domainEvents = aggregatesWithEvents
+                .SelectMany(a => a.DomainEvents)
                 .ToList();
-            
-            foreach (var loyalty in loyaltyEntries)
-            {
-                domainEvents.AddRange(loyalty.DomainEvents);
-            }
-            
-            // Collect from Menu aggregates
-            var menuEntries = ChangeTracker.Entries<Menu>()
-                .Where(e => e.Entity.DomainEvents.Any())
-                .Select(e => e.Entity)
-                .ToList();
-            
-            foreach (var menu in menuEntries)
-            {
-                domainEvents.AddRange(menu.DomainEvents);
-            }
-            
-            // Collect from SaleRecord entities
-            var saleRecordEntries = ChangeTracker.Entries<SaleRecord>()
-                .Where(e => e.Entity.DomainEvents.Any())
-                .Select(e => e.Entity)
-                .ToList();
-            
-            foreach (var saleRecord in saleRecordEntries)
-            {
-                domainEvents.AddRange(saleRecord.DomainEvents);
-            }
-            
+
             return domainEvents;
         }
-        
+
         /// <summary>
-        /// Clears domain events from all tracked aggregates to prevent re-dispatch.
+        /// Clears domain events from all tracked aggregates that implement <see cref="IHasDomainEvents"/>
+        /// to prevent re-dispatch if <c>SaveChangesAsync</c> is retried.
         /// </summary>
         /// <remarks>
         /// This must be called BEFORE saving to the database to ensure events
@@ -1608,48 +1568,14 @@ namespace SmartMenuOptim.Infrastructure.Persistence.Context
         /// </remarks>
         private void ClearDomainEventsFromAggregates()
         {
-            // Clear from Order aggregates
-            var orderEntries = ChangeTracker.Entries<Order>()
+            var aggregatesWithEvents = ChangeTracker.Entries<IHasDomainEvents>()
                 .Where(e => e.Entity.DomainEvents.Any())
                 .Select(e => e.Entity)
                 .ToList();
-            
-            foreach (var order in orderEntries)
+
+            foreach (var aggregate in aggregatesWithEvents)
             {
-                order.ClearDomainEvents();
-            }
-            
-            // Clear from CustomerLoyalty aggregates
-            var loyaltyEntries = ChangeTracker.Entries<CustomerLoyalty>()
-                .Where(e => e.Entity.DomainEvents.Any())
-                .Select(e => e.Entity)
-                .ToList();
-            
-            foreach (var loyalty in loyaltyEntries)
-            {
-                loyalty.ClearDomainEvents();
-            }
-            
-            // Clear from Menu aggregates
-            var menuEntries = ChangeTracker.Entries<Menu>()
-                .Where(e => e.Entity.DomainEvents.Any())
-                .Select(e => e.Entity)
-                .ToList();
-            
-            foreach (var menu in menuEntries)
-            {
-                menu.ClearDomainEvents();
-            }
-            
-            // Clear from SaleRecord entities
-            var saleRecordEntries = ChangeTracker.Entries<SaleRecord>()
-                .Where(e => e.Entity.DomainEvents.Any())
-                .Select(e => e.Entity)
-                .ToList();
-            
-            foreach (var saleRecord in saleRecordEntries)
-            {
-                saleRecord.ClearDomainEvents();
+                aggregate.ClearDomainEvents();
             }
         }
 

@@ -187,10 +187,10 @@ namespace SmartMenuOptim.Domain.Aggregates.OrderAggregate;
 /// </list>
 /// </remarks>
 [Table("Orders")]
-public class Order : TenantEntityBase, IValidatableObject
+public class Order : TenantEntityBase, IValidatableObject, IHasDomainEvents
 {
     // === Private Collections for Aggregate Pattern ===
-    
+
     private readonly List<OrderItem> _orderItems = new();
     private readonly List<IDomainEvent> _domainEvents = new();
     
