@@ -2,8 +2,23 @@
 
 > **Priority**: 2 (High — MVP Core Feature)  
 > **Status**: 🟢 Complete (MVP)  
-> **Started**: 2026-03-14 · **Last Updated**: 2026-03-21  
-> **Architecture**: [ADR-005 — Vertical Slice + Aggregate-Centric](../../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md)
+> **Started**: 2026-03-14 · **Last Updated**: 2026-03-21
+
+---
+
+> **🤖 For AI Agents — Document Guide**
+>
+> | Aspect | Details |
+> |--------|---------|
+> | **Document Type** | Implementation Tracker — per-phase progress log with task tables and completion status |
+> | **Use As** | Reference for tracking implementation progress; template for new feature module trackers |
+> | **Architecture** | [ADR-005 — Vertical Slice + Aggregate-Centric](../../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md) |
+> | **Template Role** | The `📐 Document Structure Reference` section is a reusable template for new modules |
+> | **Key Sections** | Phases 1–8 (Domain → EF → Handlers → DTOs → API → UI → Integration → Events), Known Issues, Key Decisions |
+> | **Event-Driven Pattern** | Phase 3 (handlers) + Phase 8 (cross-aggregate SaleRecord events) document event implementations; for the canonical pattern framework, see [EVENT_DRIVEN_ARCHITECTURE_PATTERN.md](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) |
+> | **Bug Traceability** | § Known Issues documents ORD-003a/b/c — the nested transaction bug chain when event handlers persist entities |
+> | **Companion Docs** | [Implementation Plan](ORDER_MODULE_IMPLEMENTATION_PLAN.md) (prescriptive spec), [Post-MVP Tracker](ORDER_POST_MVP_TASK_TRACKER.md) (deferred tasks) |
+> | **Do Not** | Track Post-MVP deferred tasks here (use the Post-MVP Tracker); modify phase structure without updating the Plan |
 
 ---
 
@@ -354,6 +369,9 @@ Seed data includes: 6 order statuses per restaurant, 3 completed orders per rest
 | Document | Location |
 |----------|----------|
 | **Reference Implementation Guide** | **`docs/08-Patterns/REFERENCE_IMPLEMENTATION_GUIDE.md`** |
+| **Event-Driven Architecture Pattern** | **`docs/08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md`** |
+| Domain Events Guide | `SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md` |
+| Events Clean Architecture | `SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md` |
 | Code Inventory | `docs/07-Features/02-OrderManagement/ORDER_MANAGEMENT_CODE_INVENTORY.md` |
 | Implementation Plan | `docs/07-Features/02-OrderManagement/ORDER_MODULE_IMPLEMENTATION_PLAN.md` |
 | Post-MVP Task Tracker | `docs/07-Features/02-OrderManagement/ORDER_POST_MVP_TASK_TRACKER.md` |
@@ -368,7 +386,8 @@ Seed data includes: 6 order statuses per restaurant, 3 completed orders per rest
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.8 | 2026-03-21 | **ORD-003 expanded** — split ORD-003 into 3 sub-issues (ORD-003a/b/c) for traceability: (a) `UpdateStatusAsync` bypassed domain methods for terminal statuses — no events raised; (b) `SaleRecordedHandler` never persisted `SaleRecord` entities — only logged; (c) nested transaction crash in `UnityOfWork.SaveChangesAsync()`. Each sub-issue documents root cause, call chain, and fix. |
+| 2.9 | 2026-03-21 | AI agent optimization — added `🤖 For AI Agents — Document Guide` block at top; added Event-Driven Architecture Pattern, Domain Events Guide, and Events Clean Architecture to Related Docs table |
+| 2.8 | 2026-03-21 | **ORD-003 expanded**
 | 2.7 | 2026-03-21 | **Phase 8: Event-Driven Sale Records**
 | 2.6 | 2026-03-21 | **🎉 MVP Complete**
 | 2.5 | 2026-03-21 | Phase 6.5 UX Polish complete

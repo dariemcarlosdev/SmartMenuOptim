@@ -1,11 +1,25 @@
 # 📦 Order Management — Post-MVP Task Tracker
 
 > **SmartMenuOptimizer — Order Feature Post-MVP Backlog**  
-> **Version**: 2.1  
+> **Version**: 2.3  
 > **Created**: 2026-03-14  
-> **Last Updated**: 2026-03-15  
+> **Last Updated**: 2026-03-21  
 > **Branch**: `env-dev/feature/WIP-refactor-Clean-Architecture-DDD`  
 > **Extracted From**: [ORDER_MANAGEMENT_CODE_INVENTORY.md](ORDER_MANAGEMENT_CODE_INVENTORY.md)
+
+---
+
+> **🤖 For AI Agents — Document Guide**
+>
+> | Aspect | Details |
+> |--------|---------|
+> | **Document Type** | Post-MVP Task Tracker — deferred backlog of tasks beyond MVP release |
+> | **Use As** | Backlog reference for future iterations; template for new module Post-MVP trackers |
+> | **Scope Rule** | **Post-MVP only** — all tasks have status `⏸️ Deferred`. MVP tasks are tracked in the [Implementation Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md) |
+> | **Key Sections** | Architecture & Refactoring (CQRS), Testing, API Hardening (§5.4), Performance, Integrations, Technical Debt, Event-Driven Architecture Reference |
+> | **Event-Driven Pattern** | `📡 Event-Driven Architecture Reference` section documents Order event flows; for the canonical pattern framework, see [EVENT_DRIVEN_ARCHITECTURE_PATTERN.md](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) |
+> | **Companion Docs** | [Implementation Plan](ORDER_MODULE_IMPLEMENTATION_PLAN.md) (prescriptive spec), [Implementation Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md) (MVP progress) |
+> | **Do Not** | Add MVP tasks here; change task status from `⏸️` without moving to the Implementation Tracker |
 
 ---
 
@@ -56,6 +70,9 @@
 
 > **Related Docs**  
 > [Implementation Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md) (MVP progress) · [Implementation Plan](ORDER_MODULE_IMPLEMENTATION_PLAN.md) (full spec) · [Code Inventory](ORDER_MANAGEMENT_CODE_INVENTORY.md) · [MVP Prioritization](../../01-Overview/MVP_FEATURE_PRIORITIZATION.md)
+>
+> **Event-Driven Architecture**  
+> [Domain Events Guide](../../../SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md) · [Events Clean Architecture](../../../SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md) · [Event-Driven Architecture Pattern](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md)
 
 ---
 
@@ -161,6 +178,75 @@ Post-MVP Pending Tasks: 26
 
 ---
 
+## 📡 Event-Driven Architecture Reference
+
+> The Order module is a primary consumer of the project's event-driven architecture.
+> Refer to the following documents for implementation patterns:
+>
+> | Document | Purpose |
+> |----------|---------|
+> | [Domain Events Guide](../../../SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md) | Event catalog, schemas, aggregate collection pattern, handler rules |
+> | [Events Clean Architecture](../../../SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md) | What belongs in Domain vs Application vs Infrastructure |
+> | [Event-Driven Architecture Pattern](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) | Canonical reference — lifecycle, resilience, DI, templates, anti-patterns |
+
+### Order Event Flows
+
+The Order aggregate raises three domain events. Each triggers multiple independent handlers:
+
+#### Flow 1: Order Placed
+
+```
+Order.Place()
+    → raises OrderPlacedEvent
+        → AppDbContext.SaveChangesAsync()
+            → DB commit succeeds
+            → MediatR dispatches OrderPlacedEvent
+                ├── AwardLoyaltyPointsHandler     → CustomerLoyalty.AddPoints()
+                │       → may raise LoyaltyPointsEarnedEvent
+                │       → may raise LoyaltyTierChangedEvent (if threshold crossed)
+                ├── SendOrderConfirmationHandler   → INotificationService (customer email/SMS)
+                ├── SendKitchenNotificationHandler  → INotificationService (kitchen display)
+                └── UpdateOrderAnalyticsHandler     → Structured logging for dashboards
+```
+
+#### Flow 2: Order Cancelled
+
+```
+Order.Cancel(reason, cancelledBy)
+    → raises OrderCancelledEvent
+        → AppDbContext.SaveChangesAsync()
+            → DB commit succeeds
+            → MediatR dispatches OrderCancelledEvent
+                └── OrderCancelledHandler
+                    → Reverse loyalty points (if RequiresRefund)
+                    → Log cancellation analytics
+                    → Notify restaurant staff
+```
+
+#### Flow 3: Order Completed
+
+```
+Order.Complete()
+    → raises OrderCompletedEvent
+        → AppDbContext.SaveChangesAsync()
+            → DB commit succeeds
+            → MediatR dispatches OrderCompletedEvent
+                └── OrderCompletedHandler
+                    → Calculate fulfillment time metrics
+                    → Update order completion analytics
+                    → Trigger customer satisfaction flow
+```
+
+### Key Implementation Notes
+
+- **Event lifecycle**: Events dispatch only AFTER `SaveChangesAsync` succeeds (see [Pattern §4](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md))
+- **Resilience**: All handlers inherit `ResilientEventHandlerBase<T>` — 3 retries with exponential backoff, then Dead Letter Queue
+- **Auto-discovery**: Order aggregate implements `IHasDomainEvents` — no `AppDbContext` registration needed
+- **Multi-tenant**: All Order events include `RestaurantId` for tenant isolation
+- **Cascading**: `AwardLoyaltyPointsHandler` demonstrates event cascading (Order → Loyalty events, max 2 levels deep)
+
+---
+
 ## 📝 New Task Template
 
 ```markdown
@@ -175,7 +261,9 @@ Post-MVP Pending Tasks: 26
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.1 | 2026-03-15 | Removed `✅ Completed Tasks` section — completed work is tracked in the [Implementation Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md); renamed file from `ORDER_PENDING_TASK_TRACKER.md` to `ORDER_POST_MVP_TASK_TRACKER.md`; updated naming convention in template; document now contains **only** Post-MVP pending tasks |
+| 2.3 | 2026-03-21 | AI agent optimization — added `🤖 For AI Agents — Document Guide` block at top for AI model discoverability and document-role clarity |
+| 2.2 | 2026-03-21 | Added `📡 Event-Driven Architecture Reference`
+| 2.1 | 2026-03-15 | Removed `✅ Completed Tasks` section
 | 2.0 | 2026-03-15 | **Major restructure** — document scope redefined to **Post-MVP only**; removed MVP Pending section (3 items already tracked in [Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md) Phases 5/7; `ORD-DOC-002` meta-task retired); reclassified 7 low-priority items (`ORD-PERF-001`–`004`, `ORD-TD-001`–`003`) from MVP to Post-MVP; reorganized tasks by **domain concern** (Architecture, Testing, API Hardening, Performance, Integrations, Tech Debt) instead of priority level; moved `ORD-ENH-006` (FluentValidation) to Architecture section (pairs with CQRS); reordered API Hardening by §5.4 subsection (security → concurrency → observability); updated template to reflect Post-MVP-only scope; 26 pending tasks total |
 | 1.9 | 2026-03-15 | Phase 5 synchronization — scoped `ORD-DOC-003` to pagination only (§5.4.6 MVP); split 7 Post-MVP API best practices into `ORD-API-005`–`ORD-API-011`; added 2 missing completed items (`ORD-API-004` request models, `ORD-DOC-004` §5.4 docs); updated summary counts (49 total, 26 done, 14 deferred); aligned with Plan v3.0 and Tracker v2.0 |
 | 1.8 | 2026-03-14 | Phase 5 marked partial — fixed 'All Phase 5 tasks completed' note, added partial note to Phase 5 completed section, fixed broken Related Docs links (stray 'x' removed, added Plan + Tracker links) |

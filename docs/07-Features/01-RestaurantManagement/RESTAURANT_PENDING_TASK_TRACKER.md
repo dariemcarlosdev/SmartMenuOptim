@@ -54,6 +54,9 @@
 
 > **Related Docs**  
 > [Implementation Tracker](../07-Features/01-RestaurantManagement/IMPLEMENTATION_TRACKER.md) · [Implementation Guide](../07-Features/01-RestaurantManagement/IMPLEMENTATION_GUIDE.md) · [MVP Prioritization](../01-Overview/MVP_FEATURE_PRIORITIZATION.md) · [Pending Tasks (Global)](PENDING_TASKS.md)
+>
+> **Event-Driven Architecture**  
+> [Domain Events Guide](../../../SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md) · [Events Clean Architecture](../../../SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md) · [Event-Driven Architecture Pattern](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md)
 
 ---
 
@@ -201,6 +204,72 @@ Restaurant Management Tasks: 37
 
 ---
 
+## 📡 Event-Driven Architecture Reference
+
+> The Restaurant module uses domain events for Menu and Dish operations.
+> Future CQRS tasks (`REST-CQRS-007`) will add Restaurant-level domain events.
+> Refer to the following documents for implementation patterns:
+>
+> | Document | Purpose |
+> |----------|---------|
+> | [Domain Events Guide](../../../SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md) | Event catalog, schemas, aggregate collection pattern, handler rules |
+> | [Events Clean Architecture](../../../SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md) | What belongs in Domain vs Application vs Infrastructure |
+> | [Event-Driven Architecture Pattern](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) | Canonical reference — lifecycle, resilience, DI, templates, anti-patterns |
+
+### Restaurant Module Event Flows
+
+The Menu aggregate currently raises two domain events. Future Post-MVP work (`REST-CQRS-007`) will add Restaurant-level events (`RestaurantCreated`, `RestaurantUpdated`, `MenuCreated`).
+
+#### Flow 1: Dish Added to Menu
+
+```
+Menu.AddDish(dish, categoryId, categoryName)
+    → raises DishAddedToMenuEvent
+        → AppDbContext.SaveChangesAsync()
+            → DB commit succeeds
+            → MediatR dispatches DishAddedToMenuEvent
+                └── DishAddedToMenuHandler
+                    → Invalidate menu cache (ICacheService)
+                    → Log menu composition change
+                    → (Future) Update search index
+```
+
+#### Flow 2: Dish Removed from Menu
+
+```
+Menu.RemoveDish(dishId, reason)
+    → raises DishRemovedFromMenuEvent
+        → AppDbContext.SaveChangesAsync()
+            → DB commit succeeds
+            → MediatR dispatches DishRemovedFromMenuEvent
+                └── DishRemovedFromMenuHandler
+                    → Invalidate menu cache (ICacheService)
+                    → Log removal with reason and performance data
+                    → (Future) Notify menu planners
+```
+
+#### Flow 3 (Post-MVP — `REST-CQRS-007`): Restaurant Created
+
+```
+Restaurant.Create(...)
+    → raises RestaurantCreatedEvent
+        → AppDbContext.SaveChangesAsync()
+            → DB commit succeeds
+            → MediatR dispatches RestaurantCreatedEvent
+                ├── NotifyAdminHandler          → INotificationService
+                └── InitializeDefaultMenuHandler → Create default menu structure
+```
+
+### Key Implementation Notes
+
+- **Existing events**: `DishAddedToMenuEvent` and `DishRemovedFromMenuEvent` are already implemented in the Menu aggregate (see [Event Catalog](../../../SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md))
+- **Event lifecycle**: Events dispatch only AFTER `SaveChangesAsync` succeeds (see [Pattern §4](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md))
+- **Resilience**: All handlers inherit `ResilientEventHandlerBase<T>` — 3 retries with exponential backoff, then Dead Letter Queue
+- **Auto-discovery**: Menu aggregate implements `IHasDomainEvents` — no `AppDbContext` registration needed
+- **CQRS dependency**: Restaurant-level domain events (`REST-CQRS-007`) are deferred until CQRS infrastructure (`REST-CQRS-001`) is built
+
+---
+
 ## 📝 New Task Template
 
 ```markdown
@@ -215,7 +284,8 @@ Restaurant Management Tasks: 37
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.0 | 2026-03-14 | Restructured into MVP vs Post-MVP sections; added Document Structure Reference template |
+| 2.1 | 2026-03-21 | Added `📡 Event-Driven Architecture Reference` section with Menu event flow examples and links to Domain Events Guide, Events Clean Architecture, and Event-Driven Architecture Pattern documents |
+| 2.0 | 2026-03-14 | Restructured into MVP vs Post-MVP sections
 | 1.1 | 2026-03-14 | Added CQRS Refactoring tasks (REST-CQRS-001–007) migrated from `RESTAURANT_MODULE_ARCHITECTURE_DECISION.md` |
 | 1.0 | 2026-03-14 | Initial extraction from [PENDING_TASKS.md](PENDING_TASKS.md) — Restaurant Management tasks only |
 

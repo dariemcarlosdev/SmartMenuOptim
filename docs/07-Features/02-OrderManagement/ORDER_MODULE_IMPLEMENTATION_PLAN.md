@@ -2,9 +2,25 @@
 
 > **SmartMenuOptimizer — Order Management Feature**  
 > **Priority**: 2 (MVP High — Depends on Restaurant Foundation)  
-> **Version**: 3.6  
+> **Version**: 3.7  
 > **Last Updated**: 2026-03-21  
 > **Architecture**: [ADR-005 — Vertical Slice + Aggregate-Centric](../../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md)
+
+---
+
+> **🤖 For AI Agents — Document Guide**
+>
+> | Aspect | Details |
+> |--------|---------|
+> | **Document Type** | Implementation Plan — prescriptive spec for building the Order Management feature |
+> | **Use As** | Step-by-step blueprint when implementing similar feature modules (use §1–§8 section order) |
+> | **Template Role** | The `📐 Document Structure Reference` section is a reusable template for new modules |
+> | **Key Sections** | §1 Domain, §2 EF/Infra, §3 Event Handlers, §4 DTOs & Service, §5 API (+ §5.4 canonical API rules), §6 Blazor UI, §7 Validation, §8 Performance |
+> | **Event-Driven Pattern** | §3 + §3.1 document handler implementations; for the canonical pattern framework, see [EVENT_DRIVEN_ARCHITECTURE_PATTERN.md](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) |
+> |**Architecture**: [ADR-005 — Vertical Slice + Aggregate-Centric](../../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md) |
+> | **Cross-Aggregate Events** | §3.1 documents the Order → SaleRecord cross-aggregate event flow (Phase 8) |
+> | **Companion Docs** | [Implementation Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md) (progress), [Post-MVP Tracker](ORDER_POST_MVP_TASK_TRACKER.md) (deferred tasks) |
+> | **Do Not** | Add MVP tasks to the Post-MVP Tracker; modify this Plan for progress tracking (use the Tracker instead) |
 
 ---
 
@@ -706,6 +722,9 @@ Used on both List and Detail pages:
 | Document | Location | Description |
 |----------|----------|-------------|
 | **Reference Implementation Guide** | `docs/08-Patterns/REFERENCE_IMPLEMENTATION_GUIDE.md` | **Canonical patterns — Restaurant as golden path** |
+| **Event-Driven Architecture Pattern** | `docs/08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md` | **Canonical event pattern — lifecycle, resilience, DI, templates** |
+| Domain Events Guide | `SmartMenuOptim.Domain/docs/06-Events/DOMAIN_EVENTS_GUIDE.md` | Event schemas, catalog, aggregate collection pattern |
+| Events Clean Architecture | `SmartMenuOptim.Domain/docs/06-Events/EVENTS_CLEAN.md` | Layer placement rules for events |
 | Code Inventory | `docs/07-Features/02-OrderManagement/ORDER_MANAGEMENT_CODE_INVENTORY.md` | Pre-implementation code inventory |
 | Implementation Tracker | `docs/07-Features/02-OrderManagement/ORDER_MODULE_IMPLEMENTATION_TRACKER.md` | Progress tracking |
 | Post-MVP Task Tracker | `docs/07-Features/02-OrderManagement/ORDER_POST_MVP_TASK_TRACKER.md` | Post-MVP backlog (deferred tasks only) |
@@ -720,7 +739,8 @@ Used on both List and Detail pages:
 
 | Version | Date | Description |
 |---------|------|-------------|
-| 3.6 | 2026-03-21 | **§9 Bugs & Fixes** — added dedicated section documenting ORD-003a/b/c bug chain: root causes, error messages, call chains, before/after code, fix dependency diagram, and files changed summary. Expanded from single ORD-003 to 3 traceable sub-issues for future reference. |
+| 3.7 | 2026-03-21 | AI agent optimization — added `🤖 For AI Agents — Document Guide` block at top; added Event-Driven Architecture Pattern, Domain Events Guide, and Events Clean Architecture to Related Documentation table |
+| 3.6 | 2026-03-21 | **§9 Bugs & Fixes**
 | 3.5 | 2026-03-21 | **Phase 8: Event-Driven Sale Records**
 | 3.4 | 2026-03-15 | Phase 7 dashboard integration complete
 | 3.3 | 2026-03-15 | Phase 7 MVP scope reduced — removed unit tests and integration tests from MVP checklist (deferred to Post-MVP `ORD-TEST-001`/`002`); Phase 7 now 2 items: dashboard integration + manual UI testing checklist |

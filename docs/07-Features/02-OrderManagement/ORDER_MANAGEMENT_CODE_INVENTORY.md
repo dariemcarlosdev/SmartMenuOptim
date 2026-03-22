@@ -6,6 +6,20 @@
 
 ---
 
+> **🤖 For AI Agents — Document Guide**
+>
+> | Aspect | Details |
+> |--------|---------|
+> | **Document Type** | Pre-implementation code inventory — point-in-time snapshot of what existed before Phase 4–6 build |
+> | **Status** | ⚠️ **Historical snapshot** (2026-03-14) — §9 Gap Analysis items are now ✅ implemented. See [Implementation Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md) for current state |
+> | **Use As** | Reference for understanding what was pre-existing (Domain, Infrastructure, Event Handlers) vs what was built during Phases 4–8 |
+> | **Architecture** | [ADR-005 — Vertical Slice + Aggregate-Centric](../../02-Architecture/ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md) |
+> | **Event-Driven Pattern** | §3 Application Layer lists 6+1 event handlers; for the canonical pattern framework, see [EVENT_DRIVEN_ARCHITECTURE_PATTERN.md](../../08-Patterns/EVENT_DRIVEN_ARCHITECTURE_PATTERN.md) |
+> | **Companion Docs** | [Implementation Plan](ORDER_MODULE_IMPLEMENTATION_PLAN.md) (spec) · [Tracker](ORDER_MODULE_IMPLEMENTATION_TRACKER.md) (progress) · [Post-MVP Tracker](ORDER_POST_MVP_TASK_TRACKER.md) (deferred) |
+> | **Do Not** | Treat §9 Gap Analysis as current backlog — those items are completed; do not update this snapshot document |
+
+---
+
 ## 📑 Table of Contents
 
 1. [Inventory Summary](#-inventory-summary)
@@ -368,7 +382,11 @@ The API follows:
 | Document | Path |
 |----------|------|
 | MVP Feature Prioritization | `docs\01-Overview\MVP_FEATURE_PRIORITIZATION.md` |
-| Order Management Implementation Guide | `docs\07-Features\02-OrderManagement\IMPLEMENTATION_GUIDE.md` |
+| Order Implementation Plan | `docs\07-Features\02-OrderManagement\ORDER_MODULE_IMPLEMENTATION_PLAN.md` |
+| Order Implementation Tracker | `docs\07-Features\02-OrderManagement\ORDER_MODULE_IMPLEMENTATION_TRACKER.md` |
+| Order Post-MVP Task Tracker | `docs\07-Features\02-OrderManagement\ORDER_POST_MVP_TASK_TRACKER.md` |
+| Event-Driven Architecture Pattern | `docs\08-Patterns\EVENT_DRIVEN_ARCHITECTURE_PATTERN.md` |
+| Domain Events Guide | `SmartMenuOptim.Domain\docs\06-Events\DOMAIN_EVENTS_GUIDE.md` |
 | ADR-005 Vertical Slice Architecture | `docs\02-Architecture\ADR-005-VERTICAL-SLICE-AND-AGGREGATE-CENTRIC-ARCHITECTURE.md` |
 | Blazor State Container Pattern | `docs\08-Patterns\BLAZOR_STATE_CONTAINER_PATTERN_PROMPT_GUIDE.md` |
 | Coding Standards | `AI\Prompts\CODING-STANDARD-PROMPT.md` |
