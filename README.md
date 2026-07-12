@@ -161,14 +161,13 @@ Smart Menu Optimizer’s LLD includes both application internals and team delive
 
 ### Component Scope
 
-- Web Client (`/WebClient`)
-- API Layer (`/Api`)
-- AI/Analytics (`/AI`, `/Analytics`)
-- Messaging (`/Messaging`, `/EventBus`)
-- Data (`/Infrastructure`, `/Persistence`)
-- Security (`/Security`, `/Identity`)
-- Observability (cross-cutting)
-- CI/CD & DevOps (`/.github`, `/DevOps`)
+- Server / UI (`/SmartMenuOptim.Server`)
+- Backend API (`/SmartMenuOptim.API`)
+- Domain (`/SmartMenuOptim.Domain`)
+- Infrastructure (`/SmartMenuOptim.Infrastructure`)
+- Shared (`/SmartMenuOptim.Shared`)
+- Tests (`/SmartMenuOptim.Tests`)
+- CI/CD (`/.github/workflows`)
 
 ### Collaboration and Delivery
 
