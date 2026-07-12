@@ -225,7 +225,7 @@ Typical stages:
 
 ## Deployment & Infrastructure
 
-Managed with IaC (Bicep/Terraform/ARM) and environment-specific configurations.
+Intended to be managed with IaC (Bicep/Terraform/ARM) and environment-specific configurations. IaC templates are planned but not yet included in the repository.
 
 | Resource Type | Azure Service |
 |---------------|---------------|
