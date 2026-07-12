@@ -32,8 +32,8 @@ Cross-cutting, technology-facing concerns applied across the App Features above.
 | Feature | Description | Technical docs |
 |---------|-------------|----------------|
 | **Clean modular architecture** | Separation of concerns across Web Client, API, AI/Analytics, Messaging, Infrastructure, Security, and Monitoring layers. | [README.md](README.md#initial-project-structure) |
-| **Event-driven asynchronous workflows** | Background processing for analytics and notifications using messaging/event-based patterns and Azure integrations. | [README.md](README.md#high-level-smart-menu-optimizer-system-design) |
-| **Identity and access control** | Enterprise-ready authentication/authorization options (Azure AD/Entra ID, OAuth2/OIDC, JWT, ASP.NET Core Identity, RBAC, policy-based auth). | [README.md](README.md#technology-stack) |
+| **Event-driven asynchronous workflows** | Background processing for analytics and notifications using messaging/event-based patterns and Azure integrations. | [README.md](README.md#high-level-system-design) |
+| **Identity and access control** | Enterprise-ready authentication/authorization options (Azure AD/Entra ID, OAuth2/OIDC, JWT, ASP.NET Core Identity, RBAC, policy-based auth). | [README.md](README.md#tech-stack) |
 | **Cloud-native observability** | Telemetry, health monitoring, distributed tracing, and alerting using Azure Application Insights/Azure Monitor. | [README.md](README.md#monitoring--logging) |
 | **CI/CD-ready delivery** | GitHub Actions pipeline model for build, test, package, deploy, and release governance. | [README.md](README.md#cicd-pipeline) |
 | **Extensible AI service model** | Supports Azure Cognitive Services and optional custom ML pipelines for tenant-specific forecasting/recommendation evolution. | [README.md](README.md#ai-features) |
