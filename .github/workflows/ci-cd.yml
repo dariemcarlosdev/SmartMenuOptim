@@ -43,6 +43,14 @@ on:
       - '**/.gitignore'
       - '**/.gitattributes'
 
+  # Manual trigger for one-time prod maintenance (e.g. resetting a drifted schema).
+  workflow_dispatch:
+    inputs:
+      reset_prod_schema:
+        description: 'DANGER: DROP + recreate public schema on Neon before migrating'
+        type: boolean
+        default: false
+
 # Improvement: Prevent concurrent workflows on the same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -284,6 +292,26 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore SmartMenuOptim.API/SmartMenuOptim.API.csproj
+
+    # One-time schema reset for a drifted prod DB. Uses the SAME secret the migrate step
+    # uses, so it hits the exact Neon branch/database CI targets (avoids wrong-branch drops
+    # via the dashboard, where every branch has an identically named `smartmenudb`).
+    # Gated behind the manual `reset_prod_schema` toggle — never runs on normal deploys.
+    - name: (One-time) Reset drifted prod schema
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_prod_schema }}
+      env:
+        ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
+      run: |
+        sudo apt-get update && sudo apt-get install -y postgresql-client
+        CONN="$ConnectionStrings__DefaultConnection"
+        host=$(echo "$CONN" | grep -oiP '(?<=Host=)[^;]+')
+        port=$(echo "$CONN" | grep -oiP '(?<=Port=)[^;]+'); port=${port:-5432}
+        db=$(echo "$CONN"   | grep -oiP '(?<=Database=)[^;]+')
+        user=$(echo "$CONN" | grep -oiP '(?<=Username=)[^;]+')
+        pass=$(echo "$CONN" | grep -oiP '(?<=Password=)[^;]+')
+        echo "Resetting schema on host=$host db=$db"
+        PGPASSWORD="$pass" psql "sslmode=require host=$host port=$port dbname=$db user=$user" \
+          -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
 
     - name: Apply EF Core Migrations to Azure PostgreSQL
       env:
