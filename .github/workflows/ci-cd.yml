@@ -302,11 +302,18 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install -y postgresql-client
         CONN="$ConnectionStrings__DefaultConnection"
-        host=$(echo "$CONN" | grep -oiP '(?<=Host=)[^;]+')
-        port=$(echo "$CONN" | grep -oiP '(?<=Port=)[^;]+'); port=${port:-5432}
-        db=$(echo "$CONN"   | grep -oiP '(?<=Database=)[^;]+')
-        user=$(echo "$CONN" | grep -oiP '(?<=Username=)[^;]+')
-        pass=$(echo "$CONN" | grep -oiP '(?<=Password=)[^;]+')
+        # `|| true` guards each grep: the runner uses `bash -e`, so a grep with no
+        # match (e.g. Neon key-value strings omit `Port=`) would abort the step before
+        # the psql call. Swallow the non-match; Port falls back to 5432 below.
+        host=$(echo "$CONN" | grep -oiP '(?<=Host=)[^;]+' || true)
+        port=$(echo "$CONN" | grep -oiP '(?<=Port=)[^;]+' || true); port=${port:-5432}
+        db=$(echo "$CONN"   | grep -oiP '(?<=Database=)[^;]+' || true)
+        user=$(echo "$CONN" | grep -oiP '(?<=Username=)[^;]+' || true)
+        pass=$(echo "$CONN" | grep -oiP '(?<=Password=)[^;]+' || true)
+        if [ -z "$host" ] || [ -z "$db" ] || [ -z "$user" ] || [ -z "$pass" ]; then
+          echo "ERROR: could not parse Host/Database/Username/Password from secret. Expected Npgsql key-value format."
+          exit 1
+        fi
         echo "Resetting schema on host=$host db=$db"
         PGPASSWORD="$pass" psql "sslmode=require host=$host port=$port dbname=$db user=$user" \
           -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
