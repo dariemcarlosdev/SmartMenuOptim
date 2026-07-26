@@ -326,9 +326,14 @@ jobs:
           PGDATABASE=$(echo "$CONN" | grep -oiP '(?<=Database=)[^;]+')
           PGUSER=$(echo "$CONN" | grep -oiP '(?<=Username=)[^;]+')
           export PGPASSWORD=$(echo "$CONN" | grep -oiP '(?<=Password=)[^;]+')
-          # SSL Mode: lowercase the value; default to 'require' (Neon mandates TLS).
-          export PGSSLMODE=$(echo "$CONN" | grep -oiP '(?i)(?<=SSL Mode=)[^;]+' \
-                             | tr '[:upper:]' '[:lower:]' || echo "require")
+          # SSL Mode: matches both "SSL Mode=" and "SslMode=" (Npgsql accepts either),
+          # lowercase the value; default to 'require' (Neon mandates TLS).
+          # NOTE: assign then default with ${VAR:-require} — a trailing `|| echo` on the
+          # pipeline never fires because the pipeline's exit status is tr's (always 0),
+          # which previously left PGSSLMODE="" -> psql "invalid sslmode value".
+          PGSSLMODE=$(echo "$CONN" | grep -oiP 'ssl ?mode=[^;]+' | sed -E 's/.*=//' \
+                      | tr '[:upper:]' '[:lower:]')
+          export PGSSLMODE=${PGSSLMODE:-require}
           # Validate required components were parsed before connecting.
           if [[ -z "$PGHOST" || -z "$PGDATABASE" || -z "$PGUSER" || -z "$PGPASSWORD" ]]; then
             echo "ERROR: Failed to parse required connection string components." >&2

@@ -216,12 +216,34 @@ fi
       PGDATABASE=$(echo "$CONN" | grep -oiP '(?<=Database=)[^;]+')
       PGUSER=$(echo "$CONN" | grep -oiP '(?<=Username=)[^;]+')
       export PGPASSWORD=$(echo "$CONN" | grep -oiP '(?<=Password=)[^;]+')
-      export PGSSLMODE=$(echo "$CONN" | grep -oiP '(?i)(?<=SSL Mode=)[^;]+' \
-                         | tr '[:upper:]' '[:lower:]' || echo "require")
+      PGSSLMODE=$(echo "$CONN" | grep -oiP 'ssl ?mode=[^;]+' | sed -E 's/.*=//' \
+                  | tr '[:upper:]' '[:lower:]')
+      export PGSSLMODE=${PGSSLMODE:-require}
       psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -U "$PGUSER" \
         -v ON_ERROR_STOP=1 -f /tmp/migration_final.sql
     fi
 ```
+
+---
+
+## Follow-up Fix — `psql: error: invalid sslmode value: ""` (2026-07-26)
+
+**Symptom:** `apply-prod-migrations` reached the `else` (Npgsql key=value) branch and failed with:
+
+```
+psql: error: invalid sslmode value: ""
+Error: Process completed with exit code 2.
+```
+
+**Root cause:** the `PGSSLMODE` line piped `grep` into `tr`, then appended `|| echo "require"`.
+A shell pipeline's exit status is that of its **last** command (`tr`), which returns `0`
+even on empty input — so the `|| echo "require"` fallback **never fired** when the
+connection string had no `SSL Mode=` key. `PGSSLMODE` was exported as `""`, and psql
+rejects an empty sslmode.
+
+**Fix:** assign first, then default with parameter expansion `${PGSSLMODE:-require}`
+(fires on empty **or** unset). Also relaxed the match to `ssl ?mode=` so both
+`SSL Mode=` and `SslMode=` (both valid Npgsql spellings) are recognized.
 
 ---
 
