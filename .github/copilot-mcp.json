@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "sqlserver": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-sqlserver"],
+      "env": {
+        "SQLSERVER_CONNECTION_STRING": "${env:ESCROW_DB_CONNECTION_STRING}"
+      },
+      "description": "SQL Server MCP for EscrowApp database exploration. Connection string must be set via ESCROW_DB_CONNECTION_STRING environment variable — never hardcode credentials."
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
+      "env": {
+        "POSTGRES_CONNECTION_STRING": "${env:ESCROW_POSTGRES_CONNECTION_STRING}"
+      },
+      "description": "PostgreSQL MCP server for EscrowApp. This project uses Npgsql/PostgreSQL as its primary data store. Set ESCROW_POSTGRES_CONNECTION_STRING env var to connect."
+    }
+  }
+}

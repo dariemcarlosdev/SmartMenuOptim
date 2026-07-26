@@ -1,0 +1,203 @@
+@page "/restaurants/{RestaurantId:int}/menus/new"
+@page "/restaurants/{RestaurantId:int}/menus/{MenuId:int}/edit"
+
+<PageTitle>@(_isEdit ? "Edit" : "Create") Menu - SmartMenuOptimizer</PageTitle>
+
+<div class="container mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/restaurants">Restaurants</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId">Restaurant</a></li>
+            <li class="breadcrumb-item"><a href="/restaurants/@RestaurantId/menus">Menus</a></li>
+            <li class="breadcrumb-item active">@(_isEdit ? "Edit" : "New")</li>
+        </ol>
+    </nav>
+
+    @* Page Header *@
+    <div class="mb-4">
+        <h2>
+            <i class="bi @(_isEdit ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+            @(_isEdit ? "Edit Menu" : "Create New Menu")
+        </h2>
+        <p class="text-muted">@(_isEdit ? "Update menu details and availability" : "Add a new menu like Breakfast, Lunch, or Dinner")</p>
+    </div>
+
+    @* Error Alert *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @_error
+            <button type="button" class="btn-close" @onclick="() => _error = null"></button>
+        </div>
+    }
+
+    @* Loading State for Edit *@
+    @if (_isEdit && _loadingMenu)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading menu...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="@_model" OnValidSubmit="HandleSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-lg-8">
+                    @* Basic Information Card *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="bi bi-info-circle me-2"></i>Menu Information
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Menu Name <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="_model.Name" 
+                                           placeholder="e.g., Breakfast, Lunch, Dinner, Happy Hour" />
+                                <ValidationMessage For="() => _model.Name" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Description</label>
+                                <InputTextArea class="form-control" @bind-Value="_model.Description" rows="3" 
+                                               placeholder="Describe this menu, its offerings, or special features..." />
+                                <ValidationMessage For="() => _model.Description" class="text-danger small" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Menu Type</label>
+                                    <InputSelect class="form-select" @bind-Value="_model.MenuTypeId">
+                                        <option value="">-- Select Type --</option>
+                                        <option value="1">Breakfast</option>
+                                        <option value="2">Brunch</option>
+                                        <option value="3">Lunch</option>
+                                        <option value="4">Dinner</option>
+                                        <option value="5">Late Night</option>
+                                        <option value="6">Happy Hour</option>
+                                        <option value="7">Kids Menu</option>
+                                        <option value="8">Seasonal</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" id="menuActive" />
+                                        <label class="form-check-label" for="menuActive">
+                                            @(_model.IsActive ? "Active - Visible to customers" : "Inactive - Hidden from customers")
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Availability Card *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <i class="bi bi-clock me-2"></i>Availability Hours
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="allDay" 
+                                       checked="@_isAllDay" @onchange="ToggleAllDay" />
+                                <label class="form-check-label" for="allDay">
+                                    Available all day
+                                </label>
+                            </div>
+
+                            @if (!_isAllDay)
+                            {
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Available From</label>
+                                        <InputText type="time" class="form-control" @bind-Value="_availableFromStr" />
+                                        <div class="form-text">Time when menu becomes available</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Available Until</label>
+                                        <InputText type="time" class="form-control" @bind-Value="_availableToStr" />
+                                        <div class="form-text">Time when menu stops being available</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* Sidebar *@
+                <div class="col-lg-4">
+                    @* Tips Card *@
+                    <div class="card shadow-sm mb-4 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>Tips
+                            </h6>
+                            <ul class="small text-muted mb-0">
+                                <li class="mb-2">Use clear, descriptive names like "Lunch Specials" or "Weekend Brunch"</li>
+                                <li class="mb-2">Set availability hours to match your service times</li>
+                                <li class="mb-2">Inactive menus are hidden from customers but preserved</li>
+                                <li>Add dishes after creating the menu</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    @* Common Menu Types *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-clock-history me-2"></i>Common Availability
+                            </h6>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("06:00", "11:00")'>
+                                    <strong>Breakfast:</strong> 6:00 AM - 11:00 AM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("10:00", "14:00")'>
+                                    <strong>Brunch:</strong> 10:00 AM - 2:00 PM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("11:00", "15:00")'>
+                                    <strong>Lunch:</strong> 11:00 AM - 3:00 PM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("17:00", "22:00")'>
+                                    <strong>Dinner:</strong> 5:00 PM - 10:00 PM
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm text-start" 
+                                        @onclick='() => SetAvailability("15:00", "18:00")'>
+                                    <strong>Happy Hour:</strong> 3:00 PM - 6:00 PM
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Form Actions *@
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>@(_isEdit ? "Updating..." : "Creating...")</span>
+                    }
+                    else
+                    {
+                        <i class="bi @(_isEdit ? "bi-check-lg" : "bi-plus-lg") me-2"></i>
+                        <span>@(_isEdit ? "Update Menu" : "Create Menu")</span>
+                    }
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="Cancel" disabled="@_saving">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </button>
+            </div>
+        </EditForm>
+    }
+</div>

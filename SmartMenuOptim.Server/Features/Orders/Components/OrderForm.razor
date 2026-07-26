@@ -1,0 +1,168 @@
+@page "/orders/new"
+@using SmartMenuOptim.Application.Features.Orders.DTOs
+
+<PageTitle>New Order - SmartMenuOptimizer</PageTitle>
+
+<div class="container mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/orders">Orders</a></li>
+            <li class="breadcrumb-item active">New Order</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4"><i class="bi bi-plus-circle me-2"></i>Place New Order</h2>
+
+    @* Error State *@
+    @if (_error is not null)
+    {
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>@_error</div>
+        </div>
+    }
+
+    <EditForm Model="_model" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger mb-3" />
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Order Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Restaurant</label>
+                        @if (_restaurantsLoading)
+                        {
+                            <div class="d-flex align-items-center gap-2 form-control bg-light">
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span class="text-muted">Loading...</span>
+                            </div>
+                        }
+                        else if (_restaurants is not null && _restaurants.Any())
+                        {
+                            <select class="form-select"
+                                    value="@_model.RestaurantId"
+                                    @onchange="OnRestaurantChanged">
+                                @foreach (var restaurant in _restaurants)
+                                {
+                                    <option value="@restaurant.Id">@restaurant.Name</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <div class="text-danger small">No restaurants available.</div>
+                        }
+                        <ValidationMessage For="() => _model.RestaurantId" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Customer</label>
+                        @if (_customersLoading)
+                        {
+                            <div class="d-flex align-items-center gap-2 form-control bg-light">
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span class="text-muted">Loading...</span>
+                            </div>
+                        }
+                        else if (_customers is not null && _customers.Any())
+                        {
+                            <InputSelect class="form-select" @bind-Value="_model.CustomerId">
+                                @foreach (var customer in _customers)
+                                {
+                                    <option value="@customer.Id">@customer.Name</option>
+                                }
+                            </InputSelect>
+                        }
+                        else
+                        {
+                            <div class="text-danger small">No customers available.</div>
+                        }
+                        <ValidationMessage For="() => _model.CustomerId" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Special Instructions</label>
+                    <InputTextArea class="form-control" @bind-Value="_model.SpecialInstructions" rows="2" />
+                    <ValidationMessage For="() => _model.SpecialInstructions" />
+                </div>
+            </div>
+        </div>
+
+        @* Order Items *@
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Items</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddItem">
+                    <i class="bi bi-plus-lg me-1"></i> Add Item
+                </button>
+            </div>
+            <div class="card-body">
+                @if (!_model.Items.Any())
+                {
+                    <p class="text-muted text-center py-3">No items added. Click "Add Item" to begin.</p>
+                }
+                else
+                {
+                    @for (var i = 0; i < _model.Items.Count; i++)
+                    {
+                        var index = i;
+                        <div class="row align-items-end mb-3 pb-3 @(index < _model.Items.Count - 1 ? "border-bottom" : "")">
+                            <div class="col-md-4">
+                                <label class="form-label">Dish</label>
+                                @if (_dishesLoading)
+                                {
+                                    <div class="d-flex align-items-center gap-2 form-control bg-light">
+                                        <span class="spinner-border spinner-border-sm"></span>
+                                        <span class="text-muted">Loading...</span>
+                                    </div>
+                                }
+                                else if (_dishes is not null && _dishes.Any())
+                                {
+                                    <InputSelect class="form-select" @bind-Value="_model.Items[index].DishId">
+                                        @foreach (var dish in _dishes)
+                                        {
+                                            <option value="@dish.Id">@dish.Name — @dish.Price.ToString("C")</option>
+                                        }
+                                    </InputSelect>
+                                }
+                                else
+                                {
+                                    <div class="text-muted small">No dishes available for this restaurant.</div>
+                                }
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Quantity</label>
+                                <InputNumber class="form-control" @bind-Value="_model.Items[index].Quantity" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Notes</label>
+                                <InputText class="form-control" @bind-Value="_model.Items[index].SpecialInstructions" />
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-danger w-100" @onclick="() => RemoveItem(index)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        @* Actions *@
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@_submitting">
+                @if (_submitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                <i class="bi bi-check-lg me-1"></i> Place Order
+            </button>
+            <a href="/orders" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </EditForm>
+</div>

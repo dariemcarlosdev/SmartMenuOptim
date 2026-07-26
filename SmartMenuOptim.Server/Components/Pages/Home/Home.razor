@@ -1,0 +1,156 @@
+@page "/"
+@using SmartMenuOptim.Server.Components.Layout
+@layout LandingLayout
+
+<PageTitle>Smart Menu Optimizer</PageTitle>
+
+<div class="smo" @ref="Root">
+
+    <!-- HERO -->
+    <section class="smo-hero">
+        <div class="smo-hero__text">
+            <p class="smo-eyebrow" data-anim style="--i:0">Menu Intelligence</p>
+            <h1 class="smo-display" data-anim style="--i:1">
+                Turn every dish
+                <span class="smo-display__accent">into a decision.</span>
+            </h1>
+            <p class="smo-lead" data-anim style="--i:2">
+                Smart Menu Optimizer reads your sales, reviews and trends, then tells you
+                what to keep, what to cut and what to price up. Data-driven menus, plated.
+            </p>
+            <div class="smo-cta-row" data-anim style="--i:3">
+                <a href="/dashboard" class="smo-cta">Start Free Trial &amp; Register</a>
+                <span class="smo-cta__note">No card required &middot; 14-day trial</span>
+            </div>
+        </div>
+
+        <!-- Signature element: live Menu Insight plate -->
+        <div class="smo-plate-wrap" data-anim style="--i:4">
+            <article class="smo-plate" id="smoPlate" aria-label="Menu insight preview">
+                <span class="smo-plate__glow" aria-hidden="true"></span>
+                <header class="smo-plate__head">
+                    <span class="smo-plate__dish">Truffle Pasta</span>
+                    <span class="smo-plate__badge">Top performer</span>
+                </header>
+                <div class="smo-plate__spark" aria-hidden="true">
+                    <svg viewBox="0 0 280 80" preserveAspectRatio="none">
+                        <path id="smoSpark"
+                              d="M0,62 L40,54 L80,58 L120,40 L160,46 L200,26 L240,20 L280,10"
+                              fill="none" stroke-width="2.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <dl class="smo-plate__kpis">
+                    <div class="smo-kpi">
+                        <dt>Sales trend</dt>
+                        <dd><span class="smo-num" data-count="15" data-prefix="+" data-suffix="%">+0%</span></dd>
+                    </div>
+                    <div class="smo-kpi">
+                        <dt>Rating</dt>
+                        <dd><span class="smo-num" data-count="4.8" data-decimals="1" data-suffix="/5">0/5</span></dd>
+                    </div>
+                    <div class="smo-kpi">
+                        <dt>Margin</dt>
+                        <dd><span class="smo-num" data-count="62" data-suffix="%">0%</span></dd>
+                    </div>
+                </dl>
+            </article>
+        </div>
+    </section>
+
+    <!-- KPI STRIP -->
+    <section class="smo-stats" aria-label="Platform results">
+        <div class="smo-stat" data-anim style="--i:0">
+            <span class="smo-stat__num smo-num" data-count="18" data-suffix="%">0%</span>
+            <span class="smo-stat__label">Average margin lift</span>
+        </div>
+        <div class="smo-stat" data-anim style="--i:1">
+            <span class="smo-stat__num smo-num" data-count="2" data-suffix="M+">0M+</span>
+            <span class="smo-stat__label">Menu items analyzed</span>
+        </div>
+        <div class="smo-stat" data-anim style="--i:2">
+            <span class="smo-stat__num smo-num" data-count="4.9" data-decimals="1" data-suffix="/5">0/5</span>
+            <span class="smo-stat__label">Owner rating</span>
+        </div>
+    </section>
+
+    <!-- WHY -->
+    <section class="smo-why">
+        <h2 class="smo-h2" data-anim>Why Smart Menu Optimizer?</h2>
+        <div class="smo-tiles">
+            <article class="smo-tile" data-anim style="--i:0">
+                <span class="smo-tile__icon bi bi-bar-chart-line-fill" aria-hidden="true"></span>
+                <h3>Boost profitability</h3>
+                <p>
+                    Spotlight best sellers and expose underperformers. Refine the menu with
+                    performance analytics that drive revenue and steady growth.
+                </p>
+            </article>
+            <article class="smo-tile" data-anim style="--i:1">
+                <span class="smo-tile__icon bi bi-emoji-smile-fill" aria-hidden="true"></span>
+                <h3>Enhance satisfaction</h3>
+                <p>
+                    Read feedback and ratings to see what guests love. Fix weak spots and
+                    build dining experiences that keep them coming back.
+                </p>
+            </article>
+            <article class="smo-tile" data-anim style="--i:2">
+                <span class="smo-tile__icon bi bi-graph-up-arrow" aria-hidden="true"></span>
+                <h3>Data-driven decisions</h3>
+                <p>
+                    Get actionable calls on inventory, promotions and pricing. Optimize stock
+                    and tailor offerings with real-time analytics.
+                </p>
+            </article>
+            <article class="smo-tile" data-anim style="--i:3">
+                <span class="smo-tile__icon bi bi-clock-history" aria-hidden="true"></span>
+                <h3>Real-time monitoring</h3>
+                <p>
+                    Track sales, trends and reviews as they happen. Spot demand shifts early
+                    and keep the menu competitive.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <!-- BRAND -->
+    <section class="smo-brand">
+        <div class="smo-brand__text" data-anim style="--i:0">
+            <h2 class="smo-h2">Build, protect and grow your restaurant brand</h2>
+            <div class="smo-brand__point">
+                <h3>Build your brand</h3>
+                <p>
+                    Stand out by optimizing the menu with data. Highlight signature dishes
+                    and create a dining experience that sets you apart.
+                </p>
+            </div>
+            <div class="smo-brand__point">
+                <h3>Boost your online presence</h3>
+                <p>
+                    Surface top-rated dishes and reviews online. Connect the menu to social
+                    and food platforms to attract and keep guests.
+                </p>
+            </div>
+            <div class="smo-brand__point">
+                <h3>On a platform you can trust</h3>
+                <p>
+                    Reliable, secure and actionable. Restaurant owners lean on Smart Menu
+                    Optimizer to make confident decisions.
+                </p>
+            </div>
+        </div>
+
+        <aside class="smo-brand__card" data-anim style="--i:1" aria-label="Menu insights summary">
+            <div class="smo-brand__card-head">
+                <span class="smo-brand__card-icon bi bi-clipboard-data" aria-hidden="true"></span>
+                <span class="smo-brand__card-title">Menu Insights</span>
+            </div>
+            <ul class="smo-brand__rows">
+                <li><span class="bi bi-star-fill" aria-hidden="true"></span>Top dish: Truffle Pasta</li>
+                <li><span class="bi bi-graph-up-arrow" aria-hidden="true"></span>Sales trend: +15%</li>
+                <li><span class="bi bi-people-fill" aria-hidden="true"></span>Customer reviews: 4.8/5</li>
+            </ul>
+        </aside>
+    </section>
+
+</div>

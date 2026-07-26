@@ -9,9 +9,11 @@ using System.Text;
 using System.Threading.Tasks;
 //using SmartMenuOptim.Server; // <-- Add this using statement
 using SmartMenuOptim.API;
-using SmartMenuOptim.Shared.Data.Entities;
-using SmartMenuOptim.Shared.Data.Dtos;
 using SmartMenuOptim.Tests.IntegrationTests.Helpers;
+using SmartMenuOptim.Application.Dtos;
+using SmartMenuOptim.Application.Features.AI.DTOs;
+using SmartMenuOptim.Application.Features.Sales.DTOs;
+using SmartMenuOptim.Application.Features.Reviews.DTOs;
 
 namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
 {
@@ -33,7 +35,7 @@ namespace SmartMenuOptim.Tests.IntegrationTests.EndPoints
         public async Task PostRecommend_WithValidRequest_Returns200Ok()
         {
             // Arrange: Define a valid request with sale records. Arrange is used to set up the test environment, including any necessary data or configurations.
-            var request = new AiRecomendationRequestDTO
+            var request = new AiRecommendationRequestDTO
             {
                 SaleRecords = new List<SaleRecordDTO>
                 {

@@ -1,0 +1,26 @@
+.restaurant-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.restaurant-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.restaurant-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.restaurant-card .badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+.restaurant-card .card-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.075);
+}
+
+.restaurant-card .btn-group .btn {
+    flex: 1;
+}

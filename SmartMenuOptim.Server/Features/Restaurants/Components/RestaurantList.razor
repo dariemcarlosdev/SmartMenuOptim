@@ -1,0 +1,205 @@
+@page "/restaurants"
+
+<PageTitle>Restaurants - SmartMenuOptimizer</PageTitle>
+
+<div class="container-fluid mt-4">
+    @* Header with Add Button *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-shop me-2"></i>Restaurants
+            </h2>
+            <p class="text-muted mb-0">Manage your restaurant locations and settings</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateNew">
+            <i class="bi bi-plus-lg me-1"></i> Add Restaurant
+        </button>
+    </div>
+
+    @* Loading State *@
+    @if (_loading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading restaurants...</span>
+            </div>
+        </div>
+    }
+    @* Error State *@
+    else if (_error is not null)
+    {
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                <strong>Error loading restaurants:</strong> @_error
+                <button class="btn btn-link p-0 ms-2" @onclick="LoadRestaurantsAsync">Try again</button>
+            </div>
+        </div>
+    }
+    @* Empty State *@
+    else if (_restaurants is null || !_restaurants.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-shop display-1 text-muted mb-3"></i>
+                <h4>No restaurants found</h4>
+                <p class="text-muted mb-3">Get started by creating your first restaurant</p>
+                <button class="btn btn-primary" @onclick="CreateNew">
+                    <i class="bi bi-plus-lg me-1"></i> Create Restaurant
+                </button>
+            </div>
+        </div>
+    }
+    @* Restaurant Cards *@
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var restaurant in _restaurants)
+            {
+                var todayHours = restaurant.BusinessHours?.FirstOrDefault(h => h.DayOfWeek == DateTime.Now.DayOfWeek);
+                var configuredDays = restaurant.BusinessHours?.Count(h => !h.IsClosed) ?? 0;
+
+                <div class="col">
+                    <div class="card h-100 shadow-sm restaurant-card">
+                        <div class="card-body">
+                            @* Header with Status *@
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">@restaurant.Name</h5>
+                                <span class="badge @(restaurant.IsAcceptingOrders ? "bg-success" : "bg-secondary")">
+                                    @(restaurant.IsAcceptingOrders ? "Open" : "Closed")
+                                </span>
+                            </div>
+
+                            @* Description *@
+                            <p class="card-text text-muted small mb-3">
+                                @(string.IsNullOrWhiteSpace(restaurant.Description) 
+                                    ? "No description available" 
+                                    : TruncateText(restaurant.Description, 100))
+                            </p>
+
+                            @* Contact Info *@
+                            <div class="small mb-2">
+                                <div class="text-muted mb-1">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    @if (restaurant.Address is not null)
+                                    {
+                                        <span>@restaurant.Address.City, @restaurant.Address.State</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fst-italic">No address</span>
+                                    }
+                                </div>
+                                <div class="text-muted mb-1">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    @(string.IsNullOrWhiteSpace(restaurant.Email) ? "No email" : restaurant.Email)
+                                </div>
+                                <div class="text-muted">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    @(string.IsNullOrWhiteSpace(restaurant.PhoneNumber) ? "No phone" : restaurant.PhoneNumber)
+                                </div>
+                            </div>
+
+                            @* Today's Business Hours *@
+                            <div class="small mb-2">
+                                <i class="bi bi-clock me-1 text-muted"></i>
+                                <span class="text-muted">Today:</span>
+                                @if (todayHours is not null && !todayHours.IsClosed)
+                                {
+                                    <span class="fw-semibold text-success">
+                                        @todayHours.OpenTime.ToString(@"hh\:mm") – @todayHours.CloseTime.ToString(@"hh\:mm")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="fst-italic text-secondary">Closed</span>
+                                }
+                                @if (configuredDays > 0)
+                                {
+                                    <span class="text-muted ms-1">(@configuredDays days/wk)</span>
+                                }
+                                else
+                                {
+                                    <span class="text-warning ms-1">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>No hours set
+                                    </span>
+                                }
+                            </div>
+
+                            @* Stats *@
+                            <div class="d-flex gap-3 small text-muted border-top pt-2 mt-2">
+                                <a href="/orders?restaurantId=@restaurant.Id"
+                                   class="text-decoration-none d-inline-flex align-items-center gap-1"
+                                   title="View all orders for this restaurant">
+                                    <i class="bi bi-receipt"></i>
+                                    <span class="fw-semibold">@GetTotalOrders(restaurant.Id)</span> orders
+                                    @if (GetActiveOrders(restaurant.Id) > 0)
+                                    {
+                                        <span class="badge bg-info ms-1">@GetActiveOrders(restaurant.Id) active</span>
+                                    }
+                                </a>
+                                <span title="Max simultaneous orders capacity">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    Max @restaurant.MaxSimultaneousOrders concurrent
+                                </span>
+                            </div>
+                        </div>
+
+                        @* Card Footer with Actions *@
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        @onclick="() => ViewDetails(restaurant.Id)"
+                                        title="View details">
+                                    <i class="bi bi-eye me-1"></i> View
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" 
+                                        @onclick="() => Edit(restaurant.Id)"
+                                        title="Edit restaurant">
+                                    <i class="bi bi-pencil me-1"></i> Edit
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        @onclick="() => ConfirmDelete(restaurant)"
+                                        title="Delete restaurant">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* Delete Confirmation Modal *@
+    @if (_showDeleteModal && _restaurantToDelete is not null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                            Confirm Delete
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete <strong>@_restaurantToDelete.Name</strong>?</p>
+                        <p class="text-muted small mb-0">This action cannot be undone. All associated menus, dishes, and data will be removed.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                        <button type="button" class="btn btn-danger" @onclick="DeleteRestaurantAsync" disabled="@_deleting">
+                            @if (_deleting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

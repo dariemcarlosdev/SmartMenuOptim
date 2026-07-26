@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SmartMenuOptim.API\SmartMenuOptim.API.csproj" />
+    <ProjectReference Include="..\SmartMenuOptim.Application\SmartMenuOptim.Application.csproj" />
     <ProjectReference Include="..\SmartMenuOptim.Server\SmartMenuOptim.Server.csproj" />
   </ItemGroup>
 

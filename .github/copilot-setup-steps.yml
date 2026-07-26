@@ -1,0 +1,51 @@
+# copilot-setup-steps.yml
+# Configures the environment for GitHub Copilot coding agent (cloud agent).
+# These steps run before Copilot begins working on pull requests or issues.
+# See: https://docs.github.com/en/copilot/customizing-copilot/customizing-the-development-environment-for-copilot-coding-agent
+
+steps:
+  # Install the .NET 10 SDK required by EscrowApp (net10.0 target framework)
+  - name: Setup .NET 10 SDK
+    uses: actions/setup-dotnet@v4
+    with:
+      dotnet-version: "10.0.x"
+
+  # Node.js is needed for MCP server extensions (npx-based tools)
+  - name: Setup Node.js for MCP extensions
+    uses: actions/setup-node@v4
+    with:
+      node-version: "20"
+
+  # Restore all NuGet packages (MediatR, EF Core, Npgsql, Stripe, etc.)
+  - name: Restore NuGet packages
+    run: dotnet restore EscrowApp.sln
+
+  # Build the solution to ensure the codebase compiles before Copilot makes changes.
+  # This gives the agent a known-good baseline to diff against.
+  - name: Build solution
+    run: dotnet build EscrowApp.sln --no-restore
+
+  # Provision a local PostgreSQL instance for EF Core migrations and integration tests.
+  # EscrowApp uses Npgsql.EntityFrameworkCore.PostgreSQL as its data provider.
+  - name: Setup PostgreSQL
+    uses: ikalnytskyi/action-setup-postgres@v7
+    with:
+      username: escrow_user
+      password: ${{ secrets.POSTGRES_PASSWORD }}
+      database: escrow_db
+
+  # Set environment variables for the development/CI context.
+  # - ASPNETCORE_ENVIRONMENT selects the Development configuration profile
+  # - ConnectionStrings__DefaultConnection is the EF Core connection string for PostgreSQL
+  # - Stripe__SecretKey is the Stripe test-mode API key (from repository secrets — never hardcoded)
+  - name: Configure environment variables
+    run: |
+      echo "ASPNETCORE_ENVIRONMENT=Development" >> $GITHUB_ENV
+      echo "ConnectionStrings__DefaultConnection=Host=localhost;Database=escrow_db;Username=escrow_user;Password=${{ secrets.POSTGRES_PASSWORD }}" >> $GITHUB_ENV
+      echo "Stripe__SecretKey=${{ secrets.STRIPE_TEST_SECRET_KEY }}" >> $GITHUB_ENV
+
+  # Install the csharp-ls language server as a global dotnet tool.
+  # This enables rich code intelligence (go-to-definition, references, diagnostics)
+  # for the Copilot agent when navigating the codebase.
+  - name: Install C# language server
+    run: dotnet tool install --global csharp-ls

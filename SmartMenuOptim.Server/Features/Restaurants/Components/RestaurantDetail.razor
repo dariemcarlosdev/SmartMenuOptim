@@ -1,0 +1,197 @@
+@page "/restaurants/{Id:int}"
+@using Microsoft.AspNetCore.Components.Web
+@using SmartMenuOptim.Application.Features.Restaurants.DTOs
+@using SmartMenuOptim.Server.Components.Shared
+
+<PageTitle>Restaurant Details - SmartMenuOptimizer</PageTitle>
+
+<div class="container mt-4">
+    @* Breadcrumb *@
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/restaurants">Restaurants</a></li>
+            <li class="breadcrumb-item active">@(_restaurant?.Name ?? "Details")</li>
+        </ol>
+    </nav>
+
+    @* Loading State - Using Shared Component *@
+    <LoadingSpinner IsLoading="_loading" Message="Loading restaurant..." />
+
+    @* Error State - Using Shared Component *@
+    @if (!_loading && _error is not null)
+    {
+        <ErrorAlert Message="@_error" 
+                    BackLinkUrl="/restaurants" 
+                    BackLinkText="Back to restaurants"
+                    IsDismissible="true"
+                    OnDismiss="DismissError" />
+    }
+
+    @* Restaurant Not Found - Using Shared Component *@
+    @if (!_loading && _error is null && _restaurant is null)
+    {
+        <NotFoundAlert Message="Restaurant not found." 
+                       BackLinkUrl="/restaurants" 
+                       BackLinkText="Back to restaurants" />
+    }
+
+    @* Restaurant Details *@
+    @if (!_loading && _restaurant is not null)
+    {
+        @* Header with Actions *@
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <h2 class="mb-0">@_restaurant.Name</h2>
+                    <span class="badge fs-6 @(_restaurant.IsAcceptingOrders ? "bg-success" : "bg-secondary")">
+                        @(_restaurant.IsAcceptingOrders ? "Open for Orders" : "Not Accepting Orders")
+                    </span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_restaurant.Description))
+                {
+                    <p class="text-muted mb-0">@_restaurant.Description</p>
+                }
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" @onclick="NavigateToEdit">
+                    <i class="bi bi-pencil me-1"></i> Edit
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="ToggleStatusAsync" disabled="@_togglingStatus">
+                    @if (_togglingStatus)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    else
+                    {
+                        <i class="bi @(_restaurant.IsAcceptingOrders ? "bi-pause-circle" : "bi-play-circle") me-1"></i>
+                    }
+                    @(_restaurant.IsAcceptingOrders ? "Stop Orders" : "Start Orders")
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            @* Left Column - Details *@
+            <div class="col-lg-8">
+                @* Contact Information Card - Using Shared Component *@
+                <DetailCard HeaderTitle="Contact Information" HeaderIcon="bi-telephone">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Email</label>
+                            <div class="fw-semibold">
+                                <i class="bi bi-envelope me-1 text-primary"></i>
+                                @(string.IsNullOrWhiteSpace(_restaurant.Email) ? "Not provided" : _restaurant.Email)
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Phone</label>
+                            <div class="fw-semibold">
+                                <i class="bi bi-telephone me-1 text-primary"></i>
+                                @(string.IsNullOrWhiteSpace(_restaurant.PhoneNumber) ? "Not provided" : _restaurant.PhoneNumber)
+                            </div>
+                        </div>
+                    </div>
+                </DetailCard>
+
+                @* Address Card - Using Shared Component *@
+                <DetailCard HeaderTitle="Address" HeaderIcon="bi-geo-alt">
+                    @if (_restaurant.Address is not null)
+                    {
+                        <address class="mb-0">
+                            <div>@_restaurant.Address.Street</div>
+                            @if (!string.IsNullOrWhiteSpace(_restaurant.Address.Street2))
+                            {
+                                <div>@_restaurant.Address.Street2</div>
+                            }
+                            <div>@_restaurant.Address.City, @_restaurant.Address.State @_restaurant.Address.PostalCode</div>
+                            <div>@_restaurant.Address.CountryCode</div>
+                        </address>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0 fst-italic">No address provided</p>
+                    }
+                </DetailCard>
+
+                @* Business Hours Card - Using Shared Component *@
+                <DetailCard HeaderTitle="Business Hours" HeaderIcon="bi-clock">
+                    <HeaderActions>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="NavigateToBusinessHours">
+                            <i class="bi bi-pencil me-1"></i> Edit Hours
+                        </button>
+                    </HeaderActions>
+                    <ChildContent>
+                        @if (_restaurant.BusinessHours?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <tbody>
+                                        @foreach (var day in Enum.GetValues<DayOfWeek>())
+                                        {
+                                            var hours = _restaurant.BusinessHours.FirstOrDefault(h => h.DayOfWeek == day);
+                                            <tr>
+                                                <td class="fw-semibold" style="width: 120px;">@day</td>
+                                                <td>
+                                                    @if (hours is null || hours.IsClosed)
+                                                    {
+                                                        <span class="text-muted">Closed</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@hours.OpenTime.ToString(@"hh\:mm") - @hours.CloseTime.ToString(@"hh\:mm")</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0 fst-italic">No business hours configured</p>
+                        }
+                    </ChildContent>
+                </DetailCard>
+            </div>
+
+            @* Right Column - Quick Stats & Actions *@
+            <div class="col-lg-4">
+                @* Quick Stats Card - Using Shared Components *@
+                <DetailCard HeaderTitle="Quick Stats" HeaderIcon="bi-speedometer2">
+                    <StatItem Label="Max Concurrent Orders" 
+                              Value="@_restaurant.MaxSimultaneousOrders.ToString()" 
+                              UseBadge="true" />
+                    <StatItem Label="Timezone" 
+                              Value="@_restaurant.TimeZoneId" />
+                    <StatItem Label="Owner ID" 
+                              Value="@_restaurant.OwnerId.ToString()" />
+                    <StatItem Label="Created" 
+                              Value="@_restaurant.CreatedAt.ToString("MMM dd, yyyy")" 
+                              ShowBorder="false" />
+                </DetailCard>
+
+                @* Quick Actions Card - Using Shared Component *@
+                <DetailCard HeaderTitle="Quick Actions" HeaderIcon="bi-lightning">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" @onclick="NavigateToMenus">
+                            <i class="bi bi-book me-2"></i>Manage Menus
+                        </button>
+                        <button class="btn btn-outline-primary" @onclick="NavigateToCategories">
+                            <i class="bi bi-tags me-2"></i>Manage Categories
+                        </button>
+                        <button class="btn btn-outline-primary" @onclick="NavigateToDishes">
+                            <i class="bi bi-cup-straw me-2"></i>Manage Dishes
+                        </button>
+                        <button class="btn btn-outline-info" @onclick="NavigateToInsights">
+                            <i class="bi bi-lightbulb me-2"></i>AI Insights
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="NavigateToDashboard">
+                            <i class="bi bi-speedometer2 me-2"></i>View Dashboard
+                        </button>
+                    </div>
+                </DetailCard>
+            </div>
+        </div>
+    }
+</div>

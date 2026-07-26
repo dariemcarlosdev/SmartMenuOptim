@@ -1,11 +1,16 @@
 using Azure.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Http.Resilience;
 using MudBlazor.Services;
 using Polly;
-using SmartMenuOptim.Server.Services;
-using SmartMenuOptim.Server.Services.Interfaces;
-using System.Threading.RateLimiting;
+using SmartMenuOptim.Domain.Extensions;
+using SmartMenuOptim.Server.Features.Restaurants.Services;
+using SmartMenuOptim.Server.Features.Restaurants.State;
+using SmartMenuOptim.Server.Features.Orders.Services;
+using SmartMenuOptim.Server.Features.Orders.State;
+using SmartMenuOptim.Server.Features.Reviews.Services;
+using SmartMenuOptim.Server.Features.Sales.Services;
+using SmartMenuOptim.Server.Features.AI.Services;
+using SmartMenuOptim.Server.State;
 
 namespace SmartMenuOptim.Server.Extensions;
 
@@ -14,6 +19,28 @@ namespace SmartMenuOptim.Server.Extensions;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Configures all Blazor Server services including UI, application services, HTTP clients, and Azure Key Vault.
+    /// This unified method sets up the complete service configuration for the Blazor Server application.
+    /// </summary>
+    /// <param name="builder">The WebApplicationBuilder to configure.</param>
+    /// <returns>The configured WebApplicationBuilder.</returns>
+    public static WebApplicationBuilder BlazorServerServiceCollection(this WebApplicationBuilder builder)
+    {
+        // 1. Configure Azure Key Vault as a configuration source
+        builder.AddKeyVaultConfiguration();
+        
+        // 2. Add UI services (MudBlazor, Razor Components)
+        builder.Services.AddUiServices();
+        
+        // 3. Add custom application services and domain services
+        builder.Services.AddAppServices();
+        
+        // 4. Configure HttpClients with resilience patterns
+        builder.Services.AddHttpClients();
+        
+        return builder;
+    }
     /// <summary>
     /// Adds Azure Key Vault as a configuration source.
     /// </summary>
@@ -31,8 +58,14 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds services required for the user interface.
+    /// Adds UI-related services required for MudBlazor components and interactive Razor components to the specified
+    /// service collection.
     /// </summary>
+    /// <remarks>This method registers services necessary for MudBlazor dialogs, snackbars, and other UI
+    /// features, as well as support for interactive server-side Razor components. Call this method during application
+    /// startup to enable these UI capabilities.</remarks>
+    /// <param name="services">The service collection to which the UI services will be added. Cannot be null.</param>
+    /// <returns>The same instance of <see cref="IServiceCollection"/> that was provided, with UI services registered.</returns>
     public static IServiceCollection AddUiServices(this IServiceCollection services)
     {
         // This line is required for MudBlazor dialogs, snackbars, etc.
@@ -43,20 +76,52 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds custom application services.
+    /// Adds application and domain services to the specified service collection for dependency injection.
     /// </summary>
+    /// <remarks>This method registers core application services, domain services, and logging with the
+    /// dependency injection container. It is intended to be called during application startup to configure required
+    /// services.</remarks>
+    /// <param name="services">The service collection to which the application and domain services will be added. Cannot be null.</param>
+    /// <returns>The same instance of <see cref="IServiceCollection"/> that was provided, to allow for method chaining.</returns>
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
-        services.AddScoped<IAIService, AIService>();
-        services.AddScoped<ISaleRecordService, SaleRecordService>();
-        services.AddScoped<IReviewService, ReviewService>();
+        // Client Services (HTTP-based adapters for API communication)
+        services.AddScoped<IAIClientService, AIClientService>();
+        services.AddScoped<ISaleRecordClientService, SaleRecordClientService>();
+        services.AddScoped<IReviewClientService, ReviewClientService>();
+
+        // Client Services (Restaurant feature)
+        services.AddScoped<IRestaurantClientService, RestaurantClientService>();
+        services.AddScoped<IDishClientService, DishClientService>();
+
+        // Client Services (Order feature)
+        services.AddScoped<IOrderClientService, OrderClientService>();
+
+        // State Containers (Scoped for per-circuit state in Blazor Server)
+        services.AddScoped<RestaurantDetailState>();
+        services.AddScoped<RestaurantListState>();
+
+        // State Containers (Order feature)
+        services.AddScoped<OrderListState>();
+        services.AddScoped<OrderDetailState>();
+
         services.AddLogging();
         return services;
     }
 
     /// <summary>
-    /// Adds and configures the HttpClient for communicating with the backend API, including resilience policies and configurations.
+    /// Adds and configures a named HttpClient for communicating with the backend API, including resilience policies
+    /// such as circuit breaker and retry, to the specified service collection.
     /// </summary>
+    /// <remarks>The configured HttpClient uses the base address specified by the 'BackendApi:BaseUrl'
+    /// configuration setting and sets the 'Accept' header to 'application/json'. Circuit breaker and retry policies are
+    /// applied to improve resilience when communicating with the backend API. The circuit breaker temporarily blocks
+    /// requests after a threshold of failures, while the retry policy attempts failed requests up to three times with
+    /// exponential backoff. This method is intended for use in server-side applications that consume a backend
+    /// API.</remarks>
+    /// <param name="services">The service collection to which the HttpClient and its resilience policies will be added. Cannot be null.</param>
+    /// <returns>The same IServiceCollection instance that was provided, to support method chaining.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the required 'BackendApi:BaseUrl' configuration value is missing or empty.</exception>
     public static IServiceCollection AddHttpClients(this IServiceCollection services)
     {
         var httpClientBuilder = services.AddHttpClient("BackendAPI", (serviceProvider, client) =>
@@ -86,6 +151,18 @@ public static class ServiceCollectionExtensions
             }
         });
 
+        /*
+         1.	Circuit Breaker & Retry Policy These are client-side resilience patterns that protect the Blazor server when making calls to the API. 
+            They handle transient failures and network issues between the Blazor server and the API.
+         
+            •	These are currently in the Server project because they're configured for the HttpClient that calls the API
+            •	This is actually the CORRECT placement because:
+            •	The Server (Blazor) project is the consumer of the API
+            •	These patterns protect the client-side communication with the API
+            •	They handle transient failures between the Blazor server and the API.    
+        
+         */
+
         // Circuit breaker is a pattern that prevents an application from performing an operation that's likely to fail.
         // Stop trying to perform the operation for a period of time.
         // Prevent cascading failures and improve the stability of the application. Enable the system to recover more quickly from transient faults.
@@ -100,7 +177,6 @@ public static class ServiceCollectionExtensions
                 MinimumThroughput = 10,
                 SamplingDuration = TimeSpan.FromSeconds(30),
                 BreakDuration = TimeSpan.FromSeconds(15)
-
             });
         });
 
@@ -121,31 +197,6 @@ public static class ServiceCollectionExtensions
             });
         });
 
-        return services;
-    }
-
-    /// <summary>
-    /// Adds rate limiting services to protect the application from excessive requests.
-    /// </summary>
-    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
-    {
-        //Implement rate limiting and throttling control mechanism to limit the number of requests a client can make to the API within a specified time period.
-        // The benefit of rate limiting is to protect the API from being overwhelmed by too many requests in a short period of time.
-        // In the context of Azure App Service, rate limiting can help manage traffic spikes and ensure fair usage among clients.
-        // Ensures fair usage, and protects the stability and availability of the service
-        // Scopped to SmartMenuOptim.API the benefit is to protect backend resources and maintain performance.
-        // I monitored the API usage and found that 100 requests per minute is a reasonable limit for most clients.
-        // I use to monitor the Rate Limiting metrics in Azure App Service to see how many requests are being throttled, and pause or adjust the rate limiting policy if necessary.
-        services.AddRateLimiter(options =>
-        {
-            options.AddFixedWindowLimiter("FixedPolicy", policy =>
-            {
-                policy.Window = TimeSpan.FromMinutes(1);
-                policy.PermitLimit = 100; // Allow 100 requests per minute
-                policy.QueueProcessingOrder = QueueProcessingOrder.OldestFirst; // Process oldest requests first
-                policy.QueueLimit = 10; // Allow up to 10 requests in the queue
-            });
-        });
         return services;
     }
 }

@@ -23,15 +23,25 @@ on:
     branches:
         - Staging
         - master
-        - env-dev/*       
-        - env-staging/*
+        # push Trigger: This is now limited to long-lived branches (master, Staging) This ensures that only merged and approved code is deployed. It's assumed that feature branches (env-dev/*, env-staging/*) will be merged via pull requests.
+        # - env-dev/*       
+        # - env-staging/*
+    paths-ignore:
+      - '**/README.md'
+      - '**/.gitignore'
+      - '**/.gitattributes'
 
   pull_request:
     branches:
         - Staging
         - master
-        - env-dev/*
-        - env-staging/*
+        # This now targets master and Staging. It will run for any pull request aimed at these branches, which is ideal for validating changes from your env-dev/* and env-staging/* branches  before they are merged into important branches like master or Staging.
+        # - env-dev/*
+        # - env-staging/*
+    paths-ignore:
+      - '**/README.md'
+      - '**/.gitignore'
+      - '**/.gitattributes'
 
 # Improvement: Prevent concurrent workflows on the same branch
 concurrency:
@@ -44,7 +54,7 @@ concurrency:
 #
 # Job Execution Flow:
 # 1. `build-and-test`: Compiles the code, runs tests, and packages the application.
-# 2. `codeql-analysis`, `security-scan`, `database-migrations`: Run in parallel after `build-and-test` starts.
+# 2. `codeql-analysis`, `security-scan`, `verify-database-migrations`: Run in parallel after `build-and-test` starts.
 # 3. `deploy-azure-server` & `deploy-azure-api`: Run after all checks succeed.
 # 4. `notify-on-failure` / `notify-on-success`: Run at the end to send a notification.
 # ==================================================================================================
@@ -176,10 +186,10 @@ jobs:
   #         sarif_file: ${{ steps.msdo.outputs.sarifFile }}
 
   # --------------------------------------------------------------------------------------------------
-  # Job: database-migrations
+  # Job: verify-database-migrations
   # Purpose: Applies database migrations and verifies schema
   # --------------------------------------------------------------------------------------------------
-  database-migrations:
+  verify-database-migrations:
     needs: security-scan
     runs-on: ubuntu-latest
     services:
@@ -230,7 +240,7 @@ jobs:
   # Purpose: To deploy the Blazor Server application to an Azure Web App.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-server:
-    needs: [build-and-test, security-scan, database-migrations]
+    needs: [build-and-test, security-scan, verify-database-migrations]
     runs-on: ubuntu-latest
     steps:
     - name: Download build artifacts
@@ -253,7 +263,7 @@ jobs:
   # Purpose: To apply EF Core migrations to the production database before deployment.
   # --------------------------------------------------------------------------------------------------
   apply-prod-migrations:
-    needs: [build-and-test, security-scan, database-migrations]
+    needs: [build-and-test, security-scan, verify-database-migrations]
     #// Only run on master or Staging branches
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'  
     runs-on: ubuntu-latest
@@ -286,8 +296,8 @@ jobs:
   # Purpose: To deploy the API application to an Azure Web App.
   # --------------------------------------------------------------------------------------------------
   deploy-azure-api:
-    # needs: [build-and-test, security-scan, database-migrations, codeql-analysis]
-    # needs: [build-and-test, security-scan, database-migrations]
+    # needs: [build-and-test, security-scan, verify-database-migrations, codeql-analysis]
+    # needs: [build-and-test, security-scan, verify-database-migrations]
     needs: apply-prod-migrations
     runs-on: ubuntu-latest
     steps:

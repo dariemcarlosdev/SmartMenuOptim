@@ -16,7 +16,7 @@
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:7140;http://localhost:5080",
+      "applicationUrl": "https://localhost:7140;http://localhost:5008",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Production"
       },
@@ -31,7 +31,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5008"
+      "applicationUrl": "http://localhost:5000"
     },
     // HTTPS Development profile
     "https.Development": {
@@ -42,7 +42,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7119;http://localhost:5008"
+      "applicationUrl": "https://localhost:7119;http://localhost:5000"
     },
     // IIS Express profiles. These profiles use ports 23400 for HTTP and 44388 for HTTPS.
     "IIS Express": {

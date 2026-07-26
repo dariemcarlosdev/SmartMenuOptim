@@ -1,25 +1,10 @@
-﻿using Asp.Versioning;
-using Microsoft.AspNetCore.Builder; // Add this using directive  
-using Microsoft.AspNetCore.Components.Server;
-using Microsoft.AspNetCore.Hosting; // Add this using directive  
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using SmartMenuOptim.API.Data;
-using SmartMenuOptim.API.Services;
-using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Infrastructure.Middlewares;
-using SmartMenuOptim.Shared.Data.Context;
-using SmartMenuOptim.Shared.Data.Interfaces;
-using SmartMenuOptim.Shared.Data.Repositories;
-using System.Threading.RateLimiting;
-using SmartMenuOptim.API.Extensions;
+﻿using SmartMenuOptim.API.Extensions;
 
 namespace SmartMenuOptim.API;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +15,7 @@ public class Program
 
           // Integrate Sentry for real-time error tracking and performance monitoring.
           // Sentry helps in identifying, diagnosing, and resolving issues quickly.
-          .UseSentry( options => 
+          .UseSentry(options =>
           {
               options.Dsn = "https://fa9c287a9080835a56e63569f803c34b@o4510109391454208.ingest.us.sentry.io/4510109651435520";
               options.MaxBreadcrumbs = 50;
@@ -79,28 +64,26 @@ public class Program
                 .AddEnvironmentVariables();
         }
 
-
-        // Add and configure services for the application's dependency injection container.
-        // Using extension methods helps to keep the Program.cs file clean and organized.
-        builder.Services.AddApiVersioningServices();
-        builder.Services.AddDataServices(builder.Configuration);
-        builder.Services.AddCustomServices();
-        builder.Services.AddCustomCorsPolicy(builder.Configuration);
-
-        // Add services for controllers, API explorer (for Swagger), and Swagger generation.
-        builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        // Configure all API services in one unified method
+        // This includes controllers, data services, identity, custom services, CORS, Swagger, and rate limiting
+        builder.ApiServiceCollection();
 
         var app = builder.Build();
 
+                //Resolve tenant from incoming request headers.
+        // This middleware extracts the tenant identifier from the request headers and sets it in the request context.
+        // For the moment, this is commented out as we are not implementing multi-tenancy yet, but it can be easily enabled in the future when needed.
+        
+        //app.UseMiddleware<TenantResolverMiddleware>();
+
         // Configure the HTTP request pipeline using an extension method.
         // This encapsulates middleware registration and keeps the Program.cs file tidy.
-        app.ConfigurePipeline();
+        app.ConfigureHtPipeline(); // Extension method defined in Extensions/WebApplicationExtensions.cs. ( middleware should be synced with the one in SmartMenuOptim.Server)
+        await app.InitializeDataBaseAsync();
 
         // In Program.cs, register the middleware:
         // app.UseMiddleware<TenantResolverMiddleware>();
-        // app.UseMiddleware<RateLimittitngMiddleware>();
+        // app.UseMiddleware<RateLimitingMiddleware>();
 
         // Run the application.
         app.Run();

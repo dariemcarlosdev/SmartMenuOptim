@@ -1,16 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
-using SmartMenuOptim.API.Controllers;
-using SmartMenuOptim.API.Services.Interfaces;
-using SmartMenuOptim.Server.Services.Interfaces;
-using SmartMenuOptim.Shared.Data.Dtos;
-using SmartMenuOptim.Shared.Data.Entities;
-using SmartMenuOptim.Shared.Data.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SmartMenuOptim.API.Features.Ai;
+using SmartMenuOptim.API.Features.Ai.v1;
+using SmartMenuOptim.Application.Features.AI.Contracts;
+using SmartMenuOptim.Application.Dtos;
+using SmartMenuOptim.Domain.Repositories;
 
 namespace SmartMenuOptim.Tests.UnitTests.Controllers
 {
@@ -26,13 +20,13 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
         // 5. Handling ties in sales records.
 
         private readonly IUnityOfWork _mockUnityOfWork;
-        private readonly IAiImprovementStrategyService _mock; // Mocking the service if needed for further tests
+        private readonly IAImprovementStrategyService _mock; // Mocking the service if needed for further tests
 
         //mock constructor to initialize the IUnityOfWork
         public AiControllerTests()
         {
             _mockUnityOfWork = new Mock<IUnityOfWork>().Object; // Using Moq to create a mock of IUnityOfWork
-            _mock = new Mock<IAiImprovementStrategyService>().Object; // Mocking the service if needed for further tests
+            _mock = new Mock<IAImprovementStrategyService>().Object; // Mocking the service if needed for further tests
         }
 
         [Fact]
@@ -105,7 +99,7 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             Assert.NotNull(response);
             // Only one dish should be recommended based on the highest sales
             Assert.Single(response);
-            Assert.Equal("Pizza", response[0].RecomendedDish);
+            Assert.Equal("Pizza", response[0].RecommendedDish);
         }
 
         /// <summary>
@@ -143,8 +137,8 @@ namespace SmartMenuOptim.Tests.UnitTests.Controllers
             Assert.NotNull(response);
             // Both Pizza and Burger should be recommended since both have positive sentiment and are tied in sales
             Assert.Equal(2, response.Count);
-            Assert.Contains(response, r => r.RecomendedDish == "Pizza");
-            Assert.Contains(response, r => r.RecomendedDish == "Burger");
+            Assert.Contains(response, r => r.RecommendedDish == "Pizza");
+            Assert.Contains(response, r => r.RecommendedDish == "Burger");
             // Strategy note should still be the same
             Assert.All(response, r => Assert.Equal("AI strategy to boost this item with promotions and track review sentiment to refine.", r.StrategyNote));
         }

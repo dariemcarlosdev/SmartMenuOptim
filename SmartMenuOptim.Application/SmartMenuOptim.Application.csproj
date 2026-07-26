@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Dtos\Sentiment\**" />
+    <EmbeddedResource Remove="Dtos\Sentiment\**" />
+    <None Remove="Dtos\Sentiment\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ONLY keep general-purpose libraries if absolutely needed -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    
+    <!-- MediatR for CQRS and Domain Events -->
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    
+    <!-- FluentValidation for request validation -->
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    
+    <!-- Logging abstractions -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SmartMenuOptim.Domain\SmartMenuOptim.Domain.csproj" />
+    <ProjectReference Include="..\SmartMenuOptim.Shared\SmartMenuOptim.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Dtos\Admin\" />
+    <Folder Include="Dtos\Customer\" />
+    <Folder Include="Dtos\Dish\" />
+    <Folder Include="Dtos\Restaurant\" />
+    <Folder Include="Extensions\Mapping\" />
+  </ItemGroup>
+
+</Project>

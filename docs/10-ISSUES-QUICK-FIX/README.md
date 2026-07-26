@@ -32,6 +32,7 @@
 | # | Issue | Layer | Severity | Status |
 |---|-------|-------|----------|--------|
 | [006](./006_DATABASE-LOGIN-FAILED-ON-STARTUP__API.md) | Database Login Failed on Startup — `28P01` Postgres password rejected | API | Critical | ✅ Fixed |
+| [009](./009_WDAC-BLOCKS-APPHOST-EXE__ENV.md) | "For your protection, admin is not allowing this app" — WDAC blocks unsigned apphost `.exe` | API + Server | High | ✅ Fixed |
 
 ### UI / UX Enhancements
 
@@ -61,6 +62,9 @@ The `SaleRecordedHandler` was implemented with analytics logging and cache inval
 
 ### Local Postgres Password Mismatch (006)
 API loads its connection string from **user-secrets** in dev (`Program.cs` clears config sources, adds user-secrets when `IsDevelopment()` and not in Docker). `28P01 password authentication failed` means the secret's password (`copoadmin123`) no longer matches the local Postgres server password. **Pattern**: Realign the two — reset the server password via temporary `trust` auth in `pg_hba.conf`, or update the secret with `dotnet user-secrets set`. See [006](./006_DATABASE-LOGIN-FAILED-ON-STARTUP__API.md) for full app credentials + reset steps.
+
+### WDAC Blocks Unsigned Apphost `.exe` (009)
+On an Enterprise machine with **WDAC (Windows Defender Application Control)** enforced (`CodeIntegrityPolicyEnforcementStatus = 2`), the .NET-built unsigned apphost (`Project.exe`) is denied — *"For your protection, your administrator is not allowing access to this app"*. This is **not** Mark-of-the-Web, so Properties → **Unblock** does nothing. `dotnet run` works because it runs the managed `.dll` under Microsoft-signed `dotnet.exe`; VS F5 fails because it launches the apphost `.exe`. **Pattern**: Set `<UseAppHost>false</UseAppHost>` in the web `.csproj` so the build emits no `.exe`; both CLI and VS then launch via the signed `dotnet.exe` host. Self-contained/standalone publish still emits an apphost and stays blocked — use framework-dependent publish or sign the binary. See [009](./009_WDAC-BLOCKS-APPHOST-EXE__ENV.md).
 
 ### `[Required]` on a Transport DTO Auto-400s an `[ApiController]` Endpoint (008)
 `[ApiController]` recursively validates the request body — including every element of a `List<T>` — against its data annotations *before* the action body runs. A `[Required]` on a field that is legitimately empty in stored data (`ReviewDTO.CustomerName`, empty for customer-linked reviews) rejects the whole call with HTTP 400 at model binding, so no action code executes. **Pattern**: Put input validation on the input model (`ReviewFormModel`), not on the transport/read DTO used as a request body. Keep only constraints that hold for all stored data (e.g. `[StringLength]`) on the DTO. See [008](./008_INSIGHTS-NO-RECOMMENDATIONS__API_UI.md).
