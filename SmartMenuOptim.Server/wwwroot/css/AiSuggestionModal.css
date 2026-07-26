@@ -1,25 +1,28 @@
 ﻿.typing-effect {
-    font-family: "Consolas", "Courier New", monospace;
-    font-size: 1.1rem;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.65;
     white-space: pre-wrap;
-    background: #f5f5f5;
-    border-radius: 6px;
-    padding: 1rem 1.2rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    border: 1px solid #e0e0e0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
     min-height: 80px;
-    color: #333;
-    letter-spacing: 0.02em;
+    color: #1f2937;
     position: relative;
 }
 
 
 .typing-effect .caret {
     display: inline-block;
-    width: 1.2ch;
+    width: 2px;
+    height: 1.1em;
+    vertical-align: text-bottom;
+    background: #f59e0b;
     animation: blink-caret 1s step-end infinite;
-    color: #007bff;
-    font-weight: bold;
+    color: transparent;
 }
 
 @keyframes blink-caret {
@@ -30,6 +33,73 @@
     50%, 100% {
         opacity: 0;
     }
+}
+
+/* Formatted AI suggestion (rendered markdown after typing completes) */
+.ai-suggestion-content {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: #1f2937;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    animation: ai-fade-in 0.35s ease-out;
+}
+
+@keyframes ai-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-suggestion-content h1,
+.ai-suggestion-content h2,
+.ai-suggestion-content h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 1rem 0 0.5rem;
+}
+
+.ai-suggestion-content h1:first-child,
+.ai-suggestion-content h2:first-child,
+.ai-suggestion-content h3:first-child,
+.ai-suggestion-content p:first-child {
+    margin-top: 0;
+}
+
+.ai-suggestion-content p {
+    margin: 0 0 0.75rem;
+}
+
+.ai-suggestion-content ul,
+.ai-suggestion-content ol {
+    margin: 0 0 0.75rem;
+    padding-left: 1.4rem;
+}
+
+.ai-suggestion-content li {
+    margin-bottom: 0.5rem;
+}
+
+.ai-suggestion-content li::marker {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.ai-suggestion-content strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.ai-suggestion-content code {
+    background: #f3f4f6;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.9em;
 }
 
 .custom-modal-size {

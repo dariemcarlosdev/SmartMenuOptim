@@ -1,4 +1,5 @@
 @* AiSuggestionModal.razor: A reusable Bootstrap modal component *@
+@using Markdig
 @if (Show)
 {
     <div class="modal fade show" style="display:block; background:rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
@@ -11,8 +12,8 @@
                 <div class="modal-body custom-modal-body">
                     @if (Typing && !string.IsNullOrEmpty(TypingText))
                     {
-                        <div class="typing-effect">
-                            @CurrentText<span class="caret">|</span>
+                        <div class="ai-suggestion-content">
+                            @_renderedHtml
                         </div>
                     }
                     else
@@ -37,27 +38,19 @@
     [Parameter] public EventCallback OnClose { get; set; } // Callback to close the modal
     [Parameter] public string TypingText { get; set; } = string.Empty;
     [Parameter] public bool Typing { get; set; } = false;
-    [Parameter] public int TypingDelay { get; set; } = 25;
+    [Parameter] public int TypingDelay { get; set; } = 25; // retained for caller compatibility; no longer used
 
-    private string CurrentText { get; set; } = string.Empty;
+    private MarkupString _renderedHtml;
 
-    
-    protected override async Task OnParametersSetAsync()
+    // Markdown pipeline. DisableHtml() strips raw HTML from AI output (OWASP A03 — no MarkupString injection).
+    private static readonly MarkdownPipeline _pipeline =
+        new MarkdownPipelineBuilder().DisableHtml().UseAdvancedExtensions().Build();
+
+    protected override void OnParametersSet()
     {
         TypingText ??= string.Empty;
-        if (Typing && !string.IsNullOrEmpty(TypingText))
-        {
-            CurrentText = string.Empty;
-            for (int i = 0; i < TypingText.Length; i++)
-            {
-                CurrentText += TypingText[i];
-                StateHasChanged();
-                await Task.Delay(TypingDelay);
-            }
-        }
-        else
-        {
-            CurrentText = TypingText ?? string.Empty;
-        }
+        _renderedHtml = Typing && !string.IsNullOrEmpty(TypingText)
+            ? (MarkupString)Markdown.ToHtml(TypingText, _pipeline)
+            : default;
     }
 }

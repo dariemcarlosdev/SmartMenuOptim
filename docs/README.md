@@ -34,6 +34,8 @@ SmartMenuOptim.Infrastructure/docs/      ← Infrastructure layer docs
 
 | Document | Description |
 |----------|-------------|
+| [EXECUTIVE_BUSINESS_PLAN.md](01-Overview/EXECUTIVE_BUSINESS_PLAN.md) | Executive business plan — vision, strategy, market, and roadmap |
+| [MVP_FEATURE_PRIORITIZATION.md](01-Overview/MVP_FEATURE_PRIORITIZATION.md) | MVP feature analysis and implementation status |
 | [SMARTMENU_DOCUMENTATION.md](01-Overview/SMARTMENU_DOCUMENTATION.md) | Complete solution documentation |
 
 ---

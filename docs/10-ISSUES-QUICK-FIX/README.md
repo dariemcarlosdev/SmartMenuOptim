@@ -27,6 +27,19 @@
 | [BUG-004](./BUG-004__SALE_HANDLER_NO_PERSISTENCE__APPLICATION__ORDER_MANAGEMENT.md) | `SaleRecordedHandler` never persisted `SaleRecord` entities | Application | Critical | Order Management | ✅ Fixed |
 | [BUG-005](./BUG-005__NESTED_TRANSACTION_CRASH__INFRASTRUCTURE__ORDER_MANAGEMENT.md) | Nested transaction crash in `UnityOfWork.SaveChangesAsync()` | Infrastructure | Critical | Order Management | ✅ Fixed |
 
+### Environment / Setup
+
+| # | Issue | Layer | Severity | Status |
+|---|-------|-------|----------|--------|
+| [006](./006_DATABASE-LOGIN-FAILED-ON-STARTUP__API.md) | Database Login Failed on Startup — `28P01` Postgres password rejected | API | Critical | ✅ Fixed |
+
+### UI / UX Enhancements
+
+| # | Issue | Layer | Severity | Feature | Status |
+|---|-------|-------|----------|---------|--------|
+| [007](./007_AI-SUGGESTION-MODAL-MARKDOWN-FORMAT__UI.md) | AI Suggestion modal showed raw markdown in monospace box (💡 Improve) | UI | Medium | AI Menu Insights | ✅ Fixed |
+| [008](./008_INSIGHTS-NO-RECOMMENDATIONS__API_UI.md) | `/insights` always "No recommendations" — `[Required] CustomerName` on `ReviewDTO` auto-400s the `[ApiController]` recommend endpoint | API + UI | High | AI Menu Insights | ✅ Fixed |
+
 ---
 
 ## Root Cause Categories
@@ -45,6 +58,12 @@ The `SaleRecordedHandler` was implemented with analytics logging and cache inval
 
 ### Nested Transaction in Domain Event Dispatch Cycle (BUG-005)
 `UnityOfWork.SaveChangesAsync()` unconditionally called `BeginTransactionAsync()`. Domain event handlers are dispatched by `AppDbContext.SaveChangesAsync()` **inside** the existing transaction from the outer `UoW.SaveChangesAsync()`. When a handler called `_unitOfWork.SaveChangesAsync()`, it tried to begin a second transaction on the same connection, which PostgreSQL/EF Core does not support. **Pattern**: Always check `Database.CurrentTransaction != null` before calling `BeginTransactionAsync()`. If a transaction is already active, participate in it instead of starting a new one. This ensures event handler persistence is atomic with the outer operation.
+
+### Local Postgres Password Mismatch (006)
+API loads its connection string from **user-secrets** in dev (`Program.cs` clears config sources, adds user-secrets when `IsDevelopment()` and not in Docker). `28P01 password authentication failed` means the secret's password (`copoadmin123`) no longer matches the local Postgres server password. **Pattern**: Realign the two — reset the server password via temporary `trust` auth in `pg_hba.conf`, or update the secret with `dotnet user-secrets set`. See [006](./006_DATABASE-LOGIN-FAILED-ON-STARTUP__API.md) for full app credentials + reset steps.
+
+### `[Required]` on a Transport DTO Auto-400s an `[ApiController]` Endpoint (008)
+`[ApiController]` recursively validates the request body — including every element of a `List<T>` — against its data annotations *before* the action body runs. A `[Required]` on a field that is legitimately empty in stored data (`ReviewDTO.CustomerName`, empty for customer-linked reviews) rejects the whole call with HTTP 400 at model binding, so no action code executes. **Pattern**: Put input validation on the input model (`ReviewFormModel`), not on the transport/read DTO used as a request body. Keep only constraints that hold for all stored data (e.g. `[StringLength]`) on the DTO. See [008](./008_INSIGHTS-NO-RECOMMENDATIONS__API_UI.md).
 
 ### Cross-Bug Dependency: BUG-003 → BUG-004 → BUG-005
 

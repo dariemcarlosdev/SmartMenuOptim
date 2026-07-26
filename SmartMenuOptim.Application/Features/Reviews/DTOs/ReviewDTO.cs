@@ -18,8 +18,12 @@ public class ReviewDTO
     /// <summary>Review identifier.</summary>
     public int Id { get; set; }
 
-    /// <summary>Name of the customer who wrote the review.</summary>
-    [Required(ErrorMessage = "Customer name is required.")]
+    /// <summary>
+    /// Name of the customer who wrote the review. Optional: customer-linked reviews store an empty
+    /// value (identity is on <see cref="CustomerId"/>). NOT [Required] — this is a transport/read DTO,
+    /// and [ApiController] recursively validates it on the AI recommend endpoint; requiring a name
+    /// there would auto-400 every real review. Input validation lives on ReviewFormModel instead.
+    /// </summary>
     [StringLength(100, ErrorMessage = "Customer name cannot exceed 100 characters.")]
     public string CustomerName { get; set; } = string.Empty;
 

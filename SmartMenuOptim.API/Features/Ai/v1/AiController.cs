@@ -383,10 +383,12 @@ namespace SmartMenuOptim.API.Features.Ai.v1
                 return BadRequest("Reviews cannot be empty.");
             }
 
-            // Filter reviews to get only those with positive sentiment (> 0.6), non-empty comment, and non-empty customer name.
+            // Filter reviews to get only those with positive sentiment (> 0.6), non-empty comment, and non-empty dish name.
+            // CustomerName is intentionally NOT required: customer-linked reviews store an empty CustomerName
+            // (identity is on CustomerId), so gating on it drops every real review. See Recommend (v2) for the fix.
             // Select the comment from each review, ensure uniqueness, and convert to a list.
             var positiveSentimentDishes = request.Reviews
-                .Where(r => r.SentimentScore > 0.6 && !string.IsNullOrWhiteSpace(r.Comment) && !string.IsNullOrWhiteSpace(r.CustomerName) && !string.IsNullOrWhiteSpace(r.DishName))
+                .Where(r => r.SentimentScore > 0.6 && !string.IsNullOrWhiteSpace(r.Comment) && !string.IsNullOrWhiteSpace(r.DishName))
                 .Select(r => new { r.DishName, r.Comment })
                 .Distinct()
                 .ToList();
@@ -458,9 +460,11 @@ namespace SmartMenuOptim.API.Features.Ai.v1
                 return BadRequest("Reviews cannot be empty.");
             }
 
-            // Filter reviews to get only those with positive sentiment (> 0.6), non-empty comment, and non-empty customer name.
+            // Filter reviews to get only those with positive sentiment (> 0.6), non-empty comment, and a dish name.
+            // CustomerName is intentionally NOT required: customer-linked reviews store an empty CustomerName
+            // (identity is on CustomerId), so requiring it would drop every real review and yield zero recommendations.
             var positiveSentimentDishes = request.Reviews
-                .Where(r => r.SentimentScore > 0.6 && !string.IsNullOrWhiteSpace(r.Comment) && !string.IsNullOrWhiteSpace(r.CustomerName) && !string.IsNullOrWhiteSpace(r.DishName))
+                .Where(r => r.SentimentScore > 0.6 && !string.IsNullOrWhiteSpace(r.Comment) && !string.IsNullOrWhiteSpace(r.DishName))
                 .Select(r => new { r.DishName, r.Comment })
                 .Distinct()
                 .ToList();

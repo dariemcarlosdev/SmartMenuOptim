@@ -1,9 +1,4 @@
 ﻿@page "/insights"
-@using SmartMenuOptim.Application.Dtos
-@using SmartMenuOptim.Application.Common
-@inject IAIClientService AIService
-@inject IReviewClientService ReviewService
-@inject ISaleRecordClientService SaleRecordService
 
 <div class="container mt-4">
     <div class="text-center mb-4">
@@ -96,17 +91,3 @@
         </div>
     }
 </div>
-
-@code {
-    private List<AiRecommendationResponseDTO>? recommendations;
-    private bool isloading = true;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var sales = await SaleRecordService.GetSaleRecordsAsync();
-        var reviews = await ReviewService.GetReviewsAsync();
-
-        recommendations = await AIService.GetRecommendationsAsync(sales, reviews);
-        isloading = false;
-    }
-}

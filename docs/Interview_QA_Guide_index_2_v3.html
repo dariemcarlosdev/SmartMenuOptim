@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interview Q&A Guide — Dariem Carlos Macias Mora</title>
+<style>
+  :root{
+    --navy:#1a2b45;
+    --blue:#2b5f8e;
+    --accent:#c47a30;
+    --bg:#faf8f5;
+    --card:#ffffff;
+    --line:#e2ddd4;
+    --text:#2a2a2a;
+    --muted:#6b6558;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family: Georgia, 'Times New Roman', serif;
+    background: var(--bg);
+    color: var(--text);
+    margin:0;
+    padding:0 0 60px 0;
+    line-height:1.55;
+  }
+  header{
+    background: var(--navy);
+    color:#fff;
+    padding:28px 24px 22px 24px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 4px 0;
+    font-size:1.5rem;
+    letter-spacing:.3px;
+  }
+  header p{
+    margin:0;
+    color:#c9d3e0;
+    font-size:.9rem;
+    font-family: Arial, sans-serif;
+  }
+  .wrap{
+    max-width:820px;
+    margin:0 auto;
+    padding:0 20px;
+  }
+  .index{
+    background: var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-top:26px;
+    padding:22px 24px 8px 24px;
+  }
+  .index h2{
+    margin-top:0;
+    font-size:1.05rem;
+    color:var(--navy);
+    font-family: Arial, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    border-bottom:2px solid var(--accent);
+    padding-bottom:8px;
+  }
+  .index-desc{
+    font-family: Arial, sans-serif;
+    font-size:.85rem;
+    color:var(--muted);
+    margin:0 0 14px 0;
+  }
+  .legend{
+    font-family: Arial, sans-serif;
+    font-size:.78rem;
+    color:var(--muted);
+    margin:0 0 16px 0;
+  }
+  .index ol{
+    columns: 1;
+    padding-left:1.3em;
+    margin:0 0 10px 0;
+  }
+  .index li{
+    margin-bottom:9px;
+    font-family: Arial, sans-serif;
+    font-size:.94rem;
+  }
+  .index a{
+    color: var(--blue);
+    text-decoration:none;
+  }
+  .index a:hover{
+    text-decoration:underline;
+  }
+  .index a strong{
+    color: var(--accent);
+    font-weight:700;
+  }
+
+  /* ===== collapsible category index (accordion) ===== */
+  .accordion{ margin-bottom:2px; }
+  .acc-item{
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+  .acc-item:last-child{ margin-bottom:0; }
+  .acc-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    background:#f4f1ea;
+    border:none;
+    text-align:left;
+    padding:12px 16px;
+    font-family: Arial, sans-serif;
+    font-size:.92rem;
+    font-weight:700;
+    color:var(--navy);
+    cursor:pointer;
+    transition: background .15s ease;
+  }
+  .acc-header:hover{ background:#ece7db; }
+  .acc-item.open .acc-header{ background:#eef2f7; }
+  .acc-title{ display:flex; align-items:baseline; gap:8px; }
+  .acc-count{
+    font-weight:400;
+    font-size:.72rem;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .acc-chevron{
+    font-size:.8rem;
+    color:var(--accent);
+    transition: transform .2s ease;
+    flex-shrink:0;
+    margin-left:10px;
+  }
+  .acc-item.open .acc-chevron{ transform:rotate(90deg); }
+  .acc-item:hover .acc-chevron{ transform:rotate(90deg); transition-delay:.35s; }
+  .acc-body{
+    display:grid;
+    grid-template-rows:0fr;
+    transition: grid-template-rows .22s ease;
+  }
+  .acc-item.open .acc-body{ grid-template-rows:1fr; }
+  .acc-item:hover .acc-body{ grid-template-rows:1fr; transition-delay:.35s; }
+  .acc-body-inner{ overflow:hidden; min-height:0; }
+  .acc-body ol{
+    columns:1;
+    padding:14px 18px 4px 34px;
+    margin:0;
+    border-top:1px dashed var(--line);
+  }
+  .acc-body li{
+    margin-bottom:9px;
+    font-family: Arial, sans-serif;
+    font-size:.94rem;
+  }
+  .acc-body a{ color:var(--blue); text-decoration:none; }
+  .acc-body a:hover{ text-decoration:underline; }
+  .acc-body a strong{ color:var(--accent); font-weight:700; }
+  .acc-body .tag{ font-size:.6rem; padding:1px 6px; margin-right:6px; }
+
+  .qa{
+    background: var(--card);
+    border:1px solid var(--line);
+    border-left:5px solid var(--accent);
+    border-radius:8px;
+    margin-top:22px;
+    padding:20px 24px 16px 22px;
+    scroll-margin-top: 14px;
+  }
+  .qa h3{
+    margin:0 0 10px 0;
+    color:var(--navy);
+    font-size:1.12rem;
+    font-family: Arial, sans-serif;
+  }
+  .qnum{
+    display:inline-block;
+    background:var(--navy);
+    color:#fff;
+    font-family: Arial, sans-serif;
+    font-size:.72rem;
+    padding:2px 8px;
+    border-radius:12px;
+    margin-right:9px;
+    vertical-align:middle;
+  }
+  .tag{
+    display:inline-block;
+    font-family: Arial, sans-serif;
+    font-size:.66rem;
+    font-weight:bold;
+    letter-spacing:.4px;
+    padding:2px 7px;
+    border-radius:10px;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  .tag-mgr{ background:#dce8f5; color:var(--blue); }
+  .tag-dev{ background:#f3e3d0; color:var(--accent); }
+  .tag-panel{ background:#e7e4dc; color:var(--muted); }
+  .index .tag{ font-size:.6rem; padding:1px 6px; margin-right:6px; }
+  .skill{
+    display:inline-block;
+    font-family: Arial, sans-serif;
+    font-size:.6rem;
+    font-weight:600;
+    letter-spacing:.2px;
+    padding:1px 6px;
+    border-radius:4px;
+    margin-right:4px;
+    vertical-align:middle;
+    border:1px solid var(--line);
+    color:var(--muted);
+    background:#fff;
+  }
+  .qa p{
+    margin:0 0 10px 0;
+    font-size:1rem;
+  }
+  .backtop{
+    display:inline-block;
+    margin-top:8px;
+    font-family: Arial, sans-serif;
+    font-size:.85rem;
+    font-weight:700;
+    color:var(--accent);
+    text-decoration:none;
+    letter-spacing:.2px;
+    border-top:1px dashed var(--line);
+    padding-top:10px;
+    width:100%;
+    transition: color .15s ease;
+  }
+  .backtop:hover{ color: var(--navy); text-decoration: underline; }
+  .crosslink{
+    display:inline-block;
+    font-family: Arial, sans-serif;
+    font-size:.82rem;
+    color: var(--blue);
+    text-decoration:none;
+    margin-bottom:8px;
+  }
+  .crosslink:hover{ text-decoration:underline; }
+  .note{
+    font-family: Arial, sans-serif;
+    font-size:.82rem;
+    color:var(--muted);
+    font-style:italic;
+    margin-top:-2px;
+  }
+  .refbox{
+    font-family: Arial, sans-serif;
+    font-size:.82rem;
+    color:var(--muted);
+    background:#f4f1ea;
+    border:1px dashed var(--line);
+    border-radius:6px;
+    padding:10px 12px;
+    margin:8px 0 10px 0;
+  }
+  .section-break{
+    max-width:820px;
+    margin:30px auto 0 auto;
+    padding:0 20px;
+    font-family: Arial, sans-serif;
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .section-break::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+  #top{ position:relative; top:-8px; }
+  @media print{
+    header{ background:#fff !important; color:#000 !important; border-bottom:2px solid #000; }
+    header p{ color:#333 !important; }
+    .index{ page-break-after: always; }
+    .qa{ break-inside: avoid; border-left:3px solid #000; }
+    .qnum{ background:#000; }
+    a{ color:#000 !important; text-decoration:none !important; }
+    .acc-body{ grid-template-rows:1fr !important; }
+    .acc-chevron{ display:none; }
+  }
+
+  /* ===== cross-document reference system (added) ===== */
+  .xref{
+    margin: -2px 0 12px 0;
+    font-family: Arial, sans-serif;
+    font-size:.74rem;
+  }
+  .xref .xlabel{
+    color:var(--muted);
+    margin-right:6px;
+  }
+  .xref a{
+    display:inline-block;
+    text-decoration:none;
+    border-radius:12px;
+    padding:2px 10px;
+    margin:2px 6px 2px 0;
+    border:1px solid #d7e0ea;
+    color:var(--blue);
+    background:#eef2f7;
+  }
+  .xref a.primary{
+    border-color:#b9cfe6;
+    background:#e3edf8;
+    font-weight:bold;
+  }
+  .xref a:hover{ background:#dde8f3; }
+  a.idx-badge{
+    display:inline-block;
+    font-family: Arial, sans-serif;
+    font-size:.62rem;
+    font-weight:bold;
+    padding:1px 7px;
+    border-radius:9px;
+    margin-left:5px;
+    vertical-align:middle;
+    text-decoration:none;
+    background:#eef2f7;
+    color:var(--blue);
+    border:1px solid #d7e0ea;
+    cursor:pointer;
+  }
+  a.idx-badge:hover{ background:#dde8f3; }
+
+  /* floating quick-jump panel */
+  .qnav-fab{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:999;
+    font-family: Arial, sans-serif;
+  }
+  .qnav-fab button{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:none;
+    background:var(--navy);
+    color:#fff;
+    font-size:1.15rem;
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .qnav-fab button:hover{ background:var(--blue); }
+  .qnav-panel{
+    position:absolute;
+    right:0;
+    bottom:52px;
+    width:280px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 4px 18px rgba(0,0,0,.2);
+    padding:10px 12px 8px 12px;
+    font-size:.78rem;
+  }
+  .qnav-head{
+    font-weight:bold;
+    color:var(--navy);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    font-size:.68rem;
+    margin-bottom:6px;
+  }
+  .qnav-list a{
+    display:block;
+    text-decoration:none;
+    color:var(--text);
+    padding:5px 4px;
+    border-bottom:1px solid #f0ede6;
+  }
+  .qnav-list a:hover{ background:#f5f3ee; }
+  .qnav-list a:last-child{ border-bottom:none; }
+  .qnav-list .qk{
+    display:inline-block;
+    min-width:16px;
+    text-align:center;
+    background:var(--accent);
+    color:#fff;
+    border-radius:4px;
+    font-size:.68rem;
+    padding:1px 4px;
+    margin-right:6px;
+  }
+  .qnav-hint{
+    margin-top:6px;
+    padding-top:6px;
+    border-top:1px dashed var(--line);
+    color:var(--muted);
+    font-size:.66rem;
+  }
+  @media print{ .qnav-fab, .xref, a.idx-badge{ display:none !important; } }
+
+  /* ===== interview cue keywords (added) ===== */
+  mark.kw{
+    background:transparent;
+    color:var(--accent);
+    font-weight:700;
+    border-bottom:2px solid #f0d9bf;
+    padding:0 1px;
+    border-radius:0;
+  }
+  @media print{ mark.kw{ color:#000; border-bottom:1.5px solid #000; } }
+
+</style>
+</head>
+<body>
+
+<div id="top"></div>
+<header>
+  <h1>Interview Q&amp;A Guide</h1>
+  <p>Dariem Carlos Macias Mora &nbsp;•&nbsp; Bilingual Software Developer &nbsp;•&nbsp; Miami Lakes, FL</p>
+  <p>Panel format: Hiring Manager + 2 Developers</p>
+</header>
+
+<div class="wrap">
+
+  <div class="index">
+    <h2>Quick Index — click a category to expand its questions</h2>
+    <div class="accordion" id="qAccordion">
+
+      <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-1">
+          <span class="acc-title">1&nbsp;·&nbsp;Self Intro &amp; Core Motivations new Oportunity<span class="acc-count">(7)</span><span class="tag tag-mgr">BILINGUAL</span><span class="tag tag-mgr">FULL-STACK</span><span class="tag tag-mgr">API</span><span class="tag tag-mgr">SDD</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-1">
+          <div class="acc-body-inner">
+            <ol>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q1">Tell me about <strong>yourself</strong>.</a><span class="skill">SQL</span><span class="skill">EF</span><span class="skill">C#</span><span class="skill">.NET</span><span class="skill">API</span><span class="skill">LEGACY</span></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q2">Why are you <strong>interested in this position?</strong></a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q1" target="_blank" rel="noopener">Mock Q1</a></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q3">Why do you want to <strong>leave</strong> MDCPS?</a><span class="skill">LEGACY</span><span class="skill">MAINT</span></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q11">Why are you <strong>the best fit for this role</strong> , and what <strong>sets you apart from others</strong>?</a><span class="skill">SQL</span><span class="skill">API</span><span class="skill">EF</span><span class="skill">C#</span><span class="skill">.NET</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Mock Q3</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q1" target="_blank" rel="noopener">Mock Q1</a></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q32">What <strong>motivates</strong> you as a Software Engineer?</a><span class="skill">LEGACY</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q6" target="_blank" rel="noopener">Mock Q6</a></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q31">Where do you <strong>see yourself in five years</strong>?</a></li>
+              <li><span class="tag tag-panel">PANEL</span><a href="#q4">What project or <strong>aprofessional  accomplishment</strong> are you <strong>most proud</strong> of?</a><span class="skill">LEGACY</span><span class="skill">C#</span><span class="skill">.NET</span><span class="skill">MAINT</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Mock Q4</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q6" target="_blank" rel="noopener">Mock Q6</a></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+	  
+	  
+      <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-4">
+          <span class="acc-title">7&nbsp;·&nbsp;Behavioral, Adaptability, Learning new Stack &amp; Teamwork<span class="acc-count">(11)</span><span class="tag tag-mgr">COLLABORATION</span><span class="tag tag-mgr">STAKEHOLDERS</span><span class="tag tag-mgr">ADAPTABILITY</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-4">
+          <div class="acc-body-inner">
+            <ol>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q20">Describe a time when <strong>requirements changed</strong> halfway through a project.</a><span class="skill">SQL</span><span class="skill">LOGIC</span></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q21">Tell me about a <strong>mistake</strong> you made / a <strong> time you failed</strong>.</a><span class="skill">SQL</span><span class="skill">API</span><span class="skill">MAINT</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q7" target="_blank" rel="noopener">Mock Q7</a></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q23">Tell me about a time <strong>you worked under pressure</strong>.</a><span class="skill">LEGACY</span><span class="skill">MAINT</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Mock Q4</a></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q24">How do you <strong>prioritize</strong> multiple urgent tasks?</a><span class="skill">MAINT</span></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q25">How do you <strong>handle difficult usersor stakeholders</strong>, or <strong> explain something technical</strong> to a <strong>non-technical</strong> person?</a><span class="skill">MAINT</span></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q27">Have you ever <STRONG>had to learn a framework or tech stack</STRONG> you had never used before? (<strong>Angular</strong>)</a><span class="skill">EF</span><span class="skill">C#</span><span class="skill">.NET</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q1" target="_blank" rel="noopener">Mock Q1</a></li>
+		      <li><span class="tag tag-mgr">MGR</span><a href="#q29">How do you deal with <strong>ambiguity</strong>?</a><span class="skill">LEGACY</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Mock Q4</a></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q30">What is your <strong> biggest weakness</strong>?</a></li>
+              <li><span class="tag tag-mgr">MGR</span><a href="#q33">How do you <strong>c handle Constructive criticism</strong>?</a></li>
+              <li><span class="tag tag-panel">PANEL</span><a href="#q18">Tell me about <strong>mentoring</strong> another developer.</a><span class="skill">SQL</span><span class="skill">LOGIC</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q5" target="_blank" rel="noopener">Mock Q5</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q19">Tell me about a time you <strong>disagreed/conflic resolution</strong> with another developer.</a><span class="skill">SQL</span><span class="skill">LOGIC</span></li>
+              <li><span class="tag tag-panel">PANEL</span><a href="#q40">How do you <strong>thrive working on a team</strong>?</a></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+	  
+	  
+      <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-net">
+          <span class="acc-title">2&nbsp;·&nbsp;C# / .NET &amp; EF Core Fundamentals and REST/API<span class="acc-count">(4)</span><span class="tag tag-mgr">C#</span><span class="tag tag-mgr">.NET</span><span class="tag tag-mgr">EF</span><span class="tag tag-mgr">LINQ</span><span class="tag tag-mgr">API</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-net">
+          <div class="acc-body-inner">
+            <ol>
+              <li><span class="tag tag-dev">DEV</span><a href="#q42">Explain <strong>value types vs reference types</strong> in .NET.</a><span class="skill">C#</span><span class="skill">.NET</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q14" target="_blank" rel="noopener">Mock Q14</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q43">What's the difference between <strong>IQueryable</strong> and <strong>IEnumerable</strong>?</a><span class="skill">EF</span><span class="skill">LINQ</span><span class="skill">SQL</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Mock Q3</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q15" target="_blank" rel="noopener">Mock Q15</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q44">How does <strong>LINQ</strong> return its results (<strong>deferred execution</strong>)?</a><span class="skill">EF</span><span class="skill">LINQ</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q16" target="_blank" rel="noopener">Mock Q16</a></li>
+              <li><span class="tag tag-dev">DEV</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener"><strong>.NET Core / REST API Architecture</strong></a><span class="skill">.NET</span><span class="skill">API</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Mock Q3</a></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-sqlint">
+          <span class="acc-title">3&nbsp;·&nbsp;SQL Server Heavy Internals<span class="acc-count">(7)</span><span class="tag tag-mgr">SQL</span><span class="tag tag-mgr">PERFORMANCE</span><span class="tag tag-mgr">CONCURRENCY</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-sqlint">
+          <div class="acc-body-inner">
+            <ol>
+              <li><span class="tag tag-dev">DEV</span><a href="#q45">When do you actually <strong>use stored procedures</strong>?</a><span class="skill">SQL</span><span class="skill">PERFORMANCE</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q10" target="_blank" rel="noopener">Mock Q10</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q46">Walk me through <strong>SQL functions and their performance traps</strong>.</a><span class="skill">SQL</span><span class="skill">PERFORMANCE</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q11" target="_blank" rel="noopener">Mock Q11</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q49">Walk me through <strong>how you'd implement a trigger as an audit backstop</strong> on Guardian Delta, and where triggers bite you at scale.</a><span class="skill">SQL</span><span class="skill">TRIGGERS</span><span class="skill">PERFORMANCE</span></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q47">How does <strong>locking work in SQL Server</strong>?</a><span class="skill">SQL</span><span class="skill">CONCURRENCY</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q12" target="_blank" rel="noopener">Mock Q12</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q48">What causes <strong>SQL deadlocks, how you stop them?</strong></a><span class="skill">SQL</span><span class="skill">CONCURRENCY</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q13" target="_blank" rel="noopener">Mock Q13</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q8">How do you decide between <strong>MERGE VS DML</strong> statements?</a><span class="skill">SQL</span><span class="skill">LOGIC</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q39">Walk me through the <strong>different SQL JOIN types</strong> , and the difference between a <strong>clustered VS non-clustered index</strong>.</a><span class="skill">SQL</span><span class="skill">JOINS</span><span class="skill">INDEX</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+	  
+	    <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-arch">
+          <span class="acc-title">3&nbsp;·&nbsp;Architecture &amp; Design Principles<span class="acc-count">(3)</span><span class="tag tag-mgr">C#</span><span class="tag tag-mgr">OOP</span><span class="tag tag-mgr">PATTERNS</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-arch">
+          <div class="acc-body-inner">
+            <ol>
+              <li><span class="tag tag-dev">DEV</span><a href="#q37">Walk me through <strong>SOLID principles</strong> with something you actually built.</a><span class="skill">SOLID</span><span class="skill">C#</span><span class="skill">.NET</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q8" target="_blank" rel="noopener">Mock Q8</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q38">Give me real usage of <strong>Strategy, Mediator,Factory and Proxy/Facade</strong> patterns.</a><span class="skill">PATTERNS</span><span class="skill">C#</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q9" target="_blank" rel="noopener">Mock Q9</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q50">Break down the <strong>4 OOP pillars</strong> — Abstraction, Encapsulation, Inheritance, Polymorphism — with real examples.</a><span class="skill">OOP</span><span class="skill">C#</span><span class="skill">.NET</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q8" target="_blank" rel="noopener">Mock Q8</a></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-2">
+          <span class="acc-title">4&nbsp;·&nbsp;Performance/Scalability (SQL Guardian - BarberflowApp)<span class="acc-count">(5)</span><span class="tag tag-mgr">SQL</span><span class="tag tag-mgr">PERFORMANCE</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-2">
+          <div class="acc-body-inner">
+            <ol>
+              <li><span class="tag tag-dev">DEV</span><a href="#q6">Walk me through the <strong>Enterprise Guardian project in detail</strong>.</a><span class="skill">SQL</span><span class="skill">LOGIC</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q5">Tell me about a time you <strong>improved performance</strong>.</a><span class="skill">SQL</span><span class="skill">LOGIC</span><span class="skill">API</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Mock Q3</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q10">Did you <strong>measure</strong> the actual <STRONG>performance improvement</STRONG>?</a><span class="skill">SQL</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q7">What would you do differently at <strong>higher scale Guradian Project</strong>?</a><span class="skill">SQL</span><span class="skill">LOGIC</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a></li>
+		      <li><span class="tag tag-dev">DEV</span><a href="https://github.com/dariemcarlosdev/barberflow-saas" target="_blank" rel="noopener"> <STRONG>Scale from 100 user to 1M users</STRONG> (High Architectural desition)</a></li>
+			</ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-3">
+          <span class="acc-title">4&nbsp;·&nbsp;Troubleshooting, Legacy Systems, tech-debts &amp; Code Quality<span class="acc-count">(6)</span><span class="tag tag-mgr">LEGACY</span><span class="tag tag-mgr">DEBUGGING</span><span class="tag tag-mgr">CROSS-LAYER</span><span class="tag tag-mgr">API</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-3">
+          <div class="acc-body-inner">
+            <ol>
+			  <li><span class="tag tag-dev">DEV</span><a href="#q41">How would you approach migrating a <strong>legacy FoxPro system</strong>?</a><span class="skill">LEGACY</span><span class="skill">MAINT</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q17" target="_blank" rel="noopener">Mock Q17</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q14">Tell me about a difficult <strong>production issue you solved</strong> while modernizing a <strong>legacy application</strong>.</a><span class="skill">LEGACY</span><span class="skill">C#</span><span class="skill">.NET</span><span class="skill">MAINT</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Mock Q4</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q16">How do you <strong>troubleshoot an issue</strong>  when you <strong> even don't know where the problem is</strong> ?</a><span class="skill">API</span><span class="skill">MAINT</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Mock Q3</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q7" target="_blank" rel="noopener">Mock Q7</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q9">Walk me through a time you caught a <strong>performance issue in code review</strong>.</a><span class="skill">SQL</span><span class="skill">LOGIC</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q5" target="_blank" rel="noopener">Mock Q5</a><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Mock Q2</a></li>
+              <li><span class="tag tag-dev">DEV</span><a href="#q17">How do you <strong>ensure high code quality</strong>?</a><span class="skill">SQL</span><span class="skill">LOGIC</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q5" target="_blank" rel="noopener">Mock Q5</a></li>
+              <li><span class="tag tag-panel">PANEL</span><a href="#q35">How do you approach <strong>technical debt</strong> and <strong>trade-offs</strong>?</a><span class="skill">LEGACY</span><span class="skill">C#</span><span class="skill">.NET</span><span class="skill">MAINT</span><a class="idx-badge" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q6" target="_blank" rel="noopener">Mock Q6</a></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-header" aria-expanded="false" aria-controls="acc-body-5">
+          <span class="acc-title">8&nbsp;·&nbsp;Closing the Interview<span class="acc-count">(2)</span><span class="tag tag-mgr">FULL-STACK</span><span class="tag tag-mgr">API</span><span class="tag tag-mgr">PROBLEM-SOLVING</span></span>
+          <span class="acc-chevron">▸</span>
+        </button>
+        <div class="acc-body" id="acc-body-5">
+          <div class="acc-body-inner">
+            <ol>
+              <li><span class="tag tag-panel">PANEL</span><a href="#q34">Do you have any <strong>questions for us</strong>?</a></li>
+              <li><span class="tag tag-panel">PANEL</span><a href="#q36">Closing <strong>Interview to Conclude</strong>?</a></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section-break">Opening</div>
+
+  <!-- Q1 -->
+  <div class="qa" id="q1">
+    <h3><span class="qnum">1</span><span class="tag tag-mgr">MGR</span>Tell me about yourself.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p>Sure. I've been doing software development for over ten years now, mostly in the <strong>.NET world</strong> — <strong>C#</strong>, <strong>SQL Server</strong>, <strong>REST APIs</strong>, and a lot of <strong>legacy modernization</strong> along the way. Right now at Miami-Dade County Public Schools, I've been leading the <strong><mark class="kw">migration of a Web Forms application</mark></strong> over to <strong>ASP.NET Core with Entity Framework Core</strong> and <strong>MSSQL</strong>. I've built REST APIs with proper versioning, filtering, pagination, and security built in, not bolted on. I also added <strong>unit and integration testing with XUnit and Moq</strong>, which brought our bug rate down by about <mark class="kw">90%</mark>, and documented everything in <strong>Swagger</strong>, which cut onboarding time for new developers by over 75%.</p>
+    <p><strong>On the data side</strong>, I <strong>architected the Enterprise Guardian Delta Processing System</strong> — a <strong>SQL Server solution</strong> that processes <mark class="kw">300,000-plus records(PROD: 1M)</mark> a night 
+	— and I've been <strong>building AI-driven features</strong> too: <strong>sentiment analysis</strong> and <strong>review classification</strong> using <strong>Azure OpenAI Platform</strong> and <strong>Cognitive Services</strong>, 
+	which help to cut manual processing by <mark class="kw">60%</mark>. Saying this, <strong>What draws me to this role</strong> is that it's the same shape of work — full-stack, business-critical, some legacy in the mix — while I keep doing what I actually enjoy: <strong>backend architecture</strong>,<strong>System Design</strong>, <strong>SQL performance work</strong>, and <strong>talking to stakeholders</strong> in <strong>English or Spanish</strong> depending on who's in the room.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q2 -->
+  <div class="qa" id="q2">
+    <h3><span class="qnum">2</span><span class="tag tag-mgr">MGR</span>Why are you interested in this position?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q1" target="_blank" rel="noopener">Watch it answered live — Q1: Angular / Front-End Approach</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p>Honestly, two things. <strong>First</strong>, the stack's almost exactly what I've been doing day to day — <strong>.NET Core</strong>, <strong>Angular</strong>, <strong>SQL Server</strong>, <strong>REST APIs</strong>, <strong>legacy modernization</strong>. I mean or how this is translated to the Team?, <strong>I show up useful in week one, instead of spending six months getting oriented or trained</strong>. And from what I understand of Park West Gallery, you're running real, <strong><mark class="kw">business-critical legacy systems</mark></strong> that people depend on every day — that's the kind of problem I actually like solving, not just tolerate.</p>
+    <p><strong>Second thing</strong> — and this one matters a lot to me — <strong>This role needs someone who can talk to both engineers and business stakeholders</strong>, that feel confortable with That. and It's something I have been doing constantly, <strong><mark class="kw">in two languages</mark></strong>. Plenty of developers write good code. Fewer of them can sit with a frustrated stakeholder and explain, in plain terms, why a report's running slow and when it'll be fixed.</p>
+    <p><strong>I actually took the interest further before this interview</strong>, and built <strong><mark class="kw">Gallery Manager</mark></strong>, a small production app that tracks gallery inventory, groups pieces into timed exhibits, and calculates revenue per exhibit, on <strong>Angular and .NET Core</strong>. It's live at <a href="https://gallery-manager-henna.vercel.app/" target="_blank" rel="noopener">gallery-manager-henna.vercel.app</a>, code's public too. Wanted to actually understand the shape of a gallery's operations, not just read the job description.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q3 -->
+  <div class="qa" id="q3">
+    <h3><span class="qnum">3</span><span class="tag tag-mgr">MGR</span>Why do you want to leave MDCPS?</h3>
+    <p>Honestly, I'm not running from anything. I've had real ownership there — led the <strong><mark class="kw">modernization effort</mark></strong>, <strong>built systems both app system and automated systems </strong>,<strong> mentored a few junior engineers along the way</strong>. But I've pretty much hit the ceiling on what's left to modernize, and I want to keep growing past that.</p>
+    <p>There's a practical piece too — I’m looking for a role where <strong><mark class="kw">full-stack development</mark></strong> is the main focus, not something squeezed in between support tickets.I have a <strong>lot of experience balancing system support with heavyarchitectural upgrades and desitions</strong>, and I'm <strong>looking for a team</strong> where I can dedicate all my energy to <strong><mark class="kw">solving complex problems</mark> across both, new builds and existing legacy systems</strong></p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q4 -->
+  <div class="qa" id="q4">
+    <h3><span class="qnum">4</span><span class="tag tag-panel">PANEL</span>What project or professional accomplishment are you most proud of?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Watch it answered live — Q4: Legacy Debugging — WPBT</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q6" target="_blank" rel="noopener">Watch it answered live — Q6: Legacy Strategy — WT1C (Español)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p>Two stand out, and both are live in production right now.</p>
+    <p><strong>The first is WPBT</strong> — a <strong>legacy Web Forms app on .NET Framework 4.8</strong>
+	— which <strong>I moved off on-premise LDAP/AD onto <mark class="kw">Azure Entra ID</mark> as modern identity provider</strong>, 
+	using <strong>OIDC through OWIN and Katana middleware.</strong>. <strong>I have funny experience doing this project, and i'd like shared</strong>,  The IIS admin team told me flat out it wasn't possible 
+	— <strong>their arguments were that modern authentication/authorizations mechanims are built around .NET Core apps</strong>, and <strong>a 4.8 Web Form Legacy does not fit in Azure Enviroment</strong>. 
+	I didn't take that as the final word.<strong>Actually I assum it as a personal challange</strong> I <strong>worked it at the protocol level</strong> and <strong><mark class="kw">closed five issues that surfaced one layer at a time</mark></strong> 
+	— callback path handling under the virtual directory, the token redemption contract, cookie-path behavior across environments, then two authorization bugs downstream of that. 
+<strong>The result, the app  The app is totally full integrated with AzureEntraID and live on PROD</strong> <strong>
+- What I'm proud of is the shape of challange</strong>— a <strong>genuinely legacy stack running on a modern identity provider</strong>, no rewrite, no downtime for the people using it.<strong>and my implementation will helpl other devs</strong>,</p>
+    
+	<p><strong>The second is WT1C the Title I Compliance System</strong>, which I'm leading right now. 
+	It's used by 300-plus schools district-wide, and <strong>it's running on tech that's genuinely end-of-life</strong> — <strong>AngularJS 1.6.5, ASP.NET Web API 2, .NET Framework 4.8 </strong>
+	— <strong>with real security exposure</strong>: hardcoded database credentials, 75-day auth tokens, unencrypted HTTP traffic, and student data under FERPA sitting on top of all of it. 
+	<strong>Instead of a "big-bang" rewrite, I designed an incremental, modular<mark class="kw">migration paln to Blazor Server on .NET Core 10</mark></strong>, <strong>deployed side-by-side with the legacy system in IIS</strong>. 
+	<strong>Schools keep working on the current system while we validate each module</strong>, and <strong>when a module's ready,  we cut it over automatically </strong>— no manual action on their end. 
+	<strong>If something breaks, I roll back just that piece, not the whole system</strong>. Three hundred schools, <mark class="kw">zero days of lost access</mark>, phased instead of one big bet on a single cutover.</p>
+    <p><strong>What connects these projects is my instinct as Senior engineer</strong>: <strong>I don't accept '<mark class="kw">it's impossible</mark>' just because the stack is old</strong>. 
+	I always <strong>look under the hood</strong> and <strong>verify the constraints myself instead of just giving up on it</strong>.. <strong>Both projects, are real examples, proving and finding viable solutio.</strong></p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">SQL Server / Enterprise Guardian — Technical Deep Dive</div>
+
+  <!-- Q5 -->
+  <div class="qa" id="q5">
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: REST API Design (Español)</a></div>
+    <p>The best example I've got is the Enterprise Guardian Delta Processing System I architected — a <strong>SQL Server solution</strong> that processes 300,000-plus guardian records every night, detecting inserts, updates, and deletes between daily snapshots. I designed the whole thing: a stateful change-detection process comparing today's snapshot against a baseline table, <strong><mark class="kw">SHA2-256 hash comparisons</mark></strong> instead of raw string comparisons for change detection, a <strong>baseline/staging/audit table structure</strong>, and a <strong>Control-M job</strong> to run it nightly with retry logic. I owned the architecture and the technical decisions on it, and I supervised a junior developer through the actual implementation — reviewing their code for performance and correctness the whole way.</p>
+    <p>I've got a second example too, a bit different in shape — an SSIS ETL pipeline for SAP Maintenance Master Data that was doing full-table loads every run. I rebuilt it around lookup-based deduplication and delta processing and <strong><mark class="kw">cut the runtime by 70%</mark></strong>, while keeping full auditability.</p>
+    <p>And on the <strong>API side</strong>, same instinct, different layer: a student-records <strong>endpoint</strong> started taking over eight seconds during peak hours. I traced it through <strong>Serilog</strong> logs to confirm the delay was in the data layer, turned on <strong>Entity Framework query logging</strong>, and found the real problem: a misconfigured <mark class="kw"><code>Include()</code></mark> on a many-to-many relationship was matching every row against every other row instead of pairing them up correctly, so a handful of records multiplied into thousands of duplicate rows before it ever got back to the API. Fixed it with <strong><mark class="kw">SplitQuery</mark></strong> and a <strong>composite index</strong>, and response time dropped from eight seconds to under <strong><mark class="kw">400 milliseconds</mark></strong>. Same rule every time — don't guess which layer is slow, prove it.</p>
+    <p>Happy to go deep on any of the three — Enterprise Guardian especially, since there's a lot of specific technical decision-making in it I can walk through.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q6 -->
+  <div class="qa" id="q6">
+    <h3><span class="qnum">6</span><span class="tag tag-dev">DEV</span>Walk me through the Enterprise Guardian project in detail.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a></div>
+    <p>Sure. Enterprise Guardian is a SQL Server process that keeps guardian contact records in sync, and it runs on about <strong>300,000 rows</strong> every night. The core piece is a <strong><mark class="kw">stored procedure</mark></strong> called <code>P_LOAD_GUARDIAN_DELTA</code>. It compares today's data, sitting in <code>Guardian_Info</code>, against a <strong>baseline table</strong> called <code>Guardian_Base</code>, which holds yesterday's snapshot. <code>Guardian_Info</code> only ever has today's version, so without that baseline there'd be no way to tell if a row's new, changed, or been deleted.</p>
+    <p>Instead of one <strong>MERGE statement</strong> handling everything, it runs <mark class="kw">three separate queries</mark> — one for inserts, one for updates, one for deletes. I split it out that way because each one's easier to read, easier to troubleshoot on its own, and easier to tune if one of them ever runs slow. A single MERGE bundles all that logic into one execution plan, which gets a lot harder to debug once something breaks in production.</p>
+    <p>For actually detecting a change, I <strong>hash each email with <mark class="kw">SHA-256</mark></strong> after normalizing the casing, instead of comparing the raw strings. Comparing strings character by character adds up fast at this volume, so hashing gives a fixed-size comparison instead, which is a lot cheaper. I've also got a <strong><mark class="kw">clustered index</mark></strong> on <code>Student_ID</code>, since that's the join key doing all the work. Changed records land in a staging table, <code>stg_Guardian_Delta</code>, so downstream systems only process what actually changed instead of everything, and every change gets logged in a full audit table, <code>Guardian_Delta_Log</code> — old value, new value, what kind of change it was, and when.</p>
+    <p>The whole thing runs nightly through a <strong><mark class="kw">Control-M job</mark></strong> and exports through BCP. It retries automatically if it fails and sends a notification if a run doesn't finish — that <strong>retry logic</strong> actually came out of a code review catch. I designed the whole thing and supervised a junior developer through building it, reviewing his code the entire way for performance and correctness.</p>
+    <p class="refbox">Quick reference if pushed to map this to specific skills: <strong>enterprise SQL Server architecture</strong>, stateful multi-query change detection, hash-based change detection, index design, Control-M job scheduling, delta processing, audit logging, and <strong>database design</strong> — all demonstrated end-to-end on this one project.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q7 -->
+  <div class="qa" id="q7">
+    <h3><span class="qnum">7</span><span class="tag tag-dev">DEV</span>What would you do differently at higher scale?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a></div>
+    <p>
+        the very next step as volume grows is consolidating those three queries into a single <strong><mark class="kw">MERGE statement</mark></strong>. Right now, at three hundred thousand rows, explicit queries are easier to tune, but well past that, a single pass is going to win.
+
+        If we start hitting massive scale, I'd introduce <strong><mark class="kw">table partitioning</mark></strong> on the baseline and staging tables—probably by date—so we only scan what we actually need. I’d also strongly consider native <strong>CDC(Change Data Capture) or Change Tracking,design pattern and native database feature used to identify, track, and record data modifications (INSERT, UPDATE, and DELETE operations) in real time </strong>. That way, SQL Server just tell us the changes natively, instead of us recomputing hashes against a full baseline load every single night.
+
+    </p>
+    <p>
+        Regardless of the approach, I would definitely <strong><mark class="kw">break the processing down into batches</mark></strong>. As a system scales, <strong>preventing long-running SQL transactions</strong> and <strong>controlling cost escalation is absolutely critical for performance</strong>
+</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q8 -->
+  <div class="qa" id="q8">
+    <h3><span class="qnum">8</span><span class="tag tag-dev">DEV</span>How do you decide between MERGE and separate DML statements?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a></div>
+    <p>It depends on the workload shape, and Enterprise Guardian's actually a good example of that trade-off. <strong><mark class="kw">MERGE</mark></strong> consolidates inserts, updates, and deletes against the same target into a single pass, which sounds like the obvious win on paper. But for a dataset around 300,000 rows, three focused, <strong>well-indexed</strong> <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> statements can be just as fast, and they're a lot easier to troubleshoot in production than untangling a single MERGE's execution plan. MERGE also has a history of edge-case bugs in <strong>SQL Server</strong> — <mark class="kw"><code>WHEN NOT MATCHED BY SOURCE</code></mark> for deletes needs careful handling, and it can behave unpredictably under high concurrency because of its locking behavior. That's actually why production Enterprise Guardian runs three separate queries instead of the MERGE the original design proposed — the architecture's still stateful, comparing against a baseline table, but the implementation prioritizes maintainability and operational reliability over consolidating into one statement. I'd reach for MERGE again once scale genuinely justifies a single pass — that's actually the next phase we've got planned — but for this workload, <mark class="kw">explicit DML</mark> won on troubleshooting and tuning.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q39 -->
+  <div class="qa" id="q39">
+    <h3><span class="qnum">39</span><span class="tag tag-dev">DEV</span>Can you walk me through the different types of SQL JOINs, and explain the difference between a clustered and non-clustered index?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server Depth &amp; ETL Optimization</a></div>
+    <p>I like to keep database concepts concrete, so let's take it one at a time.</p>
+    <p><strong>SQL JOINs</strong></p>
+    <ul style="margin:0 0 10px 0; padding-left:1.3em;">
+      <li style="margin-bottom:8px;"><strong>INNER JOIN</strong>: <strong>Only gives you results when there's <mark class="kw">a match in both tables</mark></strong>. Think of it like pulling a list of guardians who actually have a student linked to them in the system. If there's no match, it doesn't show up.</li>
+      <li style="margin-bottom:8px;"><strong>LEFT JOIN</strong>: Gives you <strong>everything from the first (left) table plus any matches from the second table</strong>,. If there's no match, it just leaves those columns blank (<strong><mark class="kw"><code>NULL</code></mark></strong>). A good example is pulling a list of every student, whether they have a guardian on file yet or not.</li>
+      <li style="margin-bottom:8px;"><strong>RIGHT JOIN</strong>:<strong> The exact opposite of a LEFT JOIN.</strong>, Honestly, I rarely write these. If I find myself needing one, I usually just <strong>flip the order of the tables</strong> and use a LEFT JOIN instead. It's just much easier for the next developer to read.</li>
+      <li style="margin-bottom:8px;"><strong>CROSS JOIN</strong>: <strong>Matches very single row in the first table with every single row in the second</strong>. 
+        It's useful <strong>if you're doing it on purpose - like like in the context of my business, I am pairing every school with every reporting period</strong>. </p>
+        <p>But <strong>it's dangerous</strong> if you do it by accident (like a <strong>missing condition creating a massive, list</strong>, similar to that <strong>EF Core <code>Include()</code> bug</strong> we saw on the student records endpoint).</li>
+	  <li style="margin-bottom:8px;"><strong>OUTTER JOIN</strong>: <strong>a LEFT or RIGHT JOIN that returns all rows from both tables, with NULL where there's no match</strong>. Rarely I use it in practice, but can be <STRONG>useful for finding rows that exist in one table but not the other</STRONG>. </li>
+</ul>
+    <p><strong>Clustered vs. Non-Clustered Indexes</strong></p>
+    <p>The easiest way to understand the difference is to think about a book.</p>
+    <ul style="margin:0 0 10px 0; padding-left:1.3em;">
+      <li style="margin-bottom:8px;"><strong>Clustered Index</strong>: state <strong>how the data is physically stored on the disk</strong>. let's 'Think of a phone book oray?, to find de anology — 
+        <strong>it is physically organized and printed alphabetically by last name</strong>. Because we can only physically arrange the rows one way, <strong> a table can only have <mark class="kw">one clustered index</mark></strong>.</li>
+      <li style="margin-bottom:8px;"><strong>Non-Clustered Index</strong>: This data structure <strong>is like the index at the back of a textbook</strong>. 
+        The Index doesn't change the order or de pages in a book; index just keeps a <strong>separate list of keywords (pointers)</strong> and points you to the exact page where the real data lives.
+        Because it is stored in other disk from the data, we can define <strong><mark class="kw">multiple non-clustered indexes</mark></strong> on a single table to speed up different kinds of searches.</li>
+    </ul>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Clustered Index:</strong> Physically sorts and stores the table's actual rows on disk in that key's order. Best used on the column filtered, sorted, or range-scanned most often — almost always the primary key, since a table only ever gets one.</li>
+        <li><strong>Non-Clustered Index:</strong> A separate lookup structure that points back to the data instead of reordering it. Best used on columns searched or joined on frequently that aren't the clustered key, since a table can carry many of these.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q9 -->
+  <div class="qa" id="q9">
+    <h3><span class="qnum">9</span><span class="tag tag-dev">DEV</span>Walk me through a time you caught a performance issue in code review.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q5" target="_blank" rel="noopener">Watch it answered live — Q5: Mentorship / Code Quality</a>
+	<a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a></div>
+    <p>During review of the <STRONG>Enterprise Guardian project</STRONG>, I noticed the junior developer I was supervising had implemented <strong>change detection using a <mark class="kw">direct string comparison</mark></strong> on the email field — <code><strong>WHERE target.Guardian_Email &lt;&gt; source.Guardian_Email</strong></code>. 
+	It worked correctly, but at 300,000-plus rows, <STRONG>that creates unnecessary CPU overhead, since SQL Server evaluates variable-length strings character by character</STRONG>. I explained that a <strong><mark class="kw">SHA2-256 hash</mark></strong> gives a constant 32-byte comparison regardless of the original string length, and had them refactor it to use <mark class="kw"><code>HASHBYTES('SHA2_256', LOWER(Guardian_Email))</code></mark> with a persisted hash column instead.</p>
+    <p><STRONG>That wasn't the only catch on that project, either</STRONG> — I also caught a <STRONG>missing normalization step before hashing (case differences were producing false-positive "updates")</STRONG>, a <STRONG>staging table with no clustered index</strong> on <code>Student_ID</code>, 
+	a <STRONG>Control-M job with no retry or failure handling</STRONG>, and a <STRONG>delete operation with no audit trail</STRONG>. </p>
+     <p> <strong><mark class="kw">Five separate catches</mark>, five separate incidents that never happened because we worked at real team ,looking at the code before it shipped, with proper end-to-end testing and regretion test.</strong></p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q10 -->
+  <div class="qa" id="q10">
+    <h3><span class="qnum">10</span><span class="tag tag-dev">DEV</span>Did you measure the actual performance improvement?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p>Yes — I actually built a dedicated script for this, because I don't like leaving performance claims to theory.</p>
+    <p>I wrote a script called <strong><mark class="kw">Performance_Comparison_Benchmark.sql</mark></strong> that runs a head-to-head test between the original, multi-pass version of the procedure — <strong>P_LOAD_GUARDIAN_DELTA</strong> — against the refactored, single-<strong>MERGE</strong> version, <strong>P_LOAD_GUARDIAN_DELTA_MERGE</strong>. It runs both against the same dataset and returns one resultset comparing them across the KPIs that actually matter: <strong>duration</strong>, <strong>CPU</strong>, <strong>logical reads</strong>, <strong>writes</strong>, and the <strong>delta breakdown</strong> — how many rows were added, updated, or deleted — plus an <strong>efficiency percentage</strong>, so I'm not just eyeballing which one's faster. It doubles as a <strong><mark class="kw">regression test</mark> for the SAP data pipeline</strong>, so any time I touch that logic, I immediately know if I broke something or actually improved it.</p>
+    <p><STRONG>On the API side</STRONG>, I use a different toolkit, but the <strong>same principle applies</STRONG>. I wire up <strong>structured logging</strong> from day one, and I lean on <strong><mark class="kw">Sentry</mark></strong> — a platform for <strong>app monitoring and error tracking</strong> that detects, diagnoses, and fixes app crashes in real time, so I hear about a regression within minutes instead of waiting on a support ticket. I pair that with <strong><mark class="kw">Azure App Insights</mark></strong> for request telemetry, and Grafana on top for the dashboards. If we're fronting it with <strong>Azure APIM</strong>, I use its built-in analytics too.</p>
+    <p>Whether it's a <strong>SQL job</strong> or a <strong>REST API</strong>, the principle's the same for me: prove it's fast with real numbers, not just theory.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">Architecture & Design Principles</div>
+
+  <!-- Q37 -->
+  <div class="qa" id="q37">
+    <h3><span class="qnum">37</span><span class="tag tag-dev">DEV</span>Walk me through SOLID principles with something you actually built.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q8" target="_blank" rel="noopener">Watch it answered live — Q8: SOLID Principles — Gallery Manager (ArtGallery Domain)</a></div>
+    <p>I like to ground each one in something real instead of the textbook version, so I'll walk through Gallery Manager App.</p>
+    <p><strong>Single Responsibility</strong> — in plain terms,<strong> a class should do one thing and have <mark class="kw">one reason to change</mark></strong>. 
+      <strong>It's best applied when a class is quietly doing two unrelated jobs</strong>, like a data entity that's also running business math. 
+      <strong>My <code>Artwork</code> entity only holds artwork data</strong> — price, medium, sale status.
+      <strong>Revenue math for an exhibit will live in its own <code>ExhibitRevenueCalculator</code></strong>. If pricing logic changes, the entity doesn't.</p>
+    <p class="note">OOP pillar(s): <strong>Abstraction</strong> + <strong>Encapsulation</strong> — one class becomes one clean abstraction, and its data and logic for that one concern stay encapsulated together.</p>
+    <p><strong>Open/Closed</strong> — <strong>you should be able to add new behavior without touching code that's already working and already tested</strong>. 
+      <strong>Best used when you know you'll keep adding variations over time</strong> — new pricing tiers, new payment types — and don't want a growing if/else block every time. 
+      When I needed member pricing on top of public pricing, I added a new <code>IPricingStrategy</code> Interface implementation instead of editing the existing service. 
+      <strong><mark class="kw">Closed for modification, open for extension.</mark></strong></p>
+    <p class="note">OOP pillar(s): <strong>Abstraction</strong> + <strong>Polymorphism</strong> — you extend behavior by adding new implementations of an abstraction, invoked polymorphically, instead of editing what's already there.</p>
+    <p><strong>Liskov Substitution</strong> —<strong> any subclass should be <mark class="kw">swappable wherever the expected parent type is</mark>, without breaking anything</strong>. 
+      Matters most when you're modeling a type hierarchy and want calling code to treat every subtype the same way. 
+      <strong>Artwork has subtypes</strong> — Painting, Sculpture, Print. <strong>My exhibit revenue calculation is written against the base <code>Artwork</code> type</strong>, so any subtype swaps in cleanly.</p>
+    <p class="note">OOP pillar(s): <strong>Inheritance</strong> + <strong>Polymorphism</strong> — it's really a correctness rule for inheritance hierarchies, making sure every subtype stays truly substitutable at runtime.</p>
+    <p><strong>Interface Segregation</strong> — <strong>don't force a class to <mark class="kw">depend on methods it never uses</mark></strong>; split a big interface into smaller, focused ones.
+      Best applied once an interface has quietly grown to cover several unrelated responsibilities.
+      <strong>Instead of one <code>IArtworkRepository</code> with twenty methods</strong>, I <strong>split it into <code>IArtworkReader</code> and <code>IArtworkWriter</code></strong>, so reporting code only depends on reads.</p>
+    <p class="note">OOP pillar(s): <strong>Abstraction</strong> — the discipline here is designing focused, minimal abstractions instead of one bloated interface everyone's forced to depend on.</p>
+    <p><strong>Dependency Inversion</strong> — <strong>high-level business logic should <mark class="kw">depend on an abstraction, not a concrete implementation</mark></strong>. 
+      Best applied <strong>when you want to swap the underlying implementation, for testing or for changing providers, without rewriting the logic on top of it</strong>.
+      <strong><code>ExhibitService</code></strong> depends on <strong><code>IArtworkRepository</code>, not EF Core or Postgres directly</strong> — that's exactly what let me <strong>unit test the service against a mock with no real database</strong>.</p>
+    <p class="note">OOP pillar(s): <strong>Abstraction</strong> + <strong>Polymorphism</strong> — you code against the abstraction, and whichever concrete implementation gets injected resolves polymorphically at runtime.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q38 -->
+  <div class="qa" id="q38">
+    <h3><span class="qnum">38</span><span class="tag tag-dev">DEV</span>Give me real usage of Strategy, Mediator, and Proxy/Facade patterns.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q9" target="_blank" rel="noopener">Watch it answered live — Q9: Essential Design Patterns</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p><strong>Strategy</strong> — lets you <strong><mark class="kw">swap one algorithm for another at runtime</mark> without the calling code needing to know which one it's using</strong>. 
+      <strong>Best used when you've got several ways to do the same job</strong>, like different pricing or discount rules, and <strong>don't want a bunch of if/else deciding which applies</strong>. Same <code>IPricingStrategy</code> from Gallery Manager — member pricing, public pricing, exhibit-only pricing, each its own class, injected at runtime.</p>
+    <p><strong>Mediator</strong> — <strong>centralizes communication between objects so they talk through one coordinator instead of directly to each other</strong>. 
+      Best <strong> used when a class starts depending on five or six other services just to do its job</strong>  
+      — that's usually the Alert that you need one. I use <strong><mark class="kw">MediatR</mark> in my .NET Core APIs keeps controllers thin and business logic out of the HTTP layer</strong>.</p>
+    <p><strong>Factory</strong> — this one's a bit different, <strong>it's really about controlling where objects actually come from</strong>. 
+      So, <strong>on my legacy .NET Framework 4.8 WPBT project</strong> I'm working on right now,
+          <strong>I needed <code>HttpClient</code> instances for calls out to Microsoft Graph</strong>. <strong>Problem is, .NET Framework doesn't give you that built-in <code>IHttpClientFactory</code> pipeline</strong>
+      you'd get in .NET Core — so <strong>I ended up implementing a small version of it myself</strong>. 
+      Just <strong>an <mark class="kw"><code>IHttpClientFactory</code></mark> abstraction, and two implementations behind it</strong>: one that hands back a <strong>shared, lazy singleton</strong> for production 
+      — so I'm not <strong>burning through sockets</strong> — and <strong>another that spins up a fresh instance every call</strong>, which is what I use for tests. 
+      My <code>GraphApiService</code> doesn't care which one it's getting, it just <strong>depends on the interface</strong>. <strong>Unity decides that at wire-up</strong>. 
+      That's really the whole point of Factory — it takes those <strong>object-creation decisions completely out of your business code</strong>.</p>
+    <p><strong>Proxy / Facade</strong> — <strong>a proxy sits in front of something real and controls access to it</strong>, <strong>same interface, different work underneath</strong>. 
+      Real example: <strong>WPBT legacy app had a legacy <code>User</code> class where every <code>new User()</code> copied fields off a freshly built <code>UserEntraId</code></strong>,
+      my Entra ID identity object. 
+      <strong>What was the problem here?</strong>Any new property added to <code>UserEntraId</code> never reached those copies, so it was out of sync, 
+      and one high-traffic <strong>TestChairsAssesments.aspx</strong> page called <code>new User()</code> three times a request, 
+      <strong>each rebuild carrying a risk off its own Microsoft Graph API round-trip just to resolve a role</strong>.
+      <strong>My solution? I rewrote <code>User</code> as a <mark class="kw">pure proxy</mark></strong> — no copies, every property forwards straight to <code>UserEntraId</code> — 
+      and <strong>registered <code>UserEntraId</code> as a <strong><mark class="kw">per-request scoped service</mark></strong> in the DI container</strong>. 
+     <strong>Same public surface fifteen existing pages already compiled against</strong>, but now <strong>one shared instance instead of three rebuilds, three Graph calls down to one</strong>. 
+      It<strong> also removed the last piece of code still touching on-prem Active Directory</strong>, clearing my way for a full decomission of legacy <code>ActiveDirectory.cs</code> class</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q50 -->
+  <div class="qa" id="q50">
+    <h3><span class="qnum">50</span><span class="tag tag-dev">DEV</span>Can you break down the four OOP pillars — Abstraction, Encapsulation, Inheritance, Polymorphism — with real examples, when you'd reach for each, and what problem each one actually solves?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q37">In-doc — Q37: SOLID principles (each principle maps back to one or two of these same four pillars)</a><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q8" target="_blank" rel="noopener">Watch it answered live — Q8: SOLID Principles — Gallery Manager (ArtGallery Domain)</a></div>
+    <p>Sure — instead of giving you the textbook definitions, let me walk through <strong>Smart Menu Optimizer</strong>, the AI-driven, multi-tenant SaaS platform I'm building right now for restaurant managers. It's actually a good project for this question, because all four pillars show up in it naturally: multiple restaurants sharing one system, an AI layer that has to stay swappable, and a domain model that has to protect its own rules from being broken by mistake.</p>
+
+    <p><strong>Abstraction</strong> — <strong>you expose <mark class="kw">what something does</mark>, and you hide <mark class="kw">how it actually does it</mark></strong>. I reach for this any time I know the "how" is going to change, or I just don't want the caller to care about it. In my domain layer I defined an <code>ISentimentAnalyzer</code> interface with two methods — <code>AnalyzePositiveSentimentAsync</code> and <code>AnalyzeAverageSentimentAsync</code>. My <code>ReviewSentimentAnalysisService</code> calls that interface to score a customer review, and it has <strong>zero idea</strong> whether it's actually talking to <strong>Azure Text Analytics</strong>, Google Cloud, or a mock I use in tests. <strong>The problem this solves</strong>: if I hadn't abstracted that away, the Azure SDK client would be scattered through my business logic, and swapping AI providers — or even just unit testing the scoring logic — would mean rewriting real code instead of just registering a different implementation in DI.</p>
+
+    <p><strong>Encapsulation</strong> — <strong>a class owns its own data and only lets you touch it through its own rules</strong>, instead of exposing raw fields anyone can reach in and mutate. My <code>Order</code> aggregate doesn't expose a public, editable list of line items — you can't just grab the collection and add to it directly. You call <code>Order.AddItem(dish, quantity)</code>, and the total comes from <code>Order.CalculateTotal(activePromotions)</code>, never set from outside. Same idea with <code>CustomerLoyalty.AddPoints()</code> — nobody sets the points balance directly, ever. <strong>The problem this solves</strong>: it stops the object from ever landing in an invalid state. Early on I actually had the anemic version of this — an <code>OrderService</code> with the math sitting outside the entity — and it meant two different code paths could total the same order two different ways. Moving that logic inside the aggregate means there's exactly one place it can happen, period.</p>
+
+    <p><strong>Inheritance</strong> — <strong>related types share one common base instead of each one reimplementing the same fields and behavior</strong>. This is really the backbone of my <strong>multi-tenant</strong> design. Every tenant-owned entity — <code>Restaurant</code>, <code>Category</code>, <code>Dish</code>, <code>Review</code>, <code>SaleRecord</code> — inherits from one abstract <code>TenantEntityBase</code>, which carries <code>RestaurantId</code>, <code>CreatedAt</code>/<code>UpdatedAt</code>, an <code>IsDeleted</code> flag for soft delete, and <code>RowVersion</code> for concurrency control. <strong>The problem this solves</strong>: with dozens of tenant-scoped entities, I can't afford to hand-roll tenant isolation and audit fields on each one — one developer forgets a <code>RestaurantId</code> filter somewhere and you've got a data leak across two restaurants. Inheriting from <code>TenantEntityBase</code> makes that isolation the default every entity gets automatically, not something each one has to remember to implement on its own.</p>
+
+    <p><strong>Polymorphism</strong> — <strong>the exact same method call produces <mark class="kw">different behavior</mark> depending on which concrete type is actually behind it</strong>, decided at runtime. This is really the payoff of the abstraction I just described. <code>ISentimentAnalyzer</code> has three real implementations in my code — <code>SentimentService</code> for Azure, <code>GoogleSentimentService</code>, and <code>MockSentimentAnalyzer</code> — and my dependency-injection wiring picks one off a config value: <code>"Azure"</code>, <code>"Google"</code>, or <code>"Mock"</code>. <code>ReviewSentimentAnalysisService</code> always just calls <code>sentimentAnalyzer.AnalyzePositiveSentimentAsync(...)</code>; it never checks which concrete type it actually got. <strong>The problem this solves</strong>: there's no <code>if (analyzer is AzureSentimentService)</code> branching anywhere in my business logic. In tests I inject the mock and get instant, no-network unit tests; in production the exact same call path hits Azure instead. Swap the provider, and the code that consumes it doesn't change at all.</p>
+
+    <div class="refbox">
+      <strong>Tech Notes — how these four line up with SOLID (see Q37):</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Abstraction</strong> underpins <strong>Interface Segregation</strong> and <strong>Dependency Inversion</strong> — <code>ISentimentAnalyzer</code> is a small, focused contract that domain code depends on instead of a concrete Azure class.</li>
+        <li><strong>Encapsulation</strong> underpins <strong>Single Responsibility</strong> — <code>Order</code> owns its own totals and invariants instead of a separate service reaching in from outside to compute them.</li>
+        <li><strong>Inheritance</strong> underpins <strong>Liskov Substitution</strong> — every <code>TenantEntityBase</code> subtype has to honor the same contract (tenant scoping, audit fields), so repository and query code can treat all of them the same way.</li>
+        <li><strong>Polymorphism</strong> underpins <strong>Open/Closed</strong> — adding a fourth <code>ISentimentAnalyzer</code> implementation later, say AWS Comprehend, means one new class and one DI registration line, not a rewrite of <code>ReviewSentimentAnalysisService</code>.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">Fit & Positioning</div>
+
+  <!-- Q11 -->
+  <div class="qa" id="q11">
+    <h3><span class="qnum">11</span><span class="tag tag-mgr">MGR</span>Why are you the best fit for this role, and what sets you apart?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: REST API Design (Español)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q1" target="_blank" rel="noopener">Watch it answered live — Q1: Angular / Front-End Approach</a></div>
+    <p>In easy words, I have four main reasons,</p>
+    <ol style="margin:0 0 12px 0; padding-left:1.3em;">
+      <li style="margin-bottom:14px;"><strong>I've already lived through the exact problems this role tackles</strong>. I've modernized <strong>legacy Web Forms</strong> and fixed complex <strong>SQL and API bottlenecks</strong>. For example, I redesigned an <strong>SAP SSIS ETL pipeline</strong> that <strong><mark class="kw">cut runtime by 70%</mark></strong> just by moving to <strong>delta processing</strong>. I also architected the <strong>Enterprise Guardian</strong> system to process <strong>300,000+ records</strong> nightly using <strong>SHA2-256 hashes</strong> instead of raw strings. I take <strong>code reviews</strong> seriously, too—I actively <strong>mentor juniors</strong> and catch critical issues (like bad hash comparisons, missing clustered indexes, or lack of audit trails) before they ever hit production.</li>
+      <li style="margin-bottom:14px;"><strong>I don't treat backend, databases, and APIs as separate jobs</strong>. With over <strong>10 years of experience</strong>, I know that you cannot fix a slow stored procedure without understanding what the API's asking for, and you cannot fix an API without understanding what the database's doing under load. Doing <strong>production support and <mark class="kw">root-cause analysis</mark></strong> at <strong>MDCPS and Texas HHSC</strong> completely changed my mindset. I now write code assuming I'm the one who will have to debug it later.</li>
+      <li style="margin-bottom:14px;"><strong>My stack directly matches your core needs</strong>,  and <strong>as a added value I am a proactive, AI-driven developer</strong>. I bring deep experience in <strong>.NET Core, SQL Server, and legacy migrations</strong>. 
+	  <strong>When I saw this role heavy relaying on Angular</strong>, <strong>I proactively built Gallery Manager</strong> I said to myself <strong>"Why don't you build a quick production-ready product for Park West Gallery, modeled around their business core?"</strong>—a live <strong>Angular 19 and .NET 8</strong> app. I don't have two years in a straight Angular-only role, but here's how I work: I call it "<strong><mark class="kw">Specification-Driven Development</mark></strong>." I nail down the <strong>component spec</strong> first—inputs, state, <strong>API contracts</strong>, and validation—before I write a line of UI code. Then, I use <strong>AI coding tools</strong> to scaffold the boilerplate off that spec, so I can spend my actual time on security, performance, and making sure it talks cleanly to the API.
+        <p style="margin:10px 0 0 0;"><strong>I'm focused on staying ahead of how AI is shifting our roles</strong>. For me, <strong>it's not about replacing a software engineer roles </strong> or our core duties at all. 
+		 <strong>It's just a great tool, that we can use as Seniors developer on our favor </strong> to knock out the mechanical, repetitive stuff so we can focus on what actually matters
+		 —<strong>like architecture and thorough validation</strong>. I'm already using this approach when picking up new frameworks, and <strong>I'm sure it's going to become even more demanding over the next few years like a extra layer in dev flow</strong>
+		 , so I want to stay ahead. <strong>"Think About a rock-start Senior Dev. who can delivery features ensuring code quality, security, 70% faster?" </strong></p>
+      </li>
+      <li style="margin-bottom:14px;"><strong>I can close the full-stack loop end-to-end</strong>. This role needs a true full-stack developer, and I have the numbers to show I can do it. I've built <strong>event-driven microservices on Azure</strong> (Event Grid, Functions, Blob Storage), shipped <strong>AI-driven features</strong> that moved real metrics, and <strong><mark class="kw">cut release cycles by 40%</mark></strong> by setting up <strong>CI/CD with Azure DevOps and GitHub Actions</strong>. I'm not asking you to hire around a gap in my experience.</li>
+    </ol>
+    <p>Honestly, I'm confident about this role because I don't have to guess if I can do the work. I've already solved the exact shape of problems your team is tackling right now.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">Legacy, Production & Troubleshooting</div>
+
+  <!-- Q14 -->
+  <div class="qa" id="q14">
+    <h3><span class="qnum">14</span><span class="tag tag-dev">DEV</span>Tell me about a difficult production issue you solved while modernizing a legacy application.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q16">In-doc — Q16: Troubleshooting when you don't know where the problem is</a><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Watch it answered live — Q4: Legacy Debugging — WPBT</a></div>
+    <p>The clearest one is WPBT — a <strong>Web Forms app on .NET 4.8</strong>, where I moved <strong>authentication</strong> over to <strong>Azure Entra ID</strong> using <strong>OIDC</strong>, running through <strong>OWIN</strong> and <strong>Katana</strong>. Deployed to a <strong>test environment</strong> across <strong>two load-balanced servers</strong>, and immediately got an <strong><mark class="kw">HTTP 500</mark></strong> right at the <strong><mark class="kw">signin-oidc callback</mark></strong> — before <strong>ASP.NET's</strong> own <strong>error handling</strong> could even catch it.</p>
+    <p>I started outside-in with <strong>DevTools</strong>, pulling the raw response headers on the failed callback to see what was coming back before the app died. But a lot of what was actually breaking — the <strong>token exchange</strong> with Azure, a <strong>cookie encryption mismatch</strong> between the two servers — happens entirely server-side, so DevTools never sees it. That's when I built a full <strong><mark class="kw">trace instrumentation mechanism</mark></strong> straight into the <strong>custom OWIN middleware pipeline</strong> itself — logging at every stage of the handshake: <strong>message received</strong>, <strong>authorization code received</strong>, <strong>token validated</strong>, <strong>cookie writes</strong> — so I could see exactly which stage was failing instead of guessing. Turned out it wasn't one bug, it was five, stacked on top of each other — fix one, the next shows up right behind it. Started with a <strong>path mismatch</strong> causing a <strong><mark class="kw">silent 404</mark></strong>. Fixed that, then <strong>token redemption</strong> broke because a <strong>config property</strong> had gotten commented out. Fixed that, then sign-in started looping, but only on <strong>localhost</strong> — a <strong>cookie path</strong> issue. Then two smaller ones on the authorization side — a typo in <strong>role ordering</strong>, and a <strong>help page accidentally locking admins out</strong>.</p>
+    <p>None of it threw a normal error, which is what made it a pain — I had to stop trusting whatever layer I was looking at and check the one underneath it, over and over. Fully resolved, live in <strong>production</strong> today at <a href="http://wpbt.dadeschools.net/WPBT" target="_blank" rel="noopener">wpbt.dadeschools.net/WPBT</a>.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q35 -->
+  <div class="qa" id="q35">
+    <h3><span class="qnum">35</span><span class="tag tag-panel">PANEL</span>How do you approach technical debt and trade-offs?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q6" target="_blank" rel="noopener">Watch it answered live — Q6: Legacy Strategy — WT1C (Español)</a></div>
+    <p>
+        I actually <STRONG>don't think technical debt is always a bad thing.</STRONG>
+        <STRONG>Sometimes it's the smartest business decision you can make</STRONG>—as long as it being <strong><mark class="kw">documented and owned</mark></strong>. If you have a <strong>known gap</strong> in the code, and someone owns it, that's fine.
+        If you have a <strong>hidden gap</strong>, that's when situation becomes a problem.
+    </p>
+    <p>For example, I'm leading a project right now (<strong>WT1C</strong>) for over 300 schools. 
+      <strong>Doing a full rewrite would have been the cleanest option for the code, but it was way too risky for the users</strong>. So, we made a trade-off. 
+      My recomendation was<strong> <mark class="kw">migrating piece by piece</mark></strong> and <strong>running the new and old systems side-by-side</strong>. 
+      It takes longer to build I know, but <strong>the schools get <mark class="kw">zero downtime</mark></strong>. If something breaks, I just roll back that one piece.</p>
+    <p><strong>I do the same thing on a smaller scale</strong>. 
+      <strong>Another examples was in the Enterprise Guardian project, we had a strict launch deadline</strong>, so <strong>I purposely <mark class="kw">skipped a formal performance benchmark</mark></strong> to get it out on time. 
+      <strong>I didn't hide it; I just documented it as a gap we needed to revisit POST-DEPLEYMENT.</strong></p>
+    <p><strong>That’s basically my rule</STRONG>: <STRONG>technical debt is totally fine if it’s documented and someone owns it</STRONG>. It’s only a problem when it's hidden.</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q16 -->
+  <div class="qa" id="q16">
+    <h3><span class="qnum">16</span><span class="tag tag-dev">DEV</span>How do you troubleshoot an issue when you don't know where the problem is?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: REST API Design (Español)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q7" target="_blank" rel="noopener">Watch it answered live — Q7: Cross-Layer Production Issue</a></div>
+    <p>When I'm troubleshooting a complex issue, <STRONG>my main rule is simple: <mark class="kw">stop guessing and start proving</mark>.</strong></p>
+    <p>For example, we had an <strong>endpoint (HTTP GET METHOD) in Student Portal App</strong>  returning student records that suddenly started taking over eight seconds during peak hours.
+      Everyone in the team, had a different theory, but nobody actually knew where it was breaking.</p>
+    <p>first thing I always do, is <strong>scope it—who is affected, and when is it happening?</strong> That usually cuts the possibilities in half. 
+      Then, I <strong>trace one single request end-to-end</strong>. I checked our <strong>Serilog logs</strong>, <strong>I create a full tracing mechanims</strong>, which proved the slowdown was strictly in the data layer. So, I turned on <strong><mark class="kw">Entity Framework query logging</mark></strong> to see the raw SQL. It turned out EF was matching every row against every other row instead of pairing them up properly — a misconfigured <strong><mark class="kw">Include()</mark></strong> on a many-to-many relationship, so a handful of records multiplied into thousands of duplicate rows. The ORM was doing exactly what we told it to do, just not what we meant.</p>
+    <p>The fix was straightforward: I used <strong><mark class="kw">SplitQuery</mark></strong> and added a <strong>composite index</strong>. The response time <strong>dropped from eight seconds down to under <mark class="kw">400 milliseconds</mark></strong>.</p>
+    <p>Ultimately, I don't point fingers or guess. I trace the request, look at the actual <strong>execution plan</strong> along side DBA Team, and find the real bottleneck—because 'it runs fine in dev' doesn't mean much when production has ten million rows.Dev scale ≠ Prod scale (10k rows vs 10M rows).</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q17 -->
+  <div class="qa" id="q17">
+    <h3><span class="qnum">17</span><span class="tag tag-dev">DEV</span>How do you ensure high code quality?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q5" target="_blank" rel="noopener">Watch it answered live — Q5: Mentorship / Code Quality</a></div>
+    <p>For me, <strong>code quality</strong> really <strong>starts with code review</strong>. I treat it as a <strong>real line of defense strategically</strong>. For instance, <strong>on the Enterprise Guardian</strong> project, I <strong><mark class="kw">caught five major issues</mark> in review</strong> before they ever hit production</p>
+    <p>But <strong>reviews are just the human side</strong>. I also <strong>rely heavily on automated testing</strong>—implementing <strong><mark class="kw">XUnit and Moq</mark></strong> actually cut our bug rate at MDCPS by <mark class="kw">90%</mark>.
+	Even going furhter, I don't want to rely on human memory, so I <strong>set up centralized exception handling and logging</strong> that actually could points to the root cause when things break.</p>
+	<p>Finally, I automate the workflow itself thru CI/CD pipelines. I have local gates that physically <strong>block a git push</strong> if checks fail. Once a <strong>PR</strong> is open, I have a <strong>Copilot Agent</strong> and <strong>CodeRabbit</strong> do an automated first pass.</p>
+	<p>The <strong>idea isn't to replace the human reviewer</strong>. It's to <strong>let the AI clear out the obvious syntaxand style issues first</strong> ,so <strong> when a person actually looks at the PR, they are focused purely on architecture and business logic</strong> .</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q41 -->
+  <div class="qa" id="q41">
+    <h3><span class="qnum">41</span><span class="tag tag-dev">DEV</span>How would you approach migrating a legacy FoxPro system?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q17" target="_blank" rel="noopener">Watch it answered live — Q17: Reacting to a FoxPro Migration Overview</a></div>
+    <p>That really resonates with me. At MDCPS, I'm actually doing something very similar—moving a legacy system called <strong>WT1C</strong> from an old AngularJS and .NET Framework stack over to <mark class="kw">.NET 8 Blazor</mark>. With over <strong>300 schools</strong> relying on it daily, a "rip and replace" just isn't an option.</p>
+    <p>My approach is straightforward: I migrate <mark class="kw">one small piece at a time</mark> and run the old and new versions <strong>side-by-side</strong>. I don't flip the switch until I can prove the new version produces the exact same results as the old one using production data. If anything breaks, I can easily <strong>roll back</strong>. Since <strong>FoxPro</strong> is even older—often with the UI and data access <strong>tightly coupled</strong>—the very first thing I'd ask is: which part of the system is the <strong>most isolated and safest to touch first</strong>? That’s exactly where I'd start.</p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>.NET 8 Blazor:</strong> A modern Microsoft framework for building interactive web apps using C# instead of JavaScript.</li>
+        <li><strong>AngularJS:</strong> An older, legacy JavaScript front-end framework.</li>
+        <li><strong>Tight Coupling:</strong> When the visual screen (UI) and the database code are mashed together, making updates risky and difficult to isolate.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">Collaboration & Growth</div>
+
+  <!-- Q18 -->
+  <div class="qa" id="q18">
+    <h3><span class="qnum">18</span><span class="tag tag-panel">PANEL</span>Tell me about mentoring another developer.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q5" target="_blank" rel="noopener">Watch it answered live — Q5: Mentorship / Code Quality</a></div>
+    <p>The clearest thread here is <strong>code review</strong>. I don't just approve or reject — I try to explain the "why" behind every catch, because the goal isn't to fix that one line, the final goal is to not repeat the same kind of mistake again. The five catches from the <strong>Enterprise Guardian</strong> project are honestly a pretty good mentoring case study — <strong>string versus hash comparison</strong>, <strong>missing data normalization</strong>, <strong>missing index</strong>, <strong>missing retry logic</strong>, <strong>missing audit trail</strong>. Each one, I walked through what happens at scale, not just what to change.</p>
+    <p>For me, the real proof that <strong>mentoring</strong> works is when I stop seeing those same mistakes in pull requests. When a developer starts catching their own errors before they even ask for a review, that’s a huge win. Seeing that progression is, if I'm being honest, one of the most satisfying parts of being a <strong>senior engineer</strong> with team midn-set, even more than shipping my own code..</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q19 -->
+  <div class="qa" id="q19">
+    <h3><span class="qnum">19</span><span class="tag tag-dev">DEV</span>Tell me about a time you disagreed with another developer.</h3>
+    <p>For me, resolving a <strong>disagreement</strong> is not about winning an argument. It's usually just about reasoning together, rather than forcing a conclusion.</p>
+    <p>A clean example was with a junior developer I mentor. She built a <strong>change-detection script</strong> using a basic string comparison instead of a <strong>hash</strong>. Her instinct wasn't wrong—it works perfectly fine on small tables. But instead of just telling her to rewrite it, I walked her through what happens to the CPU when you hit more than <strong>300,000 rows</strong> or 1M. Once she saw the result at scale, she agreed with the change because was able to understand the math behine, not because I told her to.</p>
+    <p>I’ve had similar situations with leadership. On the <strong>Enterprise Guardian</strong> project, my manager pushed back on adding a <strong>baseline table</strong>, arguing it felt redundant. And honestly, surfacing the solution, it was a fair point of view. So, I walked him through the edge cases—specifically, <strong>deletes</strong>. The live table only holds today's data. If a record is deleted in the source system, it just disppears from registry records. Without a baseline table from yesterday, SQL Server has no way of knowing a delete even happened. Once I framed it around that specific problem, he immediately agreed the table was necessary, and I wasn't just over-engineering.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q40 -->
+  <div class="qa" id="q40">
+    <h3><span class="qnum">40</span><span class="tag tag-panel">PANEL</span>How do you thrive working on a team?</h3>
+    <p>For me, good teamwork comes down to <strong>mutual trust</strong>. I want my team to catch my mistakes early, and I want to do the same for them.</p>
+    <p>Take the <strong>WT1C</strong> project, for example. We were migrating over <strong>300 schools</strong>, so I couldn't just sit and code by myself. I worked closely with <strong>QA</strong> to test everything, and then I had to explain our progress to the business side in <strong>plain English</strong>—without relying on tech jargon. I've gotten really good at adapting how I talk depending on who's in the room.</p>
+    <p><strong>Code reviews</strong> are a big part of this, too. On <strong>Enterprise Guardian</strong>, I caught a few major issues before they went live. But I also rely on my team to catch my errors. I always tell them not to just approve my work to be nice. I want <strong>tough feedback</strong>, because a quick sign-off doesn't help anyone improve.</p>
+    <p>When I work with <strong>junior engineers</strong>, I purposely slow down. It would be faster to just fix a problem myself, but then they wouldn't learn anything. If there's a good teaching moment, I'll take the extra time to walk someone through it.</p>
+    <p>Ultimately, a team isn't just a place to hand off finished work. It's about having each other's backs when we miss things, and I always try to do that for my coworkers.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q20 -->
+  <div class="qa" id="q20">
+    <h3><span class="qnum">20</span><span class="tag tag-mgr">MGR</span>Describe a time when requirements changed halfway through a project.</h3>
+    <p>In application support, this happens all the time. You're usually fixing a live issue while the business is still trying to figure out what 'fixed' actually looks like.</p>
+    <p>A great example is the <strong>SAP ETL pipeline</strong> I worked on. Initially, the only requirement was simple: 'make it run faster.' But in between, once the stakeholders actually saw how <strong>delta processing</strong> worked, the ask suddenly expanded. They didn't just want speed anymore; they wanted <strong>full auditability</strong>. They wanted to know exactly what changed and when.</p>
+    <p>Rather than getting frustrated about the changing scope, I just viewed it as the real requirement finally surfacing. I went back and adjusted the <strong>deduplication logic</strong> so we could preserve a full <strong>audit trail</strong> without losing the <strong>performance gains</strong>. In the end, we delivered both: the process ran <strong>70% faster</strong> and was fully auditable.</p>
+	<p>That’s why I always assume the first ask is just a starting point. I try to build the architecture flexibly enough that if at some point the business realizes they need something else, I can add it with <strong>low effort</strong>.</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q21 -->
+  <div class="qa" id="q21">
+    <h3><span class="qnum">21</span><span class="tag tag-mgr">MGR</span>Tell me about a mistake you made / a time you failed.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q7" target="_blank" rel="noopener">Watch it answered live — Q7: Cross-Layer Production Issue</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+	<p>You know, because I spend so much time in <strong>SQL Server</strong>, my biggest trap used to be tunnel vision. Anytime an app was running slow, my brain immediately went: 'It’s a bad query.'
+	There was this one ticket where I wasted almost half a day trying to optimize a <strong>stored procedure</strong>. I was completely convinced it was the bottleneck. But the query was fine. The actual issue was just a massive payload choking the <strong>API</strong> during <strong>serialization</strong>.</p>
+    <p>The real mistake there wasn't that I guessed the database. The mistake was that I jumped straight into '<strong>fix mode</strong>' without actually proving my guess first. I kept the user waiting for hours just because I didn't <strong>verify the real bottleneck</strong>.</p>
+    <p>I completely changed how I troubleshoot after that. Now, I don't care how obvious the problem looks. I force myself to do a quick <strong>five-minute sweep</strong> of <strong>every layer</strong>—the API, the network, the <strong>execution plan</strong>—before I start rewriting anything.</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q23 -->
+  <div class="qa" id="q23">
+    <h3><span class="qnum">23</span><span class="tag tag-mgr">MGR</span>Tell me about a time you worked under pressure.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Watch it answered live — Q4: Legacy Debugging — WPBT</a></div>
+    <p>Honestly, for me, <strong>pressure</strong> usually just means something is broken in production and people are waiting on me to fix it.</p>
+    <p>A good example is the <strong>WPBT migration</strong>. Right before go-live, the sign-in flow completely broke. The clock is ticking, and everyone is asking for updates.</p>
+	<p>The trap in those moments is that you just want to start pushing code to see what works. But I’ve been doing this long enough to know that if you start <strong>guessing</strong>, you usually just make it worse.</p>
+    <p>So I actually force myself to do the opposite: I stop. On that WPBT issue, I literally just opened <strong>DevTools</strong>, pulled the raw headers, and checked the <strong>load balancers</strong> before I touched any code.It’s hard to just sit there and read logs when everyone is panicking, but honestly, it’s the fastest way to fix the actual problem.</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q24 -->
+  <div class="qa" id="q24">
+    <h3><span class="qnum">24</span><span class="tag tag-mgr">MGR</span>How do you prioritize multiple urgent tasks?</h3>
+    <p>Honestly, my main rule is that I prioritize based on <strong>business impact</strong> and the scale of the issue — not just who asked first, or who came first to the queve or who's making the most noise. Like, if something is breaking production for a bunch of users, that automatically comes before a minor bug in a lower environment, even if that minor bug hit my priority list first.</p>
+    <p>When I was doing <strong>app support at HHSC of Texas</strong>, that kind of rapid triage was basically the whole job. Whenever a ticket came in, I’d immediately look at the scope: responding question such as: Is this just one person, or a whole team? Are they completely blocked, or is there a workaround they can use for now?
+    But honestly, the biggest part of making that work is just <strong>communicating</strong>. If I have to push someone’s request back because a bigger bug came up, I don't just leave them hanging. I'll reach out and say, 'Hey, here's where you are in the queue, and here's why.' I've found that people are usually totally fine with waiting, as long as they aknowlege they are in your list and working around their issues.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q25 -->
+  <div class="qa" id="q25">
+    <h3><span class="qnum">25</span><span class="tag tag-mgr">MGR</span>How do you handle difficult users or stakeholders, or explain something technical to a non-technical person?</h3>
+    <p>When I deal with a <strong>frustrated user</strong>, I always try to remember that they aren't actually upset with me. Usually, they are just stressed because they can't do their work, and they don't know when the problem will be fixed. So, my first step is always to give them a <strong>clear update</strong> right away, even if I haven't completely solved the issue yet. I find that people relax very quickly once they know someone is actively working on it.</p>
+    <p>When I need to explain the <strong>technical problem</strong>, my rule is to keep it simple. I focus on what the user is experiencing, rather than how the system is built. I avoid technical words completely if a normal word does the job.</p>
+    <p>For example, on the <strong>Enterprise Guardian</strong> project, I had to explain how we compare database records. I didn't use technical terms like '<strong>SHA-256</strong>'. Instead, I told them it is like comparing two documents by looking at their fingerprints instead of reading every single word. If the fingerprints match, the documents are exactly the same. It takes ten seconds to explain, and it makes perfect sense to them.</p>
+	<p>I got a lot of practice doing this at <strong>HHSC of Texas</strong>, handling tickets and phone calls. Users just wanted to know what happened and when it would be fixed. And honestly, <strong>being bilingual</strong> helps a lot with this process. Technology is already hard to understand, but trying to understand it in your second language makes it much harder. Being able to explain these concepts <strong>in Spanish</strong> really removes that extra difficulty for a lot of people.</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q27 -->
+  <div class="qa" id="q27">
+    <h3><span class="qnum">27</span><span class="tag tag-dev">DEV</span>Have you ever had to learn a framework you had never used before? (Angular)</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q1" target="_blank" rel="noopener">Watch it answered live — Q1: Angular / Front-End Approach</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p>
+        When I need to learn a new technology, my approach isn't to sit back and watch hours of tutorials — I learn by shipping end-to-end applications. When I realized I needed to ramp up on <strong>Angular</strong>, I decided to build <strong>Gallery Manager</strong>. I picked that domain on purpose — it's close to the kind of inventory-and-sales tracking a real gallery business runs on, and I wanted to prove I could pick up Angular by shipping something real in it, not just studying it. I built the front end in Angular, backed by an <strong>ASP.NET Core 8 Minimal API</strong>, <strong>EF Core 8</strong>, <strong>Npgsql</strong>, and <strong>Postgres</strong>.
+        While the foundation of my career is deeply rooted in backend and data architecture, I proactively closed the front-end gap by building complete, end-to-end applications in Angular.
+</p>
+    <p>To accelerate that learning curve — and my overall delivery speed — I operate as an AI-driven developer using a framework I call <strong>Specification-Driven Development</strong>. 
+      When you're learning a new framework, you know, you can get caught up in the syntax. The idea behine my framework is spend my time rigorously defining the architecture and esential soft. design principles(<strong>SOLID</strong>): the inputs, state management, API contracts, and validation rules. 
+      Once that spec is rock solid, I leverage <strong>AI tooling</strong> to generate the Angular boilerplate — the modules, services, and route guards.
+      That will handle the 80% of the structural work for me. Then I dive in to refactor, secure, and integrate the remaining 20% to make sure everything in the front-end hooks up perfectly with the backend.</p>
+    <p>This method works. On a recent request for MDCPS, I used this exact approach to build out interactive data-entry UI, in about a third of the time a traditional cycle would take — RESULT: a <strong>70% productivity gain</strong>.</p>
+    <p>Ultimately, what lets me adapt to a new framework like Angular quickly is my foundation across the full stack. Angular is just the presentation layer.
+    If an Angular component throws a 500 error, I don't panic — I trace it from the <strong>browser's network tab</strong>, through the <strong>.NET API middleware</strong>, right down into the <strong>SQL Server execution plan</strong> to find the missing index or deadlock. That underlying architectural knowledge transfers to any front-end tool.</p>
+    <p>And I can prove that adaptability — I don't just talk about it, I have three live, independent applications across three different frameworks. There's <strong>Gallery Manager</strong> in Angular, live at <a href="https://gallery-manager-henna.vercel.app/" target="_blank" rel="noopener">gallery-manager-henna.vercel.app</a>, repo at <a href="https://github.com/dariemcarlosdev/gallery-manager" target="_blank" rel="noopener">github.com/dariemcarlosdev/gallery-manager</a>. There's <strong>BarberFlow</strong>, a SaaS demo using <strong>React 18</strong> and <strong>Vite</strong> backed by a <strong>.NET 10 Minimal API</strong>, live at <a href="https://barberflow-chi-eight.vercel.app/" target="_blank" rel="noopener">barberflow-chi-eight.vercel.app</a>, repo at <a href="https://github.com/dariemcarlosdev/barberflow-saas" target="_blank" rel="noopener">github.com/dariemcarlosdev/barberflow-saas</a>. And there's <strong>Smart Menu Optimizer</strong>, an <strong>Azure-native</strong> AI platform built on the latest <strong>Blazor Server</strong> and <strong>ASP.NET Core 10</strong>, repo at <a href="https://github.com/dariemcarlosdev/SmartMenuOptim" target="_blank" rel="noopener">github.com/dariemcarlosdev/SmartMenuOptim</a>.</p>
+    <p>So, to answer your question: yes. I don't just study new frameworks — I ship real apps with them. I'm happy to share those links today so your team can look under the hood and see exactly how I work.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">C# / .NET &amp; EF Core Fundamentals</div>
+
+  <!-- Q42 -->
+  <div class="qa" id="q42">
+    <h3><span class="qnum">42</span><span class="tag tag-dev">DEV</span>Explain value types vs reference types in .NET.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a class="primary" href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q14" target="_blank" rel="noopener">Watch it answered live — Q14: .NET Core Data Types</a></div>
+     <ul style="margin:0 0 10px 0; padding-left:1.3em;">
+      <li style="margin-bottom:8px;"><strong>Value types</strong>—like <strong><code>int</code>, <code>decimal</code>, dates, or booleans</strong>—get copied. If <strong>I pass one into a method and change it, my original variable stays exactly the same</strong>.</li>
+      <li style="margin-bottom:8px;"><strong>Reference types</strong>—like <strong>classes or lists</strong>—<strong>don't get copied.</strong> You're just <strong>passing a pointer</strong>. So <strong>if a method changes it, your original data changes too</strong>.</li>
+      <li style="margin-bottom:8px;"><strong>Strings</strong> are <strong>technically reference types</strong>, but because <strong>they are immutable</strong> (they can't be changed once created), they behave a lot like value types.</li>
+    </ul>
+    <p><strong>Two quick habits I stick to are</strong>: I always use <code>decimal</code> instead of <code>double</code> for money <strong>(In Domain-Driven Design (DDD), money is a Value Object. Value Objects are small chunks of data that do not have their own ID),</strong>
+	so rounding errors don't throw off financial math, and I use nullable types (like <code>int?</code>) to gracefully handle database columns that allow NULL values.</p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Value Type:</strong> A variable that holds its own data directly in memory.</li>
+        <li><strong>Reference Type:</strong> A variable that holds a memory address pointing to where the data is actually stored.</li>
+        <li><strong>Immutable:</strong> An object whose state cannot be modified after it is created.</li>
+        <li><strong>Nullable Type (<code>?</code>):</strong> A variable that can hold a normal value or explicitly hold nothing (<code>NULL</code>).</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q43 -->
+  <div class="qa" id="q43">
+    <h3><span class="qnum">43</span><span class="tag tag-dev">DEV</span>What's the difference between IQueryable and IEnumerable?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q16">In-doc — Q16: EF Include() bug (data-layer tracing)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: REST API Design (Español)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q15" target="_blank" rel="noopener">Watch it answered live — Q15: IQueryable vs. IEnumerable</a></div>
+    <p>I always relay on the restaurant analogy.</p>
+    <p><strong><code>IEnumerable</code> is like a buffet</strong>: you pull everything off the database into <strong>memory</strong> first, and <em>then</em> you <strong>filter out what you actually want to eat</strong>.</p>
+	<p><strong><code>IQueryable</code> is like ordering off a menu</strong>: you have to <strong>the database exactly what you want, and It does the filtering</strong> on its end, and it <strong>only sends back those specific rows.</strong></p>
+    <p>The <strong>most common mistake I see is when someone someone calling <code>.ToList()</code></STRONG> too early <strong>on an <code>IQueryable</code></strong>. 
+	 When you do that, <strong>you are pulling too much data into memory and force your application to do the heavy lifting work</strong>, this is from my own experience guys, <strong>have you came across with similar insignt?</strong></p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>IEnumerable:</strong> A C# interface used for iterating over collections that are already fully loaded into the application's memory.</li>
+        <li><strong>IQueryable:</strong> A C# interface that translates code into database queries (like SQL) so the database engine performs the filtering.</li>
+        <li><strong>Entity Framework (EF):</strong> A tool that lets .NET developers work with databases using C# objects instead of writing raw SQL.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q44 -->
+  <div class="qa" id="q44">
+    <h3><span class="qnum">44</span><span class="tag tag-dev">DEV</span>How does LINQ return its results?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q43">In-doc — Q43: IQueryable vs IEnumerable</a><a href="#q16">In-doc — Q16: EF Include() bug (data-layer tracing)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q16" target="_blank" rel="noopener">Watch it answered live — Q16: How LINQ Returns Its Results</a></div>
+    <p>LINQ uses what’s called "<strong>deferred (dif'ert) execution</strong>"— It mean,<strong>LINQ, doesn't run the query when we write it</strong>. 
+	It <strong>just create the instructions</strong>. The <strong>query only hits the database when we ask for the data</strong>, by the mean of <strong>looping through it</strong> or <strong>calling <code>.ToList()</code></strong> extension method.</p>
+    <p>Point here I want highlight, This leads to <strong>two common gotchas:</strong></p>
+    <ol style="margin:0 0 10px 0; padding-left:1.3em;">
+      <li style="margin-bottom:8px;">If the <strong>database data changes between when we build the query and when we run it</strong>, we'e gonna get the <strong>latest data</strong>, not the that data when you wrote the code.</li>
+      <li style="margin-bottom:8px;">If <strong>you run the same query twice without saving the result to a variable</strong>, we are gonna <strong>hitting the database twice</strong> for no reason.</li>
+    </ol>
+    <p><strong>My rule from my experience is simple</strong>: I <strong>build my filters</strong>, and <strong>then I intentionally call <code>.ToList()</code> exactly one time,</strong> so I know exaclty when that database is queried.</p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>LINQ (Language Integrated Query):</strong> A C# feature that allows querying collections or databases using a unified, readable syntax.</li>
+        <li><strong>Deferred Execution:</strong> The concept where a query is defined but not actually executed against the database until the results are explicitly requested.</li>
+        <li><strong>.ToList():</strong> A command that forces a LINQ query to execute immediately and save the results as a list in memory.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">SQL Server Internals</div>
+
+  <!-- Q45 -->
+  <div class="qa" id="q45">
+    <h3><span class="qnum">45</span><span class="tag tag-dev">DEV</span>When do you actually use stored procedures?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q6">In-doc — Q6: Enterprise Guardian (P_LOAD_GUARDIAN_DELTA)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q10" target="_blank" rel="noopener">Watch it answered live — Q10: Stored Procedures, When and Why</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p>generally I use <strong>stored procedures for real heavy jobs</strong>, that just simple CRUD operations not resolve.</p>
+    <p><strong>For example</strong> I <strong>built a SQL process for Enterprise Guardian</strong> using them. 
+      They're <strong>great because SQL Server caches the execution plan</strong> so they run incredibly fast. 
+      Plus,<strong> if I need to do five different things, I can make one database call instead of five</strong>. 
+      They're <strong>also perfect for sharing complex logic between an API and a automated nightly job</strong>, or 
+              <strong> simply for security,</strong>  so users can run a process without needing direct access to the underlying tables.</p>
+    <p>But <strong>for a basic "save this record" action</strong>? <strong>Entity Framework</strong> is the monster handle it directly. I only use stored procedures when they earn their keep.</p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Stored Procedure:</strong> A batch of pre-written SQL code saved on the database server itself for reuse and performance.</li>
+        <li><strong>Execution Plan:</strong> The database engine's cached "roadmap" for the fastest and most efficient way to run a specific query.</li>
+        <li><strong>CRUD:</strong> Acronym for the four basic database actions: Create, Read, Update, Delete.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q46 -->
+  <div class="qa" id="q46">
+    <h3><span class="qnum">46</span><span class="tag tag-dev">DEV</span>Walk me through SQL functions and the traps.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q39">In-doc — Q39: JOINs & Index types</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q11" target="_blank" rel="noopener">Watch it answered live — Q11: Scalar vs. Table-Valued Functions</a></div>
+    <p>There are basically <strong>two types of fuctions</strong>: <strong>scalar functions</strong> (which return a single value) and <strong>table-valued functions</strong> (which return a full table).
+      but, <strong>Table-valued functions come in two flavors</strong>: <strong>"inline"</strong> (which is just a simple SELECT and runs very fast) and <strong>"multi-statement"</strong> 
+      <strong>(which builds a temporary table and can really slow down the Server, because SQL Server struggles to optimize it)</strong>.</p>
+    <p>The <stong>biggest trap</stong> is <strong>using a scalar function inside a <code>WHERE</code> clause on a massive table</strong>. SQL Server <strong>will run that function row-by-agonizing-row (ANTI-PATTERN)</strong>, which absolutely kills performance.
+	If I’m <strong> by example dealing with large tables, I almost always stick to regular joins</strong> or <strong>simple inline table functions</strong>.</P>
+	<P><strong>Regarding scalar functions</strong>, I try to <strong>avoid them in WHERE clauses</strong> and <strong>instead use them in SELECT statements</strong> or <strong>JOINs</strong>, where they can be optimized better. 
+	But personally,<strong> I avoid scalar functions in general </strong>, because they are often a performance trape,even returning a single value since they can be called many times in a query.
+	</p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Scalar Function:</strong> A database function that calculates and returns one single value (like a total sum or a formatted date string).</li>
+        <li><strong>Table-Valued Function:</strong> A database function that returns a grid of rows and columns, just like a standard table.</li>
+        <li><strong>Row-by-Agonizing-Row (RBAR):</strong> A severe performance anti-pattern where SQL processes data one single row at a time instead of evaluating the whole set at once.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q49: Trigger as audit backstop (proposed design, pending DBA approval) -->
+  <div class="qa" id="q49">
+    <h3><span class="qnum">49</span><span class="tag tag-dev">DEV</span>Walk me through how you'd implement a trigger as an audit backstop on Guardian Delta, and where triggers bite you at scale.</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q6">In-doc &mdash; Q6: Enterprise Guardian (Guardian_Delta pipeline)</a><a href="#q45">In-doc &mdash; Q45: When to use stored procedures</a><a href="#q46">In-doc &mdash; Q46: SQL functions and their traps</a></div>
+    <p>
+        I will share an idea I'm proposing for the <strong>Guardian Delta pipeline project</strong>. First, <strong>a trigger is basically a piece of code that runs automatically inside the database</strong> whenever data is <strong>added, changed, or deleted</strong>
+        Let's says <strong>it is a event-driven mechanism</strong> that can be <strong>used to track changes</strong> for an <strong>audit trail</strong> or to <strong>enforce business rules</strong>
+        .
+    </p>
+    
+      <p>Right now, this is just a <strong>proposed design</strong>. I'm currently <strong>waiting for DBA approval</strong> to test it. Because we're dealing with a massive <strong>one-million-row volume</strong>, I absolutely must <strong>test this in a safe environment before it ever goes near production</strong>.</p>
+      <p>My idea is to <strong>build one single trigger</strong> to track all changes for our audit trail. When a change happens, SQL Server automatically creates 
+      <strong>two temporary tables</strong> behind the scenes:<strong>deleted</strong> holds the “old” data, and <strong>inserted</strong> holds the <strong>&ldquo;new&rdquo; data</strong>. 
+      I simply <strong>use a full outter join to combine these two tables together</strong>. 
+      This lets me capture the exact <strong>before-and-after picture</strong> of the key field, in one clean step.</p>
+    <p>The danger at a million rows isn't the join; it's the <strong>transaction log</strong>. The trigger runs inside the <strong>caller's transaction process</strong>,
+      so <strong>a single massive insert will cause severe log bloat and lock escalation</strong>. 
+      To solve this,<strong> I would create a nightly ETL process, that commits in chunks of 10 to 50 thousand rows</strong>.
+      It's the only way to keep the <strong>lock duration short</strong> and <strong>the trigger's memory manageable</strong>.</p>
+    <p>Finally, for storing the audit records, my initial thought is <strong>the trigger save the changes the before and after snapshots as simple JSON text string</strong> 
+      instead of building a massive table with dozens of columns. However, <strong>generating JSON takes extra processing power</strong>. 
+      So,Part of my testing will be to see if the JSON method is <strong>too slow for one million rows</strong>. If it is, we'll just use a <strong>standard, simple table</strong> instead.</p>
+    <p>Ultimately, my goal is to build a <strong>audit trail</strong> without ever <strong>slowing down the main system, What do you think about this ideas guys?</strong>.</p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Trigger:</strong> Code that runs automatically inside the database in response to an INSERT, UPDATE, or DELETE &mdash; it fires once per statement, not once per row.</li>
+        <li><strong>Inserted / Deleted Tables:</strong> SQL Server's temporary &ldquo;before&rdquo; (<code>deleted</code>) and &ldquo;after&rdquo; (<code>inserted</code>) snapshots created automatically during a trigger.</li>
+        <li><strong>Log Bloat &amp; Lock Escalation:</strong> When one huge transaction overloads the transaction log, SQL Server may trade many small row locks for one big table lock &mdash; blocking everything else on that table.</li>
+        <li><strong>Chunked Commit:</strong> Breaking a large load into smaller batches (e.g., 10K&ndash;50K rows) so each transaction, and its lock, stays short-lived.</li>
+        <li><strong>JSON Audit Payload:</strong> Storing changed data as one JSON string instead of dozens of mirrored columns &mdash; flexible, but with a CPU cost worth benchmarking at scale.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">&uarr; back to index</a>
+  </div>
+
+  <!-- Q47 -->
+  <div class="qa" id="q47">
+    <h3><span class="qnum">47</span><span class="tag tag-dev">DEV</span>How does locking work in SQL Server?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q8">In-doc — Q8: MERGE vs separate DML (concurrency/locking)</a><a href="#q48">In-doc — Q48: Deadlocks</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q12" target="_blank" rel="noopener">Watch it answered live — Q12: SQL Server Locking</a></div>
+    <p><strong>Locking is SQL Server’s mechanism for preventing data conflicts when multiple processes hit the same row.</strong></p>
+    <p><strong>Reads operations require a lightweight lock</strong>, in oposite <strong>writes operations demand stronger lock</strong>.
+      That prevents other operations from interfering until the transaction completes. 
+	<strong>How long it holds? </strong>, depends on the <strong>isolation level</strong>. 
+	The default is usually fine, but <strong>, let say, if you have a strict isolation level, we can end up with a huge wating process list. </strong> </p>
+    <p>
+        A great middle-ground is <strong>snapshot isolation</strong>,where <strong>readers just get a slightly older copy of the data</strong> so,
+        <strong>reads and writes stop blocking each other.</strong> Does this make sense for you guys right?
+    </p>
+    <p>When I’m <strong>debugging a locking issue</strong>, it usually comes across 3 cases: a <strong>transaction being left open too long</strong>, 
+	a <strong>missing index causing the database to lock an entire table</strong> instead of just a row, or an <strong>isolation level</strong> restrictions.</p>
+    <div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Locking:</strong> A database safety mechanism that temporarily restricts access to a piece of data while it is being updated or read.</li>
+        <li><strong>Isolation Level:</strong> A database setting that dictates how strictly locks are applied and how protected one transaction is from another's changes.</li>
+        <li><strong>Snapshot Isolation:</strong> An isolation level where the database provides readers with a versioned "snapshot" of the data, bypassing read/write locks entirely.</li>
+        <li><strong>Index:</strong> A database structure (similar to a book's index) that drastically speeds up finding specific rows without scanning the whole table.</li>
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q48 -->
+  <div class="qa" id="q48">
+    <h3><span class="qnum">48</span><span class="tag tag-dev">DEV</span>Deadlocks: what causes them, how do you stop them?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="#q47">In-doc — Q47: Locking</a><a href="#q6">In-doc — Q6: Enterprise Guardian (retry logic origin)</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q2" target="_blank" rel="noopener">Watch it answered live — Q2: SQL Server / ETL Optimization</a><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q13" target="_blank" rel="noopener">Watch it answered live — Q13: Deadlocks, Cause and Prevention</a></div>
+    <p>A <strong>deadlock</strong> <STRONG>Think about, four cars arriving at a four-way stop at the exact same time</STRONG>, and everyone is waiting for someone else to move first. at end Nobody goes anywhere.. 
+	In the database context, <STRONG>Transaction A locks Table 1 and needs Table 2</STRONG>, while <STRONG>Transaction B locks Table 2 and needs Table 1</STRONG>. They're permanently stuck.</p>
+    <p><STRONG>SQL Server actively watches for this</STRONG>. <STRONG>When the server spots a deadlock</STRONG>, it <STRONG>picks the cheapest transaction to cancel</STRONG>—so the other one can finish.</p>
+    <p><STRONG>To prevent them,my strategy</STRONG> is to always <STRONG>access tables in the exact <strong>same order</strong> in the code</STRONG>. </p>
+      <p>
+	<strong>I also keep transactions as short as possible</strong> and <STRONG>make sure my indexes are rock solid</STRONG> so I'm not locking more data than necessary. </p>
+	<p>But take this in main, Since <STRONG>deadlocks can still happen occasionally under heavy load</STRONG>, I just <STRONG>wrap the database call in retry logic</strong>.
+      If the database says <STRONG>"Hey I was the victim.."</STRONG>, my <STRONG>app just tries the operation again a second later</STRONG>.</p>
+    <p>
+        even more, you can <strong>implement a retry mechanism in your application</strong>, so that if a <strong>deadlock occurs, the application can catch the exception and retry the operation, after a short delay</strong>,when you get this, with confidence,<strong> you can ensure that your application is Resilient</strong>.
+    </p>
+    <p>
+        <strong>Circuit breaker pattern</strong> can also be used to <strong>prevent overwhelming the database with retries in case of persistent deadlocks</strong>.This can help reduce the impact of deadlocks on your application's performance and user experience.
+
+    </p>
+	<div class="refbox">
+      <strong>Tech Notes:</strong>
+      <ul style="margin:6px 0 0 0; padding-left:1.2em;">
+        <li><strong>Deadlock:</strong> A system standstill where two processes are indefinitely waiting on each other to release resources.</li>
+        <li><strong>Deadlock Victim:</strong> The transaction that the database engine forcibly cancels and rolls back to break a deadlock tie.</li>
+        <li><strong>Retry Logic:</strong> Code explicitly written to catch an expected failure (like being a deadlock victim) and automatically try the action again.</li>
+		<li><STRONG>Circuit Breaker:</STRONG> Retry pattern with exponential backoff for transient errors, once a failure is detected, the application waits for a short period before retrying the operation, and if it fails again, it waits for a longer period before retrying again. This helps to reduce the load on the database and increase the chances of success recovering.</li>
+
+      </ul>
+    </div>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <div class="section-break">Reflection & Closing</div>
+
+  <!-- Q29 -->
+  <div class="qa" id="q29">
+    <h3><span class="qnum">29</span><span class="tag tag-mgr">MGR</span>How do you deal with ambiguity?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q4" target="_blank" rel="noopener">Watch it answered live — Q4: Legacy Debugging — WPBT</a></div>
+    <p>I try to figure out what's actually knowable versus what I'm currently guessing at, and I say that distinction out loud instead of pretending I have more clarity than I do. On the <strong>WPBT</strong> issue, for example, I had a leading theory about a custom cookie manager corrupting the callback response, but I made a point of saying it wasn't confirmed until I actually pulled the header evidence — which is exactly what ended up confirming it.</p>
+    <p>With <strong>legacy systems</strong> specifically, a lot of the ambiguity is that nobody fully remembers why something was built a certain way. My approach is to build in <strong>small, reversible steps</strong> and add <strong>tracing or logging</strong> before I change anything I don't fully understand, so if my assumption's wrong, I find out fast and cheap instead of after a bigger change is already live.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q30 -->
+  <div class="qa" id="q30">
+    <h3><span class="qnum">30</span><span class="tag tag-mgr">MGR</span>What is your biggest weakness?</h3>
+    <p>I think earlier in my career, my <strong>biggest weakness</strong> was that I tried to solve everything myself. Whenever a problem came up, I had a habit of just fixing it alone instead of asking for help or involving anyone else on the team. At the time, I felt this was the faster way to bring a solution. I didn't have to stop and explain the background to anyone, I could just fix it and move on.</p>
+    <p>But over time, I realized that working on my own actually creates problems. First, you just cannot work like that as projects get bigger. Second, if I solve every problem by myself, the <strong>junior engineers</strong> on the team miss out on a chance to learn from those situations.</p>
+	<p>So, I have had to <strong>change my approach</strong>. Now, when an issue comes up that would be a <strong>good learning moment</strong>, I deliberately slow down. I invite a junior engineer to look at it with me. It could take a little more time, but it helps the team in the long run. Now, It is a choice I take on purpose now, instead of it just being my automatic reaction, but it is definitely a better way to work.</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q31 -->
+  <div class="qa" id="q31">
+    <h3><span class="qnum">31</span><span class="tag tag-mgr">MGR</span>Where do you see yourself in five years?</h3>
+    <p>Deeper into <strong>architecture and technical leadership</strong>, It's not about tittle,  more about the kind of decisions I'm involved in. 
+	Right now <strong>I do a lot of implementation with architectural input along the way</strong>. In five years <strong>I'd like to be someone whose my input shapes the direction of the business before start implementing</strong>, and who's <strong>mentoring</strong> more people doing the kind of work I do now.</p>
+    <p><strong>I'd like add this</strong>, which I concider could be a huge value for the team, <strong>I’m focused on staying ahead of how AI is shifting our roles.</strong> 
+	For me, <strong>it’s not about replacing engineering judgment at all</strong>. 
+	<strong>It’s just a great tool we can use on our favor, to knock out the mechanical, repetitive stuff</strong> so <strong>we can dedicate our energy and time on what actually matters as Senior Soft Engineers</strong>
+	—like <strong>architecture desitions, system design and thorough validation and Test, Security concerns</strong>. <strong>I'm already using this approach when picking up new frameworks</strong>, 
+	and <strong>I know it’s gonna become more demmanding over the next few years, so I want to stay ahead.</strong></p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q32 -->
+  <div class="qa" id="q32">
+    <h3><span class="qnum">32</span><span class="tag tag-mgr">MGR</span>What motivates you as a Software Engineer?</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q6" target="_blank" rel="noopener">Watch it answered live — Q6: Legacy Strategy — WT1C (Español)</a></div>
+    <p>Genuinely, it's the modernization puzzle — taking something old that's still running the business, and figuring out how to improve it without breaking what people depend on. The <strong>WPBT migration</strong> is a good example. It'd be easy to just rewrite everything from scratch, but that's not responsible when real people are using the old version right now. Figuring out the incremental path, where you're modernizing structure while everything keeps working, is the part I actually enjoy.</p>
+    <p>The other piece is <strong>mentoring</strong> — watching someone go from needing every catch explained to catching things themselves.Mentoring has a slower feedback loop than shipping a feature by own, but it creates a compounding/underlaying effect on <strong>team velocity</strong> that a single feature never could.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q33 -->
+  <div class="qa" id="q33">
+    <h3><span class="qnum">33</span><span class="tag tag-mgr">MGR</span>How do you handle constructive criticism?</h3>
+    <p>When I receive criticism, I try to <strong>pause</strong> and really think about it before I react. Early in my career, if someone disagreed with how I built something, my very first instinct was to immediately defend my work and explain why I did it my way.</p>
+    <p>Now, I have trained myself to <strong>ask a question first</strong>. I will ask them, 'What would you have done differently, and why?' I do this because there is almost always a valid point in what they are saying, even if I don't agree with every single piece of their feedback.</p>
+    <p>A good example of this is how I handle <strong>code reviews</strong>. I always encourage the team to be very detailed when looking at my code, rather than just giving a quick approval. I make mistakes in my code just like the junior engineers I mentor, and I want the team to find them. If I only wanted people to tell me my work is perfect, I would not ask the team to be so strict during the review process.</p>
+	<a class="backtop" href="#top">↑ back to index</a>
+  </div>
+
+  <!-- Q34 -->
+  <div class="qa" id="q34">
+    <h3><span class="qnum">34</span><span class="tag tag-panel">PANEL</span>Do you have any questions for us?</h3>
+    <p>A few, if that's alright. How do developers on the team split their time between new feature work and maintaining the <strong>existing legacy applications</strong>? What's the biggest technical problem you'd want someone in this seat tackling in the first six months? And how does the team typically work across <strong>developers, QA, and business stakeholders</strong> — I ask because that's something I've leaned into a lot, and I want to understand the rhythm here before I assume mine fits.</p>
+    <a class="backtop" href="#top">↑ back to index</a>
+  </div>
+  
+<div class="qa" id="q36">
+    <h3><span class="qnum">36</span><span class="tag tag-panel">PANEL</span>My Closing</h3>
+    <div class="xref"><span class="xlabel">Cross-ref:</span><a href="Mock_Interview_Transcript_Bilingual_Software_Developer.html#q3" target="_blank" rel="noopener">Watch it answered live — Q3: .NET Core / REST API Architecture</a></div>
+    <p>Thank you. I want to leave you with one final thought. You mentionedin the job description you guys need someone who can fluidly move across the <strong>full stack</strong>—from front-end frameworks down to APIs and SQL, to maintain, optimize and scale existing systems, not just build new ones. That is exactly what I’ve been doing for the last ten years.</p>
+    <p>As we discussed earlier, my deepest experience is in the backend and databases, rather than Angular. But I want to assure you that I am still a <strong>full-stack problem solver</strong>. I am the kind of developer who will track an error from the user's screen, through the <strong>.NET API</strong>, all the way down to a <strong>SQL stored procedure</strong> to find the real root cause.</p>
+    <p>To give you a clear picture of how I bridge that gap, here's exactly what I mentioned — I want the panel to be able to review my actual work after this interview:</p>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin:4px 0 14px 0;">
+
+      <div style="background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:12px 16px;">
+        <div style="font-family:Arial, sans-serif; font-weight:bold; color:var(--navy); font-size:.98rem; margin-bottom:4px;">
+          Gallery Manager
+          <span style="font-weight:normal; font-size:.64rem; color:#3f7a68; border:1px solid #3f7a68; border-radius:10px; padding:1px 8px; margin-left:6px; vertical-align:middle;">LIVE</span>
+        </div>
+        <p style="margin:0 0 6px 0; font-size:.92rem;">Helps a gallery track its artwork inventory and exhibits — recording each piece's price, medium, and sale status, grouping artworks into timed exhibits, and calculating how much revenue an exhibit generated from sold pieces.</p>
+        <p style="margin:0 0 8px 0; font-family:Arial, sans-serif; font-size:.8rem; color:var(--muted);"><strong>Stack:</strong> ASP.NET Core 8 Minimal API, EF Core 8 + Npgsql, PostgreSQL (Neon), FluentValidation, <strong>Angular 19</strong> (standalone components), GitHub Actions CI/CD</p>
+        <a class="idx-badge" href="https://gallery-manager-henna.vercel.app/" target="_blank" rel="noopener">Live app ↗</a>
+        <a class="idx-badge" href="https://github.com/dariemcarlosdev/gallery-manager" target="_blank" rel="noopener">GitHub repo ↗</a>
+      </div>
+
+      <div style="background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:12px 16px;">
+        <div style="font-family:Arial, sans-serif; font-weight:bold; color:var(--navy); font-size:.98rem; margin-bottom:4px;">
+          BarberFlow
+          <span style="font-weight:normal; font-size:.64rem; color:#3f7a68; border:1px solid #3f7a68; border-radius:10px; padding:1px 8px; margin-left:6px; vertical-align:middle;">LIVE DEMO</span>
+        </div>
+        <p style="margin:0 0 6px 0; font-size:.92rem;">A mock MVP SaaS for barbershops — built to show potential owner-customers what an all-in-one booking, rewards, and automation platform could look like.</p>
+        <p style="margin:0 0 8px 0; font-family:Arial, sans-serif; font-size:.8rem; color:var(--muted);"><strong>Stack:</strong> Vite + React 18, React Router 6, Framer Motion 11, .NET 10 Minimal API (mock backend)</p>
+        <a class="idx-badge" href="https://barberflow-chi-eight.vercel.app/" target="_blank" rel="noopener">Live app ↗</a>
+        <a class="idx-badge" href="https://github.com/dariemcarlosdev/barberflow-saas" target="_blank" rel="noopener">GitHub repo ↗</a>
+      </div>
+
+      <div style="background:var(--card); border:1px solid var(--line); border-left:4px solid var(--muted); border-radius:8px; padding:12px 16px;">
+        <div style="font-family:Arial, sans-serif; font-weight:bold; color:var(--navy); font-size:.98rem; margin-bottom:4px;">
+          Smart Menu Optimizer (SmartMenuOptim)
+          <span style="font-weight:normal; font-size:.64rem; color:var(--muted); border:1px dashed var(--muted); border-radius:10px; padding:1px 8px; margin-left:6px; vertical-align:middle;">IN DEVELOPMENT</span>
+        </div>
+        <p style="margin:0 0 6px 0; font-size:.92rem;">An Azure-native, AI-powered SaaS platform that helps restaurant managers make data-driven menu decisions by analyzing sales trends and customer feedback.</p>
+        <p style="margin:0 0 8px 0; font-family:Arial, sans-serif; font-size:.8rem; color:var(--muted);"><strong>Stack:</strong> ASP.NET Core 8, Blazor Server, Azure AI Services, PostgreSQL, Azure Key Vault (secrets)</p>
+        <a class="idx-badge" href="https://github.com/dariemcarlosdev/SmartMenuOptim" target="_blank" rel="noopener">GitHub repo ↗</a>
+        <span style="font-family:Arial, sans-serif; font-size:.76rem; color:var(--muted);"> — repo only, 

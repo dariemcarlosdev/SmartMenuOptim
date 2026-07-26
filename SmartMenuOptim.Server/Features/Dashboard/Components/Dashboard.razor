@@ -1,6 +1,7 @@
-﻿@*
-    Dashboard page - Restaurant overview and sales performance.
-    Uses shared components (DetailCard, LoadingSpinner, ErrorAlert) for design uniformity.
+@*
+    Dashboard page - Restaurant overview, order metrics, and sales performance.
+    Markup only; logic lives in Dashboard.razor.cs, styles in Dashboard.razor.css.
+    Premium restyle shares the landing design language (slate + amber, Fraunces + Inter).
 *@
 
 @page "/dashboard"
@@ -8,216 +9,195 @@
 @using SmartMenuOptim.Application.Dtos
 @using SmartMenuOptim.Application.Features.Restaurants.DTOs
 @using SmartMenuOptim.Application.Features.Orders.DTOs
-@using SmartMenuOptim.Server.Features.Sales.Services
-@using SmartMenuOptim.Server.Features.Restaurants.Services
-@using SmartMenuOptim.Server.Features.Orders.Services
 @using SmartMenuOptim.Server.Components.Shared
-@inject NavigationManager NavigationManager
-@inject ISaleRecordClientService SaleRecordService
-@inject IRestaurantClientService RestaurantClientService
-@inject IOrderClientService OrderClientService
 
 <PageTitle>Dashboard - SmartMenuOptimizer</PageTitle>
 
-<div class="container mt-4">
-    @* Page Header *@
-    <div class="mb-4">
-        <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
-        <p class="text-muted">Restaurant overview and sales performance at a glance.</p>
-    </div>
+<div class="smo-dash" @ref="Root">
 
-    @* ═══════════════════════════════════════════════════════════════════ *@
-    @* RESTAURANT OVERVIEW SECTION                                       *@
-    @* ═══════════════════════════════════════════════════════════════════ *@
+    @* ── Page header ─────────────────────────────────────────────── *@
+    <header class="smo-dash-head" data-anim style="--i:0">
+        <div>
+            <h1 class="smo-dash-title">Dashboard</h1>
+            <p class="smo-dash-sub">Your restaurants, orders, and menu performance at a glance.</p>
+        </div>
+        <a href="/insights" class="smo-btn smo-btn-primary">
+            <i class="bi bi-lightbulb"></i>AI Insights
+        </a>
+    </header>
 
-    <DetailCard HeaderTitle="Restaurant Overview" HeaderIcon="bi-shop" HeaderClass="bg-primary text-white">
-        <LoadingSpinner IsLoading="restaurantsLoading" Message="Loading restaurants..." ContainerClass="py-3" />
+    @* ── KPI hero band (the one bold moment) ─────────────────────── *@
+    <section class="smo-hero" data-anim style="--i:1">
+        @if (!_ready)
+        {
+            <div class="smo-hero-loading">
+                <span class="smo-hero-dot"></span>
+                <span class="smo-hero-dot"></span>
+                <span class="smo-hero-dot"></span>
+            </div>
+        }
+        else
+        {
+            <div class="smo-kpi smo-kpi--accent">
+                <span class="smo-kpi-label">Order Revenue</span>
+                <span class="smo-kpi-value" data-count="@Inv(OrderTotalRevenue)" data-decimals="0" data-prefix="$" data-group="true">$0</span>
+                <span class="smo-kpi-foot">@ActiveOrderCount active now</span>
+            </div>
+            <div class="smo-kpi">
+                <span class="smo-kpi-label">Total Orders</span>
+                <span class="smo-kpi-value" data-count="@(allOrders?.Count ?? 0)" data-group="true">0</span>
+                <span class="smo-kpi-foot">@OrderAverageValue.ToString("C") avg value</span>
+            </div>
+            <div class="smo-kpi">
+                <span class="smo-kpi-label">Open Restaurants</span>
+                <span class="smo-kpi-value" data-count="@(restaurants?.Count(r => r.IsAcceptingOrders) ?? 0)" data-suffix="@("/" + (restaurants?.Count ?? 0))">0</span>
+                <span class="smo-kpi-foot">accepting orders</span>
+            </div>
+            <div class="smo-kpi">
+                <span class="smo-kpi-label">Dishes Sold</span>
+                <span class="smo-kpi-value" data-count="@SummaryDishesSold" data-group="true">0</span>
+                <span class="smo-kpi-foot">@SummaryTotalSales.ToString("C") in sales</span>
+            </div>
+        }
+    </section>
+
+    @* ═══ Restaurant overview ════════════════════════════════════ *@
+    <section class="smo-panel" data-anim style="--i:2">
+        <div class="smo-panel-head">
+            <span class="smo-panel-icon"><i class="bi bi-shop"></i></span>
+            <h2 class="smo-panel-title">Restaurant Overview</h2>
+        </div>
+
+        <LoadingSpinner IsLoading="restaurantsLoading" Message="Loading restaurants..." ContainerClass="py-4" />
 
         @if (!restaurantsLoading && restaurants is not null && restaurants.Any())
         {
-            @* Summary Stats Row *@
-            <div class="row g-3 mb-4">
-                <div class="col-12 col-md-4">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-info text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-shop fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-info">@restaurants.Count</div>
-                            <div class="text-muted small">Total Restaurants</div>
-                        </div>
-                    </div>
+            <div class="smo-stats smo-stats--3">
+                <div class="smo-stat">
+                    <span class="smo-stat-num">@restaurants.Count</span>
+                    <span class="smo-stat-label">Total Restaurants</span>
                 </div>
-                <div class="col-12 col-md-4">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-success text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-check-circle fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-success">@restaurants.Count(r => r.IsAcceptingOrders)</div>
-                            <div class="text-muted small">Open for Orders</div>
-                        </div>
-                    </div>
+                <div class="smo-stat smo-stat--good">
+                    <span class="smo-stat-num">@restaurants.Count(r => r.IsAcceptingOrders)</span>
+                    <span class="smo-stat-label">Open for Orders</span>
                 </div>
-                <div class="col-12 col-md-4">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-pause-circle fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-secondary">@restaurants.Count(r => !r.IsAcceptingOrders)</div>
-                            <div class="text-muted small">Closed</div>
-                        </div>
-                    </div>
+                <div class="smo-stat smo-stat--muted">
+                    <span class="smo-stat-num">@restaurants.Count(r => !r.IsAcceptingOrders)</span>
+                    <span class="smo-stat-label">Closed</span>
                 </div>
             </div>
 
-            @* Restaurant Quick List *@
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            <div class="smo-rgrid">
                 @foreach (var restaurant in restaurants)
                 {
                     var todayHours = restaurant.BusinessHours?.FirstOrDefault(h => h.DayOfWeek == DateTime.Now.DayOfWeek);
 
-                    <div class="col">
-                        <div class="card h-100 border">
-                            <div class="card-body py-2 px-3">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <div>
-                                        <h6 class="mb-0">@restaurant.Name</h6>
-                                        <small class="text-muted">
-                                            @(restaurant.Address is not null ? $"{restaurant.Address.City}, {restaurant.Address.State}" : "No address")
-                                        </small>
-                                    </div>
-                                    <span class="badge @(restaurant.IsAcceptingOrders ? "bg-success" : "bg-secondary")">
-                                        @(restaurant.IsAcceptingOrders ? "Open" : "Closed")
-                                    </span>
-                                </div>
-                                <div class="small">
-                                    <i class="bi bi-clock me-1 text-muted"></i>
-                                    <span class="text-muted">Today:</span>
-                                    @if (todayHours is not null && !todayHours.IsClosed)
-                                    {
-                                        <span class="fw-semibold text-success">
-                                            @todayHours.OpenTime.ToString(@"hh\:mm") – @todayHours.CloseTime.ToString(@"hh\:mm")
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="fst-italic text-secondary">Closed</span>
-                                    }
-                                </div>
+                    <article class="smo-rcard">
+                        <div class="smo-rcard-top">
+                            <div class="smo-rcard-id">
+                                <h3 class="smo-rcard-name">@restaurant.Name</h3>
+                                <span class="smo-rcard-loc">
+                                    <i class="bi bi-geo-alt"></i>
+                                    @(restaurant.Address is not null ? $"{restaurant.Address.City}, {restaurant.Address.State}" : "No address")
+                                </span>
                             </div>
-                            <div class="card-footer bg-transparent py-1">
-                                <div class="btn-group btn-group-sm w-100">
-                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => NavigateToRestaurant(restaurant.Id)">
-                                        <i class="bi bi-eye me-1"></i>Details
-                                    </button>
-                                    <button class="btn btn-outline-info btn-sm" @onclick="NavigateToInsights">
-                                        <i class="bi bi-lightbulb me-1"></i>AI Insights
-                                    </button>
-                                </div>
-                            </div>
+                            <span class="smo-pill @(restaurant.IsAcceptingOrders ? "smo-pill--open" : "smo-pill--closed")">
+                                @(restaurant.IsAcceptingOrders ? "Open" : "Closed")
+                            </span>
                         </div>
-                    </div>
+                        <div class="smo-rcard-hours">
+                            <i class="bi bi-clock"></i>
+                            <span class="smo-muted">Today</span>
+                            @if (todayHours is not null && !todayHours.IsClosed)
+                            {
+                                <span class="smo-hours-val">
+                                    @todayHours.OpenTime.ToString(@"hh\:mm") – @todayHours.CloseTime.ToString(@"hh\:mm")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="smo-hours-closed">Closed today</span>
+                            }
+                        </div>
+                        <div class="smo-rcard-actions">
+                            <button class="smo-btn smo-btn-ghost" @onclick="() => NavigateToRestaurant(restaurant.Id)">
+                                <i class="bi bi-eye"></i>Details
+                            </button>
+                            <button class="smo-btn smo-btn-ghost" @onclick="NavigateToInsights">
+                                <i class="bi bi-lightbulb"></i>Insights
+                            </button>
+                        </div>
+                    </article>
                 }
             </div>
         }
         else if (!restaurantsLoading)
         {
-            <div class="text-center py-4">
-                <i class="bi bi-shop display-4 text-muted mb-3 d-block"></i>
-                <p class="text-muted mb-2">No restaurants found.</p>
-                <a href="/restaurants" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-plus-lg me-1"></i>Add your first restaurant
+            <div class="smo-empty">
+                <i class="bi bi-shop"></i>
+                <p>No restaurants yet.</p>
+                <a href="/restaurants" class="smo-btn smo-btn-primary">
+                    <i class="bi bi-plus-lg"></i>Add your first restaurant
                 </a>
             </div>
         }
-    </DetailCard>
+    </section>
 
-    @* ═══════════════════════════════════════════════════════════════════ *@
-    @* ORDER METRICS SECTION                                              *@
-    @* ═══════════════════════════════════════════════════════════════════ *@
+    @* ═══ Order metrics ══════════════════════════════════════════ *@
+    <section class="smo-panel" data-anim style="--i:3">
+        <div class="smo-panel-head">
+            <span class="smo-panel-icon"><i class="bi bi-cart-check"></i></span>
+            <h2 class="smo-panel-title">Order Metrics</h2>
+        </div>
 
-    <DetailCard HeaderTitle="Order Metrics" HeaderIcon="bi-cart-check" HeaderClass="bg-info text-white">
-        <LoadingSpinner IsLoading="ordersLoading" Message="Loading order metrics..." ContainerClass="py-3" />
+        <LoadingSpinner IsLoading="ordersLoading" Message="Loading order metrics..." ContainerClass="py-4" />
 
         @if (!ordersLoading && allOrders is not null && allOrders.Any())
         {
-            @* Summary Stats Row *@
-            <div class="row g-3 mb-4">
-                <div class="col-12 col-md-3">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-info text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-cart fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-info">@allOrders.Count</div>
-                            <div class="text-muted small">Total Orders</div>
-                        </div>
-                    </div>
+            <div class="smo-stats smo-stats--4">
+                <div class="smo-stat">
+                    <span class="smo-stat-num">@allOrders.Count</span>
+                    <span class="smo-stat-label">Total Orders</span>
                 </div>
-                <div class="col-12 col-md-3">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-success text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-currency-dollar fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-success">@OrderTotalRevenue.ToString("C")</div>
-                            <div class="text-muted small">Total Revenue</div>
-                        </div>
-                    </div>
+                <div class="smo-stat smo-stat--good">
+                    <span class="smo-stat-num">@OrderTotalRevenue.ToString("C")</span>
+                    <span class="smo-stat-label">Total Revenue</span>
                 </div>
-                <div class="col-12 col-md-3">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-warning text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-calculator fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-warning">@OrderAverageValue.ToString("C")</div>
-                            <div class="text-muted small">Avg Order Value</div>
-                        </div>
-                    </div>
+                <div class="smo-stat smo-stat--accent">
+                    <span class="smo-stat-num">@OrderAverageValue.ToString("C")</span>
+                    <span class="smo-stat-label">Avg Order Value</span>
                 </div>
-                <div class="col-12 col-md-3">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-hourglass-split fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-primary">@ActiveOrderCount</div>
-                            <div class="text-muted small">Active Orders</div>
-                        </div>
-                    </div>
+                <div class="smo-stat">
+                    <span class="smo-stat-num">@ActiveOrderCount</span>
+                    <span class="smo-stat-label">Active Orders</span>
                 </div>
             </div>
 
-            @* Status Breakdown *@
-            <h6 class="mb-2"><i class="bi bi-pie-chart me-1"></i>Status Breakdown</h6>
-            <div class="d-flex flex-wrap gap-2 mb-4">
+            <h3 class="smo-subhead"><i class="bi bi-pie-chart"></i>Status Breakdown</h3>
+            <div class="smo-chips">
                 @foreach (var statusGroup in allOrders.GroupBy(o => o.StatusName).OrderByDescending(g => g.Count()))
                 {
                     var colorCode = statusGroup.First().StatusColorCode;
-                    var badgeStyle = !string.IsNullOrWhiteSpace(colorCode)
-                        ? $"background-color:{colorCode}; color:#fff;"
-                        : "";
-                    <span class="badge @(string.IsNullOrWhiteSpace(colorCode) ? "bg-secondary" : "")" style="@badgeStyle">
-                        @statusGroup.Key: @statusGroup.Count()
+                    var dotStyle = !string.IsNullOrWhiteSpace(colorCode) ? $"background-color:{colorCode};" : "";
+                    <span class="smo-chip">
+                        <span class="smo-chip-dot" style="@dotStyle"></span>
+                        @statusGroup.Key
+                        <span class="smo-chip-count">@statusGroup.Count()</span>
                     </span>
                 }
             </div>
 
-            @* Per-Restaurant Order Summary *@
-            <h6 class="mb-2"><i class="bi bi-shop me-1"></i>Orders by Restaurant</h6>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped table-sm">
-                    <thead class="table-dark">
+            <h3 class="smo-subhead"><i class="bi bi-shop"></i>Orders by Restaurant</h3>
+            <div class="smo-table-wrap">
+                <table class="smo-table">
+                    <thead>
                         <tr>
                             <th>Restaurant</th>
-                            <th class="text-end">Orders</th>
-                            <th class="text-end">Revenue</th>
-                            <th class="text-end">Avg Value</th>
-                            <th class="text-end">Items</th>
-                            <th class="text-center">Active</th>
+                            <th class="num">Orders</th>
+                            <th class="num">Revenue</th>
+                            <th class="num">Avg Value</th>
+                            <th class="num">Items</th>
+                            <th class="ctr">Active</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -231,22 +211,22 @@
 
                             <tr>
                                 <td>
-                                    <a href="/orders?restaurantId=@group.Key" class="text-decoration-none fw-semibold">
-                                        <i class="bi bi-shop me-1 text-muted"></i>@restaurantName
+                                    <a href="/orders?restaurantId=@group.Key" class="smo-tlink">
+                                        <i class="bi bi-shop"></i>@restaurantName
                                     </a>
                                 </td>
-                                <td class="text-end">@group.Count()</td>
-                                <td class="text-end">@revenue.ToString("C")</td>
-                                <td class="text-end">@avgValue.ToString("C")</td>
-                                <td class="text-end">@totalItems</td>
-                                <td class="text-center">
+                                <td class="num">@group.Count()</td>
+                                <td class="num smo-num-strong">@revenue.ToString("C")</td>
+                                <td class="num">@avgValue.ToString("C")</td>
+                                <td class="num">@totalItems</td>
+                                <td class="ctr">
                                     @if (activeCount > 0)
                                     {
-                                        <span class="badge bg-info">@activeCount</span>
+                                        <span class="smo-badge-active">@activeCount</span>
                                     }
                                     else
                                     {
-                                        <span class="text-muted">—</span>
+                                        <span class="smo-muted">—</span>
                                     }
                                 </td>
                             </tr>
@@ -257,299 +237,159 @@
         }
         else if (!ordersLoading)
         {
-            <div class="text-center py-4">
-                <i class="bi bi-cart display-4 text-muted mb-3 d-block"></i>
-                <p class="text-muted mb-2">No orders found.</p>
-                <a href="/orders/new" class="btn btn-outline-info btn-sm">
-                    <i class="bi bi-plus-lg me-1"></i>Place your first order
+            <div class="smo-empty">
+                <i class="bi bi-cart"></i>
+                <p>No orders yet.</p>
+                <a href="/orders/new" class="smo-btn smo-btn-primary">
+                    <i class="bi bi-plus-lg"></i>Place your first order
                 </a>
             </div>
         }
-    </DetailCard>
+    </section>
 
-    @* ═══════════════════════════════════════════════════════════════════ *@
-    @* SALES PERFORMANCE SECTION                                         *@
-    @* ═══════════════════════════════════════════════════════════════════ *@
-
-    <DetailCard HeaderTitle="Sales Performance" HeaderIcon="bi-graph-up" HeaderClass="bg-success text-white">
-        <HeaderActions>
-            <button class="btn btn-sm btn-outline-light" @onclick="ToggleGuide">
-                <i class="bi bi-question-circle me-1"></i>@(_showGuide ? "Hide Guide" : "How to Use")
+    @* ═══ Sales performance ══════════════════════════════════════ *@
+    <section class="smo-panel" data-anim style="--i:4">
+        <div class="smo-panel-head">
+            <span class="smo-panel-icon"><i class="bi bi-graph-up"></i></span>
+            <h2 class="smo-panel-title">Sales Performance</h2>
+            <button class="smo-btn smo-btn-ghost smo-panel-action" @onclick="ToggleGuide">
+                <i class="bi bi-question-circle"></i>@(_showGuide ? "Hide guide" : "How to use")
             </button>
-        </HeaderActions>
-        <ChildContent>
-            @* Collapsible Usage Guide *@
-            @if (_showGuide)
-            {
-                <div class="alert alert-info mb-4" role="alert">
-                    <strong>How to Use the Sales Dashboard:</strong>
-                    <ul class="mb-1 mt-2">
-                        <li><b>Quantity Sold:</b> See how many times each dish has been ordered.</li>
-                        <li><b>Sale Dates:</b> Track when dishes are selling best to spot trends.</li>
-                        <li><b>Categories:</b> Group dishes by category to compare performance.</li>
-                        <li><b>Total Sales:</b> Revenue generated by each restaurant and category.</li>
-                        <li><b>Rating:</b> Average customer rating for each dish and category.</li>
-                    </ul>
-                    <span class="text-primary small">
-                        Use these insights to optimize your menu, adjust inventory, and plan promotions.
-                    </span>
-                </div>
-            }
+        </div>
 
-            @* Summary Stats Row *@
-            <div class="row g-3 mb-4">
-                <div class="col-12 col-md-4">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-receipt fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-primary">@SummarySaleRecords</div>
-                            <div class="text-muted small">Total Items</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-success text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-cup-straw fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-success">@SummaryDishesSold</div>
-                            <div class="text-muted small">Total Dishes Sold</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="d-flex align-items-center p-3 border rounded">
-                        <div class="bg-warning text-white rounded d-flex align-items-center justify-content-center me-3" style="width:44px; height:44px;">
-                            <i class="bi bi-currency-dollar fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="h5 mb-0 text-warning">@SummaryTotalSales.ToString("C")</div>
-                            <div class="text-muted small">Total Sales</div>
-                        </div>
-                    </div>
-                </div>
+        @if (_showGuide)
+        {
+            <div class="smo-guide">
+                <strong>Reading this dashboard</strong>
+                <ul>
+                    <li><b>Quantity sold</b> — how many times each dish has been ordered.</li>
+                    <li><b>Sale dates</b> — when dishes sell best, so you can spot trends.</li>
+                    <li><b>Categories</b> — group dishes to compare performance.</li>
+                    <li><b>Total sales</b> — revenue per restaurant and category.</li>
+                    <li><b>Rating</b> — average customer rating per dish and category.</li>
+                </ul>
+                <span class="smo-guide-foot">Use these to tune your menu, adjust inventory, and plan promotions.</span>
             </div>
+        }
 
-            @* Sales Data *@
-            <LoadingSpinner IsLoading="isloading" Message="Loading sales data..." ContainerClass="py-3" />
+        <div class="smo-stats smo-stats--3">
+            <div class="smo-stat">
+                <span class="smo-stat-num">@SummarySaleRecords</span>
+                <span class="smo-stat-label">Total Items</span>
+            </div>
+            <div class="smo-stat smo-stat--good">
+                <span class="smo-stat-num">@SummaryDishesSold</span>
+                <span class="smo-stat-label">Dishes Sold</span>
+            </div>
+            <div class="smo-stat smo-stat--accent">
+                <span class="smo-stat-num">@SummaryTotalSales.ToString("C")</span>
+                <span class="smo-stat-label">Total Sales</span>
+            </div>
+        </div>
 
-            @if (!isloading && saleRecords is null)
-            {
-                <div class="text-center py-3 text-muted">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Loading sales data...
-                </div>
-            }
-            else if (!isloading && saleRecords is not null && !saleRecords.Any())
-            {
-                <div class="text-center py-4">
-                    <i class="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                    <p class="text-muted">No sales records available yet.</p>
-                </div>
-            }
-            else if (!isloading && saleRecords is not null)
-            {
-                @foreach (var restaurantGroup in saleRecords.GroupBy(r => r.RestaurantName))
-                {
-                    var restaurantTotalSales = restaurantGroup.Sum(r => r.DishPrice * r.QuantitySold);
-                    var restaurantAvgRating = restaurantGroup.Any(r => r.Rating > 0)
-                        ? restaurantGroup.Where(r => r.Rating > 0).Average(r => r.Rating)
-                        : 0;
-                    bool isExpanded = expandedRestaurant == restaurantGroup.Key;
+        <LoadingSpinner IsLoading="isloading" Message="Loading sales data..." ContainerClass="py-4" />
 
-                    <div class="mb-3">
-                        @* Restaurant Group Header *@
-                        <div class="dashboard-header-dark" @onclick="() => ToggleRestaurant(restaurantGroup.Key)" style="cursor: pointer;">
-                            <span>
-                                <span class="me-2">
-                                    <i class="bi @(isExpanded ? "bi-chevron-down" : "bi-chevron-right")"></i>
-                                </span>
-                                <span>
-                                    <i class="bi bi-shop me-1"></i>
-                                    <span class="fw-bold">@restaurantGroup.Key</span>
-                                </span>
-                                <span class="badge bg-secondary ms-2">@restaurantGroup.Count() records</span>
-                                <span class="badge bg-success ms-1">@restaurantTotalSales.ToString("C")</span>
-                                <span class="badge dashboard-badge bg-warning text-dark ms-1" title="Average Rating">
-                                    @RenderStars(restaurantAvgRating)
-                                    <span class="ms-1">(@restaurantAvgRating.ToString("0.0")/5)</span>
-                                </span>
+        @if (!isloading && saleRecords is not null && !saleRecords.Any())
+        {
+            <div class="smo-empty">
+                <i class="bi bi-inbox"></i>
+                <p>No sales records yet.</p>
+            </div>
+        }
+        else if (!isloading && saleRecords is not null)
+        {
+            @foreach (var restaurantGroup in saleRecords.GroupBy(r => r.RestaurantName))
+            {
+                var restaurantTotalSales = restaurantGroup.Sum(r => r.DishPrice * r.QuantitySold);
+                var restaurantAvgRating = restaurantGroup.Any(r => r.Rating > 0)
+                    ? restaurantGroup.Where(r => r.Rating > 0).Average(r => r.Rating)
+                    : 0;
+                bool isExpanded = expandedRestaurant == restaurantGroup.Key;
+
+                <div class="smo-sales-group">
+                    <button class="smo-group @(isExpanded ? "is-open" : "")" @onclick="() => ToggleRestaurant(restaurantGroup.Key)">
+                        <span class="smo-group-main">
+                            <i class="bi @(isExpanded ? "bi-chevron-down" : "bi-chevron-right") smo-group-chev"></i>
+                            <i class="bi bi-shop"></i>
+                            <span class="smo-group-name">@restaurantGroup.Key</span>
+                        </span>
+                        <span class="smo-group-meta">
+                            <span class="smo-tag">@restaurantGroup.Count() records</span>
+                            <span class="smo-tag smo-tag--sales">@restaurantTotalSales.ToString("C")</span>
+                            <span class="smo-tag smo-tag--rating" title="Average rating">
+                                <span class="smo-stars">@RenderStars(restaurantAvgRating)</span>
+                                @restaurantAvgRating.ToString("0.0")
                             </span>
-                        </div>
+                        </span>
+                    </button>
 
-                        @* Expanded: Category Details *@
-                        @if (isExpanded)
+                    @if (isExpanded)
+                    {
+                        foreach (var categoryGroup in restaurantGroup.GroupBy(r => r.Category))
                         {
-                            foreach (var categoryGroup in restaurantGroup.GroupBy(r => r.Category))
-                            {
-                                var categoryTotalSales = categoryGroup.Sum(r => r.DishPrice * r.QuantitySold);
-                                var avgRating = categoryGroup.Any(r => r.Rating > 0)
-                                    ? categoryGroup.Where(r => r.Rating > 0).Average(r => r.Rating)
-                                    : 0;
+                            var categoryTotalSales = categoryGroup.Sum(r => r.DishPrice * r.QuantitySold);
+                            var avgRating = categoryGroup.Any(r => r.Rating > 0)
+                                ? categoryGroup.Where(r => r.Rating > 0).Average(r => r.Rating)
+                                : 0;
 
-                                <div class="mb-4 ms-2">
-                                    <h6 class="bg-light p-2 border rounded d-flex flex-wrap align-items-center gap-2">
-                                        <span>
-                                            <i class="bi bi-tag me-1 text-primary"></i>
-                                            <span class="text-primary">@categoryGroup.Key</span>
+                            <div class="smo-cat">
+                                <div class="smo-cat-head">
+                                    <span class="smo-cat-name">
+                                        <i class="bi bi-tag"></i>@categoryGroup.Key
+                                    </span>
+                                    <span class="smo-cat-meta">
+                                        <span class="smo-tag smo-tag--sales">@categoryTotalSales.ToString("C")</span>
+                                        <span class="smo-tag smo-tag--rating" title="Average rating">
+                                            <span class="smo-stars">@RenderStars(avgRating)</span>
+                                            @avgRating.ToString("0.0")
                                         </span>
-                                        <span class="badge bg-secondary">@categoryTotalSales.ToString("C")</span>
-                                        <span class="badge dashboard-badge bg-warning text-dark" title="Average Rating">
-                                            @RenderStars(avgRating)
-                                            <span class="ms-1">(@avgRating.ToString("0.0")/5)</span>
-                                        </span>
-                                    </h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-striped table-sm">
-                                            <thead class="table-dark">
-                                                <tr>
-                                                    <th>Dish</th>
-                                                    <th class="text-end">Qty Sold</th>
-                                                    <th class="text-end">Price</th>
-                                                    <th class="text-center">Sale Date</th>
-                                                    <th class="text-center">Rating</th>
-                                                    <th class="text-end">Total</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach (var record in categoryGroup)
-                                                {
-                                                    <tr>
-                                                        <td>
-                                                            <a href="#" class="dish-link" @onclick="() => OnDishClicked(record.DishName)" @onclick:preventDefault>
-                                                                @record.DishName
-                                                            </a>
-                                                        </td>
-                                                        <td class="text-end">@record.QuantitySold</td>
-                                                        <td class="text-end">@record.DishPrice.ToString("C")</td>
-                                                        <td class="text-center">@record.SaleDate.ToString("MMM dd, yyyy")</td>
-                                                        <td class="text-center">
-                                                            @if (record.Rating > 0)
-                                                            {
-                                                                <span class="text-warning" title="Rating: @record.Rating/5">
-                                                                    @RenderStars(record.Rating)
-                                                                </span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="text-muted">N/A</span>
-                                                            }
-                                                        </td>
-                                                        <td class="text-end">@((record.DishPrice * record.QuantitySold).ToString("C"))</td>
-                                                    </tr>
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    </span>
                                 </div>
-                            }
+                                <div class="smo-table-wrap">
+                                    <table class="smo-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Dish</th>
+                                                <th class="num">Qty Sold</th>
+                                                <th class="num">Price</th>
+                                                <th class="ctr">Sale Date</th>
+                                                <th class="ctr">Rating</th>
+                                                <th class="num">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var record in categoryGroup)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <a href="#" class="smo-dish-link" @onclick="() => OnDishClicked(record.DishName)" @onclick:preventDefault>
+                                                            @record.DishName
+                                                        </a>
+                                                    </td>
+                                                    <td class="num">@record.QuantitySold</td>
+                                                    <td class="num">@record.DishPrice.ToString("C")</td>
+                                                    <td class="ctr">@record.SaleDate.ToString("MMM dd, yyyy")</td>
+                                                    <td class="ctr">
+                                                        @if (record.Rating > 0)
+                                                        {
+                                                            <span class="smo-stars" title="Rating: @record.Rating/5">@RenderStars(record.Rating)</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="smo-muted">N/A</span>
+                                                        }
+                                                    </td>
+                                                    <td class="num smo-num-strong">@((record.DishPrice * record.QuantitySold).ToString("C"))</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         }
-                    </div>
-                }
+                    }
+                </div>
             }
-        </ChildContent>
-    </DetailCard>
+        }
+    </section>
 </div>
-
-@code {
-    private List<SaleRecordDTO>? saleRecords;
-    private IReadOnlyList<RestaurantDTO>? restaurants;
-    private List<OrderDTO>? allOrders;
-    private bool restaurantsLoading = true;
-    private bool ordersLoading = true;
-    private bool isloading = true;
-    private string? expandedRestaurant;
-    private bool _showGuide;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var restaurantsTask = RestaurantClientService.GetAllAsync();
-        var salesTask = SaleRecordService.GetSaleRecordsAsync();
-
-        await Task.WhenAll(restaurantsTask, salesTask);
-
-        var restaurantResult = restaurantsTask.Result;
-        restaurants = restaurantResult.IsSuccess ? restaurantResult.Value : [];
-        restaurantsLoading = false;
-
-        saleRecords = salesTask.Result;
-        isloading = false;
-
-        // Load orders for each restaurant (after restaurants are loaded)
-        if (restaurants is not null && restaurants.Any())
-        {
-            var orderTasks = restaurants.Select(r => OrderClientService.GetByRestaurantAsync(r.Id));
-            var orderResults = await Task.WhenAll(orderTasks);
-
-            allOrders = orderResults
-                .Where(r => r is { IsSuccess: true, Value: not null })
-                .SelectMany(r => r.Value)
-                .ToList();
-        }
-        else
-        {
-            allOrders = [];
-        }
-
-        ordersLoading = false;
-    }
-
-    private void ToggleRestaurant(string restaurantName)
-    {
-        expandedRestaurant = expandedRestaurant == restaurantName ? null : restaurantName;
-    }
-
-    private void ToggleGuide()
-    {
-        _showGuide = !_showGuide;
-    }
-
-    private void OnDishClicked(string dishName)
-    {
-        NavigationManager.NavigateTo($"/reviews?dishname={Uri.EscapeDataString(dishName)}");
-    }
-
-    private int SummarySaleRecords => expandedRestaurant is null
-        ? saleRecords?.Count ?? 0
-        : saleRecords?.Count(r => r.RestaurantName == expandedRestaurant) ?? 0;
-
-    // ═══════════════════════════════════════════════════════════════════
-    // ORDER METRICS COMPUTED PROPERTIES
-    // ═══════════════════════════════════════════════════════════════════
-
-    private decimal OrderTotalRevenue => allOrders?.Sum(o => o.TotalAmount) ?? 0;
-    private decimal OrderAverageValue => allOrders is not null && allOrders.Any() ? allOrders.Average(o => o.TotalAmount) : 0;
-    private int ActiveOrderCount => allOrders?.Count(o => !o.IsTerminal) ?? 0;
-
-    private int SummaryDishesSold => expandedRestaurant is null
-        ? saleRecords?.Sum(r => r.QuantitySold) ?? 0
-        : saleRecords?.Where(r => r.RestaurantName == expandedRestaurant).Sum(r => r.QuantitySold) ?? 0;
-
-    private decimal SummaryTotalSales => expandedRestaurant is null
-        ? saleRecords?.Sum(r => r.DishPrice * r.QuantitySold) ?? 0
-        : saleRecords?.Where(r => r.RestaurantName == expandedRestaurant).Sum(r => r.DishPrice * r.QuantitySold) ?? 0;
-
-    private void NavigateToRestaurant(int id) => NavigationManager.NavigateTo($"/restaurants/{id}");
-
-    private void NavigateToInsights() => NavigationManager.NavigateTo("/insights");
-
-    private static RenderFragment RenderStars(double rating) => builder =>
-    {
-        int filled = (int)Math.Round(rating);
-        for (int i = 0; i < filled; i++)
-        {
-            builder.OpenElement(0, "span");
-            builder.AddContent(1, "★");
-            builder.CloseElement();
-        }
-        for (int i = filled; i < 5; i++)
-        {
-            builder.OpenElement(0, "span");
-            builder.AddAttribute(1, "class", "text-secondary");
-            builder.AddContent(2, "☆");
-            builder.CloseElement();
-        }
-    };
-}
