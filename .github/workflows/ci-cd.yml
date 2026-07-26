@@ -21,7 +21,6 @@ name: CI/CD Pipeline for SmartMenuOptim
 on:
   push:
     branches:
-        - Staging
         - master
         # push Trigger: This is now limited to long-lived branches (master, Staging) This ensures that only merged and approved code is deployed. It's assumed that feature branches (env-dev/*, env-staging/*) will be merged via pull requests.
         # - env-dev/*       
@@ -33,7 +32,6 @@ on:
 
   pull_request:
     branches:
-        - Staging
         - master
         # This now targets master and Staging. It will run for any pull request aimed at these branches, which is ideal for validating changes from your env-dev/* and env-staging/* branches  before they are merged into important branches like master or Staging.
         # - env-dev/*
@@ -272,8 +270,8 @@ jobs:
   # --------------------------------------------------------------------------------------------------
   apply-prod-migrations:
     needs: [build-and-test, security-scan, verify-database-migrations]
-    #// Only run on master or Staging branches
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/Staging'  
+    #// Only run on master branch
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
