@@ -288,61 +288,14 @@ jobs:
     - name: Apply EF Core Migrations to Azure PostgreSQL
       env:
         ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
-        NEON_CONN_STRING: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
-      run: |
-        # Install the PostgreSQL client so we can run the migration script via psql.
-        sudo apt-get install -y -q postgresql-client
-
-        # Generate an idempotent SQL script.
-        # --idempotent wraps every migration block in a check against __EFMigrationsHistory,
-        # so migrations that are already recorded are silently skipped.
-        dotnet ef migrations script --idempotent \
-          --output /tmp/migration_idempotent.sql \
-          --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
-
-        # Enhance DDL idempotency by adding IF NOT EXISTS to CREATE TABLE / CREATE INDEX.
-        # This handles production databases that were provisioned with an older set of
-        # migrations (since squashed/renamed) where the schema already exists but the new
-        # migration IDs have never been recorded in __EFMigrationsHistory.
-        # Note: Npgsql EF Core always emits double-quoted PostgreSQL identifiers,
-        # so the double-quote sed patterns below are exhaustive.
-        sed -E \
-          -e 's/CREATE TABLE "([^"]+)"/CREATE TABLE IF NOT EXISTS "\1"/g' \
-          -e 's/CREATE INDEX "([^"]+)"/CREATE INDEX IF NOT EXISTS "\1"/g' \
-          -e 's/CREATE UNIQUE INDEX "([^"]+)"/CREATE UNIQUE INDEX IF NOT EXISTS "\1"/g' \
-          /tmp/migration_idempotent.sql > /tmp/migration_final.sql
-
-        # Apply the idempotent script via psql.
-        # The connection string may arrive as a URI (postgresql://...) or as an
-        # Npgsql key=value string.
-        CONN="${NEON_CONN_STRING}"
-        if [[ "$CONN" == postgresql://* || "$CONN" == postgres://* ]]; then
-          # URI format - psql accepts this directly
-          psql "$CONN" -v ON_ERROR_STOP=1 -f /tmp/migration_final.sql
-        else
-          # Npgsql semicolon-delimited format - extract each component
-          PGHOST=$(echo "$CONN" | grep -oiP '(?<=Host=)[^;]+')
-          PGPORT=$(echo "$CONN" | grep -oiP '(?<=Port=)[^;]+' || echo "5432")
-          PGDATABASE=$(echo "$CONN" | grep -oiP '(?<=Database=)[^;]+')
-          PGUSER=$(echo "$CONN" | grep -oiP '(?<=Username=)[^;]+')
-          export PGPASSWORD=$(echo "$CONN" | grep -oiP '(?<=Password=)[^;]+')
-          # SSL Mode: matches both "SSL Mode=" and "SslMode=" (Npgsql accepts either),
-          # lowercase the value; default to 'require' (Neon mandates TLS).
-          # NOTE: assign then default with ${VAR:-require} — a trailing `|| echo` on the
-          # pipeline never fires because the pipeline's exit status is tr's (always 0),
-          # which previously left PGSSLMODE="" -> psql "invalid sslmode value".
-          PGSSLMODE=$(echo "$CONN" | grep -oiP 'ssl ?mode=[^;]+' | sed -E 's/.*=//' \
-                      | tr '[:upper:]' '[:lower:]')
-          export PGSSLMODE=${PGSSLMODE:-require}
-          # Validate required components were parsed before connecting.
-          if [[ -z "$PGHOST" || -z "$PGDATABASE" || -z "$PGUSER" || -z "$PGPASSWORD" ]]; then
-            echo "ERROR: Failed to parse required connection string components." >&2
-            echo "  PGHOST=${PGHOST:-<empty>}  PGDATABASE=${PGDATABASE:-<empty>}  PGUSER=${PGUSER:-<empty>}  PGPASSWORD=<hidden>" >&2
-            exit 1
-          fi
-          psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -U "$PGUSER" \
-            -v ON_ERROR_STOP=1 -f /tmp/migration_final.sql
-        fi
+      # Plain `database update` is correct once the prod schema and __EFMigrationsHistory
+      # are consistent. A one-time `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`
+      # was run against Neon to clear the drifted (pre-squash) schema, after which EF
+      # rebuilds every table from the current migrations and records them in history.
+      # The previous `--idempotent` + `sed 'IF NOT EXISTS'` approach was removed: it only
+      # guards object existence (table/index), not column-level drift, so it silently
+      # skipped a CREATE TABLE while the new columns in its body were never added.
+      run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
   
   # --------------------------------------------------------------------------------------------------
   # Job: deploy-azure-api

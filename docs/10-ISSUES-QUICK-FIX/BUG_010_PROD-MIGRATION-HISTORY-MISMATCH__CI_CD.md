@@ -3,7 +3,7 @@
 **Layer**: CI/CD Pipeline — `apply-prod-migrations` job  
 **Feature**: Database migration / Neon PostgreSQL deployment  
 **Severity**: Critical (production deployment blocked on every push to `master`/`Staging`)  
-**Status**: ✅ Fixed  
+**Status**: ✅ Fixed — ⚠️ original `--idempotent` + `sed` fix **superseded** (see [Superseded](#superseded--sed-strategy-cannot-repair-column-level-drift-2026-07-26))  
 **Date Found**: 2026-07-26  
 **Date Fixed**: 2026-07-26  
 **CI Run**: [Run #117 · Job `apply-prod-migrations`](https://github.com/dariemcarlosdev/SmartMenuOptim/actions/runs/30215001482/job/89827943412)  
@@ -247,6 +247,69 @@ rejects an empty sslmode.
 
 ---
 
+## Superseded — `sed` Strategy Cannot Repair Column-Level Drift (2026-07-26)
+
+The `--idempotent` + `sed 'IF NOT EXISTS'` fix above went green in some runs but failed later with:
+
+```
+psql:/tmp/migration_final.sql:629: ERROR:  column "ApplicationUserId" does not exist
+CONTEXT:  SQL statement "CREATE UNIQUE INDEX IF NOT EXISTS "IX_AdminUsers_ApplicationUserId" ON "AdminUsers" ("ApplicationUserId")"
+```
+
+### Why the `sed` fix was wrong
+
+`sed` promotes only **object** existence guards (`CREATE TABLE`/`CREATE INDEX` → `... IF NOT EXISTS`).
+It cannot guard **column** existence *inside* a table. The prod `AdminUsers` table existed but was
+missing the `ApplicationUserId` column (drifted, pre-squash schema). In migration
+`20251103163754_FixPostgreSQLIndexSyntax` the column and its index are created in the **same**
+migration:
+
+```
+CREATE TABLE IF NOT EXISTS "AdminUsers" (... "ApplicationUserId" ...)   ← SKIPPED (table already exists)
+CREATE UNIQUE INDEX IF NOT EXISTS "IX_AdminUsers_ApplicationUserId" ... ← RUNS → column missing → 42703
+```
+
+Skipping the `CREATE TABLE` also skips every **new column** in its body. So the fix-table row
+"*Migration not in history, tables exist → DDL silently skips existing objects*" is **false**
+whenever the existing table's schema differs from what the migration would create.
+
+Worse: even a green pipeline left prod **broken at runtime** — the app requires
+`AdminUsers.ApplicationUserId`, which prod never received. `sed` masked missing-column drift instead
+of fixing it.
+
+### Correct fix — one-time schema reset + plain `database update`
+
+Prod data was disposable, so the drifted schema was cleared once and rebuilt cleanly from the
+current migrations.
+
+**Step 1 — one-time reset against Neon (destructive; drops all tables + `__EFMigrationsHistory`):**
+
+```bash
+psql "postgresql://<user>:<pass>@<host>/<db>?sslmode=require" \
+  -v ON_ERROR_STOP=1 \
+  -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+```
+
+**Step 2 — CI step reverted to plain `database update`** (matches the passing
+`verify-database-migrations` job); the `--idempotent` + `sed` block was removed:
+
+```yaml
+- name: Apply EF Core Migrations to Azure PostgreSQL
+  env:
+    ConnectionStrings__DefaultConnection: ${{ secrets.NEON_POSTGRES_CONNECTION_STRING }}
+  run: dotnet ef database update --project SmartMenuOptim.API/SmartMenuOptim.API.csproj
+```
+
+After the reset, EF creates every table from scratch and records all migration IDs in history →
+schema and `__EFMigrationsHistory` are consistent → future pushes apply only new migrations.
+
+> **When data is NOT disposable:** do not reset. Instead write a one-time reconciliation script
+> (`ALTER TABLE ... ADD COLUMN ...` for each drifted column/constraint to match the migrations),
+> then `INSERT` the applied migration IDs into `__EFMigrationsHistory`. `sed` idempotency is not a
+> substitute for real drift reconciliation.
+
+---
+
 ## How to Verify
 
 1. Push any commit to `master` or `Staging`.
@@ -267,5 +330,5 @@ rejects an empty sslmode.
 |---|---|
 | **Never delete applied migrations** from a project without a matching squash migration and a one-time `__EFMigrationsHistory` repair script | Squashing without history repair is the root cause of this class of issue |
 | **Make `DesignTimeDbContextFactory` public** (or move it to the API project) | Prevents EF tooling from falling back to running `Program.cs`, which is slower and fragile |
-| **Use `dotnet ef migrations script --idempotent` as the standard prod migration strategy** | More resilient than `database update` against drift between schema and history |
+| ~~**Use `dotnet ef migrations script --idempotent` as the standard prod migration strategy**~~ | ⚠️ Superseded — `--idempotent` (and `sed 'IF NOT EXISTS'`) guards object existence only, not column-level drift. Use plain `dotnet ef database update` on a schema whose `__EFMigrationsHistory` is consistent; reconcile drift once, explicitly |
 | **Add a migration history validation step** to `verify-database-migrations` | Catch drift before it reaches production |
