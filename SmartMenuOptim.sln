@@ -17,9 +17,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMenuOptim.Domain", "SmartMenuOptim.Domain\SmartMenuOptim.Domain.csproj", "{796EF42E-3C36-4A90-B2C3-7B66045F596F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub Action", "GitHub Action", "{E3AFF49C-8323-4761-98B4-81C5B1ACA6DA}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\ci-cd.yml = .github\workflows\ci-cd.yml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F8EF4D69-3FC1-42A9-BD7A-BF1DE3D5F183}"
 	ProjectSection(SolutionItems) = preProject

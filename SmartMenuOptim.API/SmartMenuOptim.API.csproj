@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <!-- WDAC (corporate code-integrity policy) blocks unsigned apphost .exe. Launch via signed dotnet.exe host instead. -->
+    <UseAppHost>false</UseAppHost>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>20449e9f-a64f-40fe-818e-e11a92349ba7</UserSecretsId>

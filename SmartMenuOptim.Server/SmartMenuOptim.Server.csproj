@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <!-- WDAC (corporate code-integrity policy) blocks unsigned apphost .exe. Launch via signed dotnet.exe host instead. -->
+    <UseAppHost>false</UseAppHost>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
