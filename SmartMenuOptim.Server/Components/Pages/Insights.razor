@@ -1,11 +1,4 @@
 ﻿@page "/insights"
-@using SmartMenuOptim.Server.Services
-@using SmartMenuOptim.Server.Services.Interfaces
-@using SmartMenuOptim.Shared.Data.Dtos
-@using SmartMenuOptim.Shared.Data.Entities
-@inject IAIService AIService
-@inject IReviewService ReviewService
-@inject ISaleRecordService SaleRecordService
 
 <div class="container mt-4">
     <div class="text-center mb-4">
@@ -65,7 +58,7 @@
                         <li class="list-group-item">
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                                 <div>
-                                    <span class="fw-bold">🍽️ @dish.RecomendedDish</span>
+                                    <span class="fw-bold">🍽️ @dish.RecommendedDish</span>
                                     <div class="mb-1 text-muted small">
                                         Average Rating:
                                         <span class="text-warning" title="Average Rating">
@@ -98,17 +91,3 @@
         </div>
     }
 </div>
-
-@code {
-    private List<AiRecomendationResponseDTO?> recommendations;
-    private bool isloading = true;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var sales = await SaleRecordService.GetSaleRecordsAsync();
-        var reviews = await ReviewService.GetReviewsAsync();
-
-        recommendations = await AIService.GetRecommendationsAsync(sales, reviews);
-        isloading = false;
-    }
-}
