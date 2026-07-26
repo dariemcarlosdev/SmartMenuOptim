@@ -1,0 +1,24 @@
+{
+  "lspServers": {
+    "csharp": {
+      "command": "dotnet",
+      "args": [
+        "tool",
+        "run",
+        "csharp-ls",
+        "--solution",
+        "EscrowApp.sln"
+      ],
+      "initializationOptions": {
+        "AutomaticWorkspaceInit": true
+      },
+      "fileExtensions": {
+        ".cs": "csharp",
+        ".csproj": "xml",
+        ".razor": "razor",
+        ".razor.cs": "csharp"
+      },
+      "description": "C# Language Server (csharp-ls) for .NET 10. Install with: dotnet tool install --global csharp-ls"
+    }
+  }
+}
