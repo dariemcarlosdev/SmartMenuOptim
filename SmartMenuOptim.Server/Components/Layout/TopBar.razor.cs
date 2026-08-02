@@ -33,24 +33,28 @@ public partial class TopBar : ComponentBase, IDisposable
         InvokeAsync(StateHasChanged);
     }
 
-    // Maps known URL paths to their corresponding topbar titles
+    // Maps the first URL segment to its topbar title. Titles mirror the sidebar
+    // labels so nav, header, and page title stay consistent. Unknown routes fall
+    // back to the app name rather than a blank title.
     private void SetPageTitle(string uri)
     {
-        var path = new Uri(uri).AbsolutePath.ToLowerInvariant();
-        if (path.Contains("/dashboard"))
-            CurrentPageTitle = "Dashboard";
-        else if (path.Contains("/insight"))
-            CurrentPageTitle = "Insight";
-        else if (path.Contains("/reviews"))
-            CurrentPageTitle = "Reviews";
-        else if (path.Contains("/settings"))
-            CurrentPageTitle = "Settings";
-        else if (path.Contains("/home"))
-            CurrentPageTitle = "Home";
-        else if (path.Contains("/underperforming"))
-            CurrentPageTitle = "Performance";
-        else
-            CurrentPageTitle = "";
+        var path = new Uri(uri).AbsolutePath.Trim('/').ToLowerInvariant();
+        var segment = path.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+
+        CurrentPageTitle = segment switch
+        {
+            "" => "Home",
+            "dashboard" => "Dashboard",
+            "restaurants" => "Restaurants",
+            "orders" => "Orders",
+            "insights" => "Insights",
+            "reviews" => "Customer Reviews",
+            "underperforming" => "Underperforming",
+            "settings" => "Settings",
+            "my-plan" => "My Plan",
+            "upgrade" => "Upgrade Plan",
+            _ => "Smart Menu"
+        };
     }
 
     private void LogOut()
