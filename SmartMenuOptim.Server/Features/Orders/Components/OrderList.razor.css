@@ -1,8 +1,8 @@
-/* Insights guide — matches Dashboard "How to use" guide, uses global --smo-* tokens. */
+/* OrderList guide — matches Dashboard/Insights "How to use" guide, global --smo-* tokens.
+   Toggle left-aligned to sit under the page header. */
 
-.smo-insights-guide-toggle {
+.smo-guide-toggle {
     display: flex;
-    justify-content: center;
     margin-bottom: 1.25rem;
 }
 
@@ -25,11 +25,10 @@
 
 .smo-guide strong:first-child { margin-top: 0; }
 
-.smo-guide p { margin: 0 0 .5rem; }
-
-.smo-guide ul {
+.smo-guide ul,
+.smo-guide ol {
     margin: 0 0 .5rem;
-    padding-left: 1.15rem;
+    padding-left: 1.25rem;
     display: grid;
     gap: .3rem;
 }

@@ -18,6 +18,9 @@ public sealed partial class Insights : ComponentBase
 
     private List<AiRecommendationResponseDTO>? recommendations;
     private bool isloading = true;
+    private bool _showGuide;
+
+    private void ToggleGuide() => _showGuide = !_showGuide;
 
     protected override async Task OnInitializedAsync()
     {

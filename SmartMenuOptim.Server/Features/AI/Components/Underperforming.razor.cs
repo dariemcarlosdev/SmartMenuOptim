@@ -19,6 +19,9 @@ public partial class Underperforming : ComponentBase
 
     private List<UnderperformingDishDTO>? underperformingDishes;
     private bool isloading = true;
+    private bool _showGuide;
+
+    private void ToggleGuide() => _showGuide = !_showGuide;
 
     // Modal State. It is used to show the AI suggestion modal.
     private bool showModal = false;
