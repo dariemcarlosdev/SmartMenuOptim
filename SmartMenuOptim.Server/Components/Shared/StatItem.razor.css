@@ -1,0 +1,11 @@
+/* StatItem — key/value row, brand-tokenized. */
+
+.text-muted {
+    color: var(--smo-muted) !important;
+}
+
+.badge {
+    background: var(--smo-slate);
+    color: var(--smo-porcelain);
+    font-weight: 600;
+}

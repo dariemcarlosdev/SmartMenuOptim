@@ -134,7 +134,7 @@
                                     </td>
                                     <td>@(order.CustomerName ?? $"Customer #{order.CustomerId}")</td>
                                     <td>
-                                        <span class="badge" style="background-color: @(order.StatusColorCode ?? "#6c757d")">
+                                        <span class="badge" style="background-color: @(order.StatusColorCode ?? "var(--smo-muted)")">
                                             @order.StatusName
                                         </span>
                                     </td>

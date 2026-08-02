@@ -1,9 +1,9 @@
-@* 
+@*
     File: NotFoundAlert.razor
     Reusable "not found" display component
     Version: 1.0
     .NET Target: .NET 9
-    
+
     Purpose: Provides a consistent "resource not found" display with navigation.
 *@
 
@@ -15,23 +15,3 @@
         <a href="@BackLinkUrl" class="alert-link">@BackLinkText</a>
     }
 </div>
-
-@code {
-    /// <summary>
-    /// The not found message to display.
-    /// </summary>
-    [Parameter]
-    public string Message { get; set; } = "Resource not found.";
-
-    /// <summary>
-    /// URL for back navigation link.
-    /// </summary>
-    [Parameter]
-    public string? BackLinkUrl { get; set; }
-
-    /// <summary>
-    /// Text for back navigation link.
-    /// </summary>
-    [Parameter]
-    public string BackLinkText { get; set; } = "Go back";
-}

@@ -1,9 +1,9 @@
-@* 
+@*
     File: LoadingSpinner.razor
     Reusable loading indicator component
     Version: 1.0
     .NET Target: .NET 9
-    
+
     Purpose: Provides a consistent loading state display across the application.
     Follows Single Responsibility Principle - handles only loading state visualization.
 *@
@@ -15,30 +15,4 @@
             <span class="visually-hidden">@Message</span>
         </div>
     </div>
-}
-
-@code {
-    /// <summary>
-    /// Controls whether the spinner is displayed.
-    /// </summary>
-    [Parameter]
-    public bool IsLoading { get; set; } = true;
-
-    /// <summary>
-    /// Accessibility message for screen readers.
-    /// </summary>
-    [Parameter]
-    public string Message { get; set; } = "Loading...";
-
-    /// <summary>
-    /// CSS class for the spinner element (e.g., "text-primary", "text-secondary").
-    /// </summary>
-    [Parameter]
-    public string SpinnerClass { get; set; } = "text-primary";
-
-    /// <summary>
-    /// CSS class for the container div.
-    /// </summary>
-    [Parameter]
-    public string ContainerClass { get; set; } = "py-5";
 }

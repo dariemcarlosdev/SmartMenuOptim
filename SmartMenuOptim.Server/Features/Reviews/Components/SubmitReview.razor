@@ -1,11 +1,4 @@
-﻿@page "/submit-review"
-@using SmartMenuOptim.Application.Dtos
-@using SmartMenuOptim.Server.Features.Reviews.Models
-@using SmartMenuOptim.Application.Common
-@using System.ComponentModel.DataAnnotations
-@inject IReviewClientService ReviewService
-@inject IAIClientService AIService
-@inject NavigationManager Navigation
+@page "/submit-review"
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -74,45 +67,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    private ReviewFormModel reviewModel = new();
-    private bool isSubmitting = false;
-    private bool isSubmitted = false;
-
-    private async Task HandleValidSubmit()
-    {
-        isSubmitting = true;
-
-        var reviewDto = new ReviewDTO
-        {
-            CustomerName = reviewModel.CustomerName,
-            DishName = reviewModel.DishName,
-            Rating = reviewModel.Rating,
-            Comment = reviewModel.Comment,
-            DateCreated = DateTime.UtcNow
-        };
-
-        try
-        {           
-            await ReviewService.AddReviewAsync(reviewDto);
-            isSubmitted = true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error submitting review: {ex.Message}");
-            // Optionally, display an error message to the user
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
-    }
-
-    private void SubmitAnother()
-    {
-        reviewModel = new();
-        isSubmitted = false;
-    }
-
-}

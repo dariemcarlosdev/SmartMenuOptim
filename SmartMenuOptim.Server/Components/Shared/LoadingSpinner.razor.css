@@ -1,0 +1,6 @@
+/* LoadingSpinner — brand-tinted indicator (default). Caller-passed text-*
+   classes still override. */
+
+.spinner-border {
+    color: var(--smo-amber);
+}

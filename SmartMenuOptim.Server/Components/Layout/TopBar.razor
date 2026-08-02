@@ -1,7 +1,4 @@
-﻿@inherits ComponentBase
-@inject NavigationManager NavigationManager
-
-<!-- 
+<!--
     The topbar title now updates dynamically based on the current route.
     This is achieved by tracking navigation changes using NavigationManager.
     The SetPageTitle method maps known URL paths to their corresponding titles.
@@ -14,10 +11,10 @@
         <span class="topbar-title">@CurrentPageTitle</span>
         <span class="topbar-subtitle">Business Owner Panel</span>
         <div class="topbar-tech mt-1">
-            <span class="mx-1" style="color:cornflowerblue">
+            <span class="mx-1 topbar-tech-ai">
                 <i class="bi bi-robot"></i>
             </span>
-            <span class="mx-1" style="color:#e25555;">
+            <span class="mx-1 topbar-tech-love">
                 <i class="bi bi-heart"></i>
             </span>
         </div>
@@ -38,14 +35,14 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end custom-dropdown-shadow" aria-labelledby="userDropdown">
                 <li>
-                    <span class="fw-bold px-3 py-2 d-block" style="font-size:1.05rem;">Account</span>
+                    <span class="fw-bold px-3 py-2 d-block fs-6">Account</span>
                 </li>
                 <li><a class="dropdown-item" href="/settings">Settings & Configurations</a></li>
                 <li><a class="dropdown-item" href="/settings">Help</a></li>
                 <li><a class="dropdown-item" href="/settings">Language</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <span class="fw-bold px-3 py-2 d-block" style="font-size:1.05rem;">My Plan & Features</span>
+                    <span class="fw-bold px-3 py-2 d-block fs-6">My Plan & Features</span>
                 </li>
                 <li><a class="dropdown-item" href="/my-plan">My Free Plan</a></li>
                 <li><a class="dropdown-item" href="/my-plan">Premium Features</a></li>
@@ -56,58 +53,3 @@
         </div>
     </div>
 </nav>
-
-@code {
-    // Simulated logged-in user name
-    private string LoggedInUserName { get; set; } = "Dariem C.";
-
-    // Holds the current page title for the topbar, updated on navigation
-    private string CurrentPageTitle { get; set; } = "Dashboard";
-
-    // On component initialization, set the initial page title and subscribe to navigation changes
-    protected override void OnInitialized()
-    {
-        SetPageTitle(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    // Event handler for navigation changes; updates the page title
-    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-    {
-        SetPageTitle(e.Location);
-        InvokeAsync(StateHasChanged);
-    }
-
-    // Maps known URL paths to their corresponding topbar titles
-    private void SetPageTitle(string uri)
-    {
-        var path = new Uri(uri).AbsolutePath.ToLowerInvariant();
-        if (path.Contains("/dashboard"))
-            CurrentPageTitle = "Dashboard";
-        else if (path.Contains("/insight"))
-            CurrentPageTitle = "Insight";
-        else if (path.Contains("/reviews"))
-            CurrentPageTitle = "Reviews";
-        else if (path.Contains("/settings"))
-            CurrentPageTitle = "Settings";
-        else if (path.Contains("/home"))
-            CurrentPageTitle = "Home";
-        else if (path.Contains("/underperforming"))
-            CurrentPageTitle = "Performance";
-        else
-            CurrentPageTitle = "";
-    }
-
-    private void LogOut()
-    {
-        // Implement logout logic here
-        Console.WriteLine("User logged out");
-    }
-
-    // Unsubscribe from navigation events when the component is disposed
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-}
-
