@@ -178,6 +178,27 @@ a.smo-focus:focus-visible {
 .bg-primary { background-color: var(--smo-slate) !important; }
 
 /* ══════════════════════════════════════════════════════════════════
+   Responsive / mobile safety net — applies everywhere, no opt-in.
+   Kills horizontal scroll on phones (the #1 "not responsive" symptom):
+   stray 100vw / wide media / fixed-width children can push past the
+   viewport. `overflow-x: clip` on <html> clips that WITHOUT creating a
+   scroll container — so `position: sticky` (desktop sidebar) still works,
+   which plain `overflow-x: hidden` would break. Media caps stop images/
+   video/tables from forcing the page wider than the screen.
+   ══════════════════════════════════════════════════════════════════ */
+html {
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%; /* stop mobile Safari auto-inflating text */
+}
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
+/* ══════════════════════════════════════════════════════════════════
    Accessibility baseline — applies everywhere, no opt-in.
    NOTE: the scroll-reveal ([data-anim] opacity:0) is intentionally NOT
    globalized — it must stay page-scoped + JS-gated, or content with no
