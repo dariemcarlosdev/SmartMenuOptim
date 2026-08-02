@@ -1,4 +1,3 @@
-
 <div class="card shadow-sm mb-3">
     <div class="card-body">
         <div class="row g-3">
@@ -21,7 +20,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">Search</label>
-                <input type="text" class="form-control" 
+                <input type="text" class="form-control"
 					   @bind-value="FilterState.SearchTerm"
 					   @bind-value:event="oninput"
                        @onkeyup="OnSearch"
@@ -30,32 +29,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    // Cascading parameter to receive the shared filter state. Cascading parameters allow passing data down the component hierarchy without explicitly passing them through each level.
-    [CascadingParameter] public ReviewFilterState FilterState { get; set; } = null!;
-	// Event callback to notify parent component of filter changes. EventCallback is a Blazor construct used for event handling. Useful for child-to-parent communication.
-    [Parameter] public EventCallback OnFiltersChanged { get; set; } 
-
-	// Method to handle search input changes
-    private async Task OnSearch()
-    {
-		await OnFiltersChanged.InvokeAsync();
-	}
-	// Method to handle rating filter changes
-	private void OnRatingChanged(ChangeEventArgs e)
-	{
-		// Try to parse the selected value to an integer and update the MinRating property in the shared filter state
-		if(int.TryParse(e.Value?.ToString(), out int minRating))
-        {
-			FilterState.MinRating = minRating; // Update the MinRating property in the shared filter state
-			OnFiltersChanged.InvokeAsync(); // Notify parent component of filter changes
-		}
-	}
-	// Method to handle sort option changes
-	private void OnSortChanged(ChangeEventArgs e)
-	{
-		FilterState.SortBy = e.Value?.ToString() ?? "date"; // Update the SortBy property in the shared filter state
-		OnFiltersChanged.InvokeAsync(); // Notify parent component of filter changes
-	}
-}

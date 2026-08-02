@@ -42,7 +42,7 @@
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <h2 class="mb-0">Order #@_order.Id</h2>
-                    <span class="badge fs-6" style="background-color: @(_order.StatusColorCode ?? "#6c757d")">
+                    <span class="badge fs-6" style="background-color: @(_order.StatusColorCode ?? "var(--smo-muted)")">
                         @_order.StatusName
                     </span>
                 </div>
@@ -129,7 +129,7 @@
                         <dl class="row mb-0">
                             <dt class="col-sm-5 text-muted">Status</dt>
                             <dd class="col-sm-7">
-                                <span class="badge" style="background-color: @(_order.StatusColorCode ?? "#6c757d")">
+                                <span class="badge" style="background-color: @(_order.StatusColorCode ?? "var(--smo-muted)")">
                                     @_order.StatusName
                                 </span>
                             </dd>

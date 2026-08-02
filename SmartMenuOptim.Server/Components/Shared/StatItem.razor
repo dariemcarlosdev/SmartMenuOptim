@@ -1,9 +1,9 @@
-@* 
+@*
     File: StatItem.razor
     Reusable statistic display component
     Version: 1.0
     .NET Target: .NET 9
-    
+
     Purpose: Provides a consistent key-value stat display.
     Used in Quick Stats cards and similar contexts.
 *@
@@ -19,41 +19,3 @@
         <span class="fw-semibold @ValueClass">@Value</span>
     }
 </div>
-
-@code {
-    /// <summary>
-    /// The label/key text.
-    /// </summary>
-    [Parameter, EditorRequired]
-    public string Label { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The value to display.
-    /// </summary>
-    [Parameter, EditorRequired]
-    public string? Value { get; set; }
-
-    /// <summary>
-    /// Whether to display the value as a badge.
-    /// </summary>
-    [Parameter]
-    public bool UseBadge { get; set; } = false;
-
-    /// <summary>
-    /// CSS class for the badge (when UseBadge is true).
-    /// </summary>
-    [Parameter]
-    public string BadgeClass { get; set; } = "bg-primary";
-
-    /// <summary>
-    /// CSS class for the value span (when UseBadge is false).
-    /// </summary>
-    [Parameter]
-    public string ValueClass { get; set; } = "";
-
-    /// <summary>
-    /// Whether to show border-bottom separator.
-    /// </summary>
-    [Parameter]
-    public bool ShowBorder { get; set; } = true;
-}
