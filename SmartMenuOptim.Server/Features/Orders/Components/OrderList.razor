@@ -16,6 +16,33 @@
         </button>
     </div>
 
+    @* How-to guide (toggle) *@
+    <div class="smo-guide-toggle">
+        <button class="smo-btn smo-btn-ghost" @onclick="ToggleGuide">
+            <i class="bi bi-question-circle"></i>@(_showGuide ? "Hide guide" : "How to add a new order")
+        </button>
+    </div>
+
+    @if (_showGuide)
+    {
+        <div class="smo-guide">
+            <strong>How to add a new order</strong>
+            <ol>
+                <li><b>Pick the restaurant</b> from the selector below — orders always belong to one restaurant.</li>
+                <li>Click <b>New Order</b> (top right) to open the order form.</li>
+                <li><b>Add dishes</b> and set quantities; the running total updates as you go.</li>
+                <li>Enter the <b>customer</b> details, then <b>save</b> to place the order.</li>
+            </ol>
+            <strong>How it works after saving</strong>
+            <ul>
+                <li>The new order shows in the table below with a <b>status badge</b> (e.g. Pending).</li>
+                <li>Use <i class="bi bi-arrow-repeat"></i> to <b>advance the status</b>, <i class="bi bi-x-circle"></i> to <b>cancel</b> (reason required), or <i class="bi bi-trash"></i> to <b>delete</b>.</li>
+                <li><b>Filter</b> by status with the buttons, or open <i class="bi bi-eye"></i> to view full details.</li>
+            </ul>
+            <span class="smo-guide-foot">Terminal orders (completed/cancelled) are read-only — only active orders can be changed.</span>
+        </div>
+    }
+
     @* Restaurant Selector *@
     @if (_restaurantsLoading)
     {

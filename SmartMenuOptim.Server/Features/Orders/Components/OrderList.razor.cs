@@ -43,6 +43,9 @@ public partial class OrderList : ComponentBase, IDisposable
     // Local UI state
     private string _cancelReasonInput = string.Empty;
     private bool _cancelReasonInvalid;
+    private bool _showGuide;
+
+    private void ToggleGuide() => _showGuide = !_showGuide;
 
     // Restaurant filter state
     private IReadOnlyList<RestaurantDTO>? _restaurants;

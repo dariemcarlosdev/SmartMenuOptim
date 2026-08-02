@@ -1,37 +1,40 @@
 ﻿@page "/insights"
 
 <div class="container mt-4">
-    <div class="text-center mb-4">
-        <h2>🔍 AI-Powered Dish Insights</h2>
-        <p class="text-muted">Get data-driven suggestions to maximize flavor and profits.</p>
+    <div class="mb-4">
+        <h2 class="mb-1">
+            <i class="bi bi-lightbulb me-2"></i>AI-Powered Dish Insights
+        </h2>
+        <p class="text-muted mb-0">Get data-driven suggestions to maximize flavor and profits.</p>
     </div>
-    <div class="bg-green-400 gap-xxl-4">  Tailwind Test</div>
+    <div class="smo-insights-guide-toggle">
+        <button class="smo-btn smo-btn-ghost" @onclick="ToggleGuide">
+            <i class="bi bi-question-circle"></i>@(_showGuide ? "Hide guide" : "How to use")
+        </button>
+    </div>
 
-    <div class="alert alert-info mb-4" role="alert">
-        <strong>What do <span style="font-size:1.2em;">💬</span> Average Sentiment Score and <span class="text-warning" style="font-size:1.2em;">★</span> Average Rating mean?</strong><br />
-        <b>Average Sentiment Score</b> reflects how positively or negatively customers feel about a dish, based on their reviews.
-        <ul class="mb-1 mt-2">
-            <li><b>Range:</b> 0 (very negative) to 1 (very positive)</li>
-            <li><b>0.0 – 0.4:</b> Mostly negative feedback <span style="font-size:1.1em;">😠</span></li>
-            <li><b>0.4 – 0.75:</b> Mixed or neutral feedback <span style="font-size:1.1em;">😐</span></li>
-            <li><b>0.75 – 1.0:</b> Mostly positive feedback <span style="font-size:1.1em;">😊</span></li>
-        </ul>
-        <b>Average Rating</b> (<span class="text-warning" style="font-size:1.2em;">★</span>) is the direct score given by customers (1–5 stars).
-        <hr class="my-2" />
-        <b>How to use these together:</b>
-        <ul class="mb-1">
-            <li>
-                <b>High Sentiment & High Rating:</b> These dishes are loved by customers. Promote them to boost sales and profits.
-            </li>
-            <li>
-                <b>High Rating but Low Sentiment:</b> Customers rate the dish well but may have concerns in their comments. Review feedback to improve customer experience and satisfaction.
-            </li>
-            <li>
-                <b>Low Rating & Low Sentiment:</b> These dishes need attention. Consider recipe changes, presentation, or service improvements to increase satisfaction and profitability.
-            </li>
-        </ul>
-        <span class="text-primary">Combining both metrics helps you identify not just what sells, but what truly delights your customers—leading to better experiences and higher profits.</span>
-    </div>
+    @if (_showGuide)
+    {
+        <div class="smo-guide">
+            <strong>What do 💬 Average Sentiment Score and ★ Average Rating mean?</strong>
+            <p><b>Average Sentiment Score</b> reflects how positively or negatively customers feel about a dish, based on their reviews.</p>
+            <ul>
+                <li><b>Range:</b> 0 (very negative) to 1 (very positive)</li>
+                <li><b>0.0 – 0.4:</b> Mostly negative feedback 😠</li>
+                <li><b>0.4 – 0.75:</b> Mixed or neutral feedback 😐</li>
+                <li><b>0.75 – 1.0:</b> Mostly positive feedback 😊</li>
+            </ul>
+            <p><b>Average Rating</b> (★) is the direct score given by customers (1–5 stars).</p>
+
+            <strong>How to use these together</strong>
+            <ul>
+                <li><b>High Sentiment & High Rating:</b> These dishes are loved by customers. Promote them to boost sales and profits.</li>
+                <li><b>High Rating but Low Sentiment:</b> Customers rate the dish well but may have concerns in their comments. Review feedback to improve customer experience and satisfaction.</li>
+                <li><b>Low Rating & Low Sentiment:</b> These dishes need attention. Consider recipe changes, presentation, or service improvements to increase satisfaction and profitability.</li>
+            </ul>
+            <span class="smo-guide-foot">Combining both metrics helps you identify not just what sells, but what truly delights your customers—leading to better experiences and higher profits.</span>
+        </div>
+    }
 
     @if (isloading)
     {

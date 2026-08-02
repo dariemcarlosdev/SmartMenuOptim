@@ -21,8 +21,11 @@ public partial class Reviews : ComponentBase
     private ReviewFilterState filterState = new ReviewFilterState(); // Shared filter state
     private List<ReviewDTO>? reviews;
     private bool isloading = true;
+    private bool _showGuide;
     private int CurrentPage = 1;
     private int PageSize = 10;
+
+    private void ToggleGuide() => _showGuide = !_showGuide;
 
     // Computed properties for filtering and sorting
     private IEnumerable<ReviewDTO> FilteredReviews
