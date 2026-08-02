@@ -15,7 +15,7 @@
     --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 
     color: var(--smo-porcelain);
-    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, "Segoe UI", sans-serif;
     max-width: 1180px;
     margin-inline: auto;
     padding-inline: clamp(1rem, 4vw, 2rem);
@@ -54,8 +54,8 @@
 }
 
 .smo-display {
-    font-family: 'Fraunces', Georgia, "Times New Roman", serif;
-    font-weight: 600;
+    font-family: 'Instrument Serif', Georgia, "Times New Roman", serif;
+    font-weight: 400;
     font-size: clamp(2.6rem, 6vw, 4.5rem);
     line-height: 1.02;
     letter-spacing: -.015em;
@@ -166,9 +166,9 @@
 }
 
 .smo-plate__dish {
-    font-family: 'Fraunces', Georgia, serif;
+    font-family: 'Instrument Serif', Georgia, serif;
     font-size: 1.35rem;
-    font-weight: 600;
+    font-weight: 400;
 }
 
 .smo-plate__badge {
@@ -261,9 +261,9 @@
 
 .smo-stat__num {
     display: block;
-    font-family: 'Fraunces', Georgia, serif;
+    font-family: 'Instrument Serif', Georgia, serif;
     font-size: clamp(2rem, 4vw, 2.9rem);
-    font-weight: 600;
+    font-weight: 400;
     color: var(--smo-porcelain);
     line-height: 1;
 }
@@ -276,8 +276,8 @@
 
 /* ---------- Section headings ---------- */
 .smo-h2 {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 600;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
     font-size: clamp(1.8rem, 3.4vw, 2.6rem);
     letter-spacing: -.01em;
     margin: 0 0 2rem;
@@ -403,8 +403,8 @@
 }
 
 .smo-brand__card-title {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 600;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
     font-size: 1.3rem;
 }
 

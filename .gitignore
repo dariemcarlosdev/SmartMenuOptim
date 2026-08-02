@@ -365,3 +365,9 @@ FodyWeavers.xsd
 /.stfolder/syncthing-folder-2a3acf.txt
 /.stfolder/syncthing-folder-e03bb1.txt
 /SmartMenuOptim.Server/appsettings.Development.json
+
+# Documentation folder (local only)
+/docs/
+
+# NexSynapse IP-guard marker (local-only, auto-created)
+.nexsynapse-ip-guard

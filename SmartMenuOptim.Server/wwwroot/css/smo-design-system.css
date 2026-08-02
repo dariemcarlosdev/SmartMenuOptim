@@ -1,0 +1,166 @@
+/* ══════════════════════════════════════════════════════════════════
+   SmartMenuOptim — Design System (single source of truth).
+   Canonical brand tokens + shared button system + a11y baseline.
+   Spec: docs/Front-End-Framework.md
+
+   Load order (App.razor): AFTER bootstrap, BEFORE the scoped-css bundle,
+   so page-scoped .razor.css can still override where a surface diverges
+   by design (dark landing hero vs light dashboard KPI band).
+
+   RULE: new components read from these tokens. Never re-declare a hex.
+   Page-scoped files may still hold their own layout; colors come here.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── Brand — anchor ──────────────────────────────────────────────
+       Slate = evening dining room: trust, sophistication, lets food
+       colors pop. The cool anchor everything sits on. */
+    --smo-ink: #131A21;      /* deepest slate — body text on light, darkest bg */
+    --smo-slate: #1E3444;    /* primary brand slate — headers on light, dark surfaces */
+    --smo-slate-2: #263A4B;  /* raised slate — hover/second layer (canonical) */
+
+    /* ── Brand — accent ──────────────────────────────────────────────
+       Amber = appetite + hospitality (lamplight, caramelization).
+       Near-complementary to slate → maximum CTA salience + warmth. */
+    --smo-amber: #E7A94C;        /* primary accent — CTA fill, active marks */
+    --smo-amber-bright: #F2C572; /* lifted amber — hover, on-dark accent text */
+    --smo-amber-ink: #A9702A;    /* accessible amber-family TEXT on light surfaces
+                                    (raw --smo-amber fails contrast as text) */
+
+    /* ── Brand — neutrals & semantic ─────────────────────────────────
+       Porcelain = the plate/linen: warm off-white, softer than #fff,
+       cuts glare when reading data. */
+    --smo-porcelain: #F5F1E9;  /* text on dark, warm panel bg */
+    --smo-sage: #4F9E7B;       /* success/open/fresh — text-safe on light (canonical) */
+    --smo-sage-soft: #7FB79A;  /* success on DARK surfaces (badges over slate) */
+
+    /* ── Product surfaces (light data UI) ────────────────────────────*/
+    --smo-canvas: #F7F5F0;   /* app page background */
+    --smo-surface: #FFFFFF;  /* cards, panels, tables */
+    --smo-line: #E6E1D6;     /* hairline borders / dividers */
+    --smo-muted: #4E5A64;    /* secondary text, captions */
+
+    /* on-dark line/muted (over slate hero surfaces) */
+    --smo-line-dark: rgba(245, 241, 233, 0.14);
+    --smo-muted-dark: rgba(245, 241, 233, 0.66);
+
+    /* ── Typography ──────────────────────────────────────────────────
+       Instrument Serif (modern high-contrast editorial serif) = the menu
+       voice, used with restraint. Single 400 weight — never request bold.
+       Plus Jakarta Sans (geometric grotesque) = legible UI + tabular data. */
+    --smo-font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    --smo-font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /* Type scale (fluid). Display/heads use --smo-font-display. */
+    --smo-fs-display: clamp(2.6rem, 6vw, 4.5rem);  /* hero */
+    --smo-fs-h1: clamp(1.9rem, 3.5vw, 2.6rem);
+    --smo-fs-h2: clamp(1.8rem, 3.4vw, 2.6rem);
+    --smo-fs-h3: 1.3rem;    /* panel / card title */
+    --smo-fs-lead: clamp(1.02rem, 1.4vw, 1.2rem);
+    --smo-fs-body: 1rem;
+    --smo-fs-sm: 0.875rem;
+    --smo-fs-xs: 0.78rem;
+    --smo-fs-eyebrow: 0.74rem; /* uppercase tracked label */
+
+    /* ── Radius scale ───────────────────────────────────────────────*/
+    --smo-r-sm: 0.625rem;   /* 10px — buttons, chips-square */
+    --smo-r-md: 0.875rem;   /* 14px — cards, inputs */
+    --smo-r-lg: 1.125rem;   /* 18px — panels */
+    --smo-r-xl: 1.375rem;   /* 22px — hero/plate */
+    --smo-r-pill: 999px;    /* pills, CTA */
+
+    /* ── Elevation ──────────────────────────────────────────────────*/
+    --smo-shadow: 0 1px 2px rgba(19, 26, 33, .05), 0 10px 30px -16px rgba(19, 26, 33, .18);
+    --smo-shadow-lg: 0 40px 80px -44px rgba(0, 0, 0, .7);
+    --smo-shadow-cta: 0 10px 30px -12px rgba(231, 169, 76, .7);
+
+    /* ── Motion ─────────────────────────────────────────────────────*/
+    --smo-ease-out: cubic-bezier(.22, 1, .36, 1);
+    --smo-ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+    --smo-dur: .25s;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Button system — canonical. Shared across all components.
+   Page-scoped .razor.css that already defines .smo-btn keeps winning
+   via its scoping attribute; this is the fallback + the source of truth
+   for every NEW component.
+   ══════════════════════════════════════════════════════════════════ */
+.smo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .55rem .9rem;
+    border-radius: var(--smo-r-sm);
+    font-family: var(--smo-font-body);
+    font-size: var(--smo-fs-sm);
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background-color var(--smo-dur) var(--smo-ease-out),
+                border-color var(--smo-dur) var(--smo-ease-out),
+                color var(--smo-dur) var(--smo-ease-out),
+                transform var(--smo-dur) var(--smo-ease-spring);
+}
+
+/* Primary — main action. Amber fill, ink label. */
+.smo-btn-primary {
+    background: var(--smo-amber);
+    color: var(--smo-ink);
+}
+.smo-btn-primary:hover { background: var(--smo-amber-bright); }
+
+/* Ghost — secondary. Sits on light surfaces. */
+.smo-btn-ghost {
+    background: var(--smo-surface);
+    border-color: var(--smo-line);
+    color: var(--smo-slate);
+}
+.smo-btn-ghost:hover { background: var(--smo-canvas); border-color: var(--smo-muted); }
+
+/* Pill — hero / marketing CTA. Large, rounded, glowing amber. */
+.smo-btn-pill {
+    min-height: 52px;
+    padding: .95rem 2rem;
+    border-radius: var(--smo-r-pill);
+    background: var(--smo-amber);
+    color: var(--smo-ink);
+    font-size: 1.05rem;
+    box-shadow: var(--smo-shadow-cta);
+}
+.smo-btn-pill:hover {
+    transform: translateY(-2px);
+    background: var(--smo-amber-bright);
+    box-shadow: 0 16px 38px -12px rgba(231, 169, 76, .85);
+}
+
+.smo-btn:disabled,
+.smo-btn[aria-disabled="true"] {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Focus — visible for keyboard, brand-consistent ──────────────────*/
+.smo-btn:focus-visible,
+.smo-cta:focus-visible,
+a.smo-focus:focus-visible {
+    outline: 3px solid var(--smo-amber-bright);
+    outline-offset: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Accessibility baseline — applies everywhere, no opt-in.
+   NOTE: the scroll-reveal ([data-anim] opacity:0) is intentionally NOT
+   globalized — it must stay page-scoped + JS-gated, or content with no
+   reveal script would render invisible. See Front-End-Framework.md.
+   ══════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+    .smo-btn,
+    .smo-btn-pill {
+        transition: none;
+    }
+    .smo-btn-pill:hover { transform: none; }
+}

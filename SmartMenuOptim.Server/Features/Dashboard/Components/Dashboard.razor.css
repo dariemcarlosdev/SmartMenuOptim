@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════════════════════════════
    Dashboard — premium restyle.
-   Shares the landing design language (slate + amber, Fraunces + Inter),
+   Shares the landing design language (slate + amber, Instrument Serif + Plus Jakarta Sans),
    tuned for a light, data-first product surface. Tokens are scoped locally
    because the landing tokens live in Home.razor.css (also scoped).
    ══════════════════════════════════════════════════════════════════ */
@@ -27,7 +27,7 @@
     margin: 0 auto;
     padding: 2rem 1.25rem 4rem;
     color: var(--ink);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: "tnum" 1;
 }
 
@@ -55,8 +55,8 @@
 }
 
 .smo-dash-title {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 600;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
     font-size: clamp(1.9rem, 3.5vw, 2.6rem);
     letter-spacing: -.02em;
     line-height: 1.05;
@@ -111,8 +111,8 @@
 }
 
 .smo-kpi-value {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 600;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
     font-size: clamp(1.6rem, 3vw, 2.25rem);
     line-height: 1;
     color: var(--porcelain);
@@ -184,8 +184,8 @@
 }
 
 .smo-panel-title {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 600;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
     font-size: 1.3rem;
     letter-spacing: -.01em;
     margin: 0;
