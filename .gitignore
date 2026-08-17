@@ -365,3 +365,10 @@ FodyWeavers.xsd
 /.stfolder/syncthing-folder-2a3acf.txt
 /.stfolder/syncthing-folder-e03bb1.txt
 /SmartMenuOptim.Server/appsettings.Development.json
+
+# Documentation folder (local only)
+/docs/
+
+# Local-only Copilot skills library
+/.github/
+/.nexsynapse-ip-guard
