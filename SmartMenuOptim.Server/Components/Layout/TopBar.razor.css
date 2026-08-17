@@ -1,70 +1,74 @@
-﻿
+/* TopBar — light surface header. All color from var(--smo-*) tokens. */
 
-/* Used on nav for the top bar in MainLayout.razor */
 .topbar {
     min-height: 64px;
+    background: var(--smo-surface);
+    border-bottom: 1px solid var(--smo-line);
 }
 
-/* Used on span for the dashboard title in MainLayout.razor */
 .topbar-title {
+    font-family: var(--smo-font-display);
     font-size: 1.75rem;
-    font-weight: 600;
-    color: #212529;
+    color: var(--smo-slate);
 }
 
-/* Used on span for the subtitle in MainLayout.razor */
 .topbar-subtitle {
-    font-size: 0.9rem;
-    color: #6c757d;
+    font-size: var(--smo-fs-sm);
+    color: var(--smo-muted);
     margin-left: 0.5rem;
 }
 
-/* Used on div wrapping notification and login buttons in MainLayout.razor */
+/* Decorative tech glyphs — brand-tinted */
+.topbar-tech-ai {
+    color: var(--smo-slate);
+}
+
+.topbar-tech-love {
+    color: var(--smo-amber);
+}
+
 .topbar-actions {
     gap: 1.5rem;
 }
 
-/* Used on notification button in MainLayout.razor */
+/* Notification button */
 .notification-btn {
     background: none;
     border: none;
     outline: none;
     padding: 0;
     position: relative;
+    min-width: 44px;
+    min-height: 44px;
 }
 
-/* Used on span for the circular background of the notification button in MainLayout.razor */
 .notification-circle {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 32px;
     height: 32px;
-    background: #e9ecef;
+    background: var(--smo-canvas);
     border-radius: 50%;
     position: relative;
 }
 
-/* Used on span for the bell icon in the notification button in MainLayout.razor */
 .notification-bell {
     font-size: 1.3rem;
-    color: #232e3c;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    color: var(--smo-slate);
 }
 
-/* Used on span for the notification badge in MainLayout.razor */
 .notification-badge {
-    background: #d32f2f;
-    color: #fff;
+    background: var(--smo-amber-ink);
+    color: var(--smo-surface);
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: var(--smo-fs-xs);
     width: 22px;
     height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    box-shadow: var(--smo-shadow);
     position: absolute;
     top: 0;
     left: 100%;
@@ -72,29 +76,61 @@
     border-radius: 50%;
 }
 
-/* Used on login button in MainLayout.razor */
+/* User dropdown trigger */
 .login-btn {
-    background: #232e3c;
-    color: #fff;
-    border: 1px solid #232e3c;
-    transition: background 0.2s, color 0.2s;
+    background: var(--smo-slate);
+    color: var(--smo-porcelain);
+    border: 1px solid var(--smo-slate);
+    min-height: 44px;
+    transition: background-color var(--smo-dur) var(--smo-ease-out),
+                color var(--smo-dur) var(--smo-ease-out);
 }
 
-    /* Used for hover effect on login button in MainLayout.razor */
 .login-btn:hover {
-    background: #3a4658 !important;
-    color: #e9ecef !important;
-    border-color: #232e3c !important;
+    background: var(--smo-slate-2) !important;
+    color: var(--smo-porcelain) !important;
+    border-color: var(--smo-slate-2) !important;
 }
 
-/* Used for shadowed border on dropdown menu in TopBar.razor */
+.login-btn:focus-visible {
+    outline: 3px solid var(--smo-amber-bright);
+    outline-offset: 3px;
+}
+
 .custom-dropdown-shadow {
-    box-shadow: 0 4px 16px rgba(30, 52, 68, 0.18), 0 1.5px 4px rgba(30, 52, 68, 0.10);
-    border-radius: 0.5rem;
+    box-shadow: var(--smo-shadow-lg);
+    border-radius: var(--smo-r-sm);
 }
 
-/* Custom: Increase space between dropdown button and menu, align menu with button */
 .dropdown-menu.custom-dropdown-shadow {
-    margin-top: 0.75rem !important; /* Increase space between button and dropdown */
-    top: 100% !important; /* Ensure dropdown aligns with button's bottom edge */
+    margin-top: 0.75rem !important;
+    top: 100% !important;
+}
+
+/* Mobile: tighten header so title + actions never overflow the viewport.
+   FAB open button sits top-left, so pull the title clear of it. */
+@media (max-width: 991.98px) {
+    .topbar {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .topbar-title {
+        font-size: 1.35rem;
+    }
+
+    .topbar-subtitle {
+        display: block;
+        margin-left: 0;
+    }
+
+    .topbar-actions {
+        gap: 0.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-btn {
+        transition: none;
+    }
 }

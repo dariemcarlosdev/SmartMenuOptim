@@ -1,6 +1,3 @@
-﻿@using SmartMenuOptim.Application.Common
-@using SmartMenuOptim.Application.Dtos
-
 @if (Reviews?.Any() == true)
 {
     <div class="card shadow-sm mb-4">
@@ -26,15 +23,4 @@
             </div>
         </div>
     </div>
-}
-
-@code {
-
-	// Parameters is a collection of ReviewDTO objects passed to the component
-    [Parameter]
-    public IEnumerable<ReviewDTO>? Reviews { get; set; }
-
-	// Calculate average rating and sentiment score
-    private double AverageRating => Reviews?.Any() == true ? Reviews.Average(r => r.Rating) : 0;
-    private double AverageSentiment => Reviews?.Any() == true ? Reviews.Average(r => r.SentimentScore) : 0;
 }

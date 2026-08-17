@@ -1,0 +1,23 @@
+/* DetailCard — surface card, brand-tokenized. All color from var(--smo-*). */
+
+.card {
+    background: var(--smo-surface);
+    border: 1px solid var(--smo-line);
+    border-radius: var(--smo-r-lg);
+}
+
+.card-header {
+    background: var(--smo-porcelain);
+    border-bottom: 1px solid var(--smo-line);
+    color: var(--smo-slate);
+    font-family: var(--smo-font-display);
+}
+
+.card-header .bi {
+    color: var(--smo-amber-ink);
+}
+
+.card-footer {
+    background: var(--smo-canvas);
+    border-top: 1px solid var(--smo-line);
+}

@@ -1,208 +1,147 @@
-.navbar-toggler {
-    appearance: none;
-    cursor: pointer;
-    width: 3.5rem;
-    height: 2.5rem;
-    color: white;
-    position: absolute;
-    top: 0.5rem;
-    right: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.75rem rgba(255, 255, 255, 0.1);
-}
+/* NavMenu — app sidebar. Dark slate surface, amber active accent.
+   All color from var(--smo-*) tokens (smo-design-system.css). No raw hex.
+   Single responsive breakpoint: 992px (framework §6). */
 
-.navbar-toggler:checked {
-    background-color: rgba(255, 255, 255, 0.5);
-}
-
-.top-row {
-    min-height: 3.5rem;
-    background-color: rgba(0,0,0,0.4);
-}
-
-.navbar-brand {
-    font-size: 1.1rem;
-}
-
-/* Used on aside for the sidebar in MainLayout.razor */
 .sidebar {
     width: 250px;
-    background: #232e3c !important;
+    min-width: 220px;
+    max-width: 280px;
+    background: var(--smo-slate);
+    color: var(--smo-porcelain);
     min-height: 100vh;
     padding: 1.5rem 1rem;
     box-sizing: border-box;
 }
 
-/* Used for app version and phase below sidebar logo in MainLayout.razor */
+/* Logo + version meta */
+.sidebar-logo {
+    font-family: var(--smo-font-display);
+    font-size: 1.5rem;
+    color: var(--smo-porcelain);
+}
+
 .sidebar-meta {
-    font-size: 0.95rem;
-    color: #bfc8da;
-    font-weight: 400;
+    font-size: var(--smo-fs-sm);
+    color: var(--smo-muted-dark);
     letter-spacing: 0.2px;
 }
 
-/* Used on span for the sidebar logo in MainLayout.razor */
-.sidebar-logo {
-    font-size: 1.5rem;
-    font-weight: bold;
+.sidebar-meta .text-info {
+    color: var(--smo-amber-bright) !important;
 }
 
-/* Used on <hr> for the sidebar divider in MainLayout.razor */
 .sidebar-hr {
-    border-color: #6c757d; /* Bootstrap secondary */
+    border-color: var(--smo-line-dark);
 }
 
-.bi {
-    display: inline-block;
-    position: relative;
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-right: 0.75rem;
-    top: -1px;
-    background-size: cover;
+/* Nav links */
+.sidebar ::deep .nav-link {
+    color: var(--smo-porcelain);
+    border-radius: var(--smo-r-sm);
+    min-height: 44px;
+    padding: 0 0.85rem;
+    line-height: 44px;
+    font-size: var(--smo-fs-sm);
+    font-weight: 500;
+    transition: background-color var(--smo-dur) var(--smo-ease-out),
+                color var(--smo-dur) var(--smo-ease-out);
 }
 
-.bi-house-door-fill-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-house-door-fill' viewBox='0 0 16 16'%3E%3Cpath d='M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5Z'/%3E%3C/svg%3E");
+.sidebar ::deep .nav-link:hover {
+    background: var(--smo-slate-2);
+    color: var(--smo-porcelain);
 }
 
-.bi-plus-square-fill-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-plus-square-fill' viewBox='0 0 16 16'%3E%3Cpath d='M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z'/%3E%3C/svg%3E");
+.sidebar ::deep .nav-link.active {
+    background: var(--smo-slate-2);
+    color: var(--smo-porcelain);
+    box-shadow: inset 3px 0 0 0 var(--smo-amber);
 }
 
-.bi-list-nested-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-list-nested' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M4.5 11.5A.5.5 0 0 1 5 11h10a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 3 7h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 1 3h10a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
+.sidebar ::deep .nav-link.active .bi {
+    color: var(--smo-amber);
 }
 
-.nav-item {
-    font-size: 0.9rem;
-    padding-bottom: 0.5rem;
+.sidebar ::deep .nav-link:focus-visible {
+    outline: 3px solid var(--smo-amber-bright);
+    outline-offset: -3px;
 }
 
-    .nav-item:first-of-type {
-        padding-top: 1rem;
-    }
-
-    .nav-item:last-of-type {
-        padding-bottom: 1rem;
-    }
-
-    .nav-item ::deep .nav-link {
-        color: white;
-        background: none;
-        border: none;
-        border-radius: 4px;
-        height: 3rem;
-        display: flex;
-        align-items: center;
-        line-height: 3rem;
-        width: 100%;
-    }
-
-.nav-item ::deep a.active {
-    background-color: rgba(255,255,255,0.37);
-    color: white;
-}
-
-.nav-item ::deep .nav-link:hover {
-    background-color: rgba(255,255,255,0.1);
-    color: white;
-}
-
-.nav-scrollable {
-    display: none;
-}
-
-.navbar-toggler:checked ~ .nav-scrollable {
-    display: block;
-}
-
-@media (min-width: 641px) {
-    .navbar-toggler {
-        display: none;
-    }
-
-    .nav-scrollable {
-        /* Never collapse the sidebar for wide screens */
-        display: block;
-
-        /* Allow sidebar to scroll for tall menus */
-        height: calc(100vh - 3.5rem);
-        overflow-y: auto;
-    }
-}
-
-/* Sidebar always visible on desktop */
-.sidebar {
-    transition: left 0.3s;
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    z-index: 1040;
-    background: #212529;
-}
-
-/* Hide sidebar on mobile unless open */
-@media (max-width: 991.98px) {
-    .sidebar.sidebar-closed {
-        left: -300px;
-        box-shadow: 2px 0 8px rgba(0,0,0,0.12);
-        border-top-right-radius: 16px;
-        border-bottom-right-radius: 16px;
-        transition: left 0.3s, box-shadow 0.3s;
-    }
-
-    .sidebar.sidebar-open {
-        left: 0;
-        box-shadow: 2px 0 16px rgba(0,0,0,0.18);
-        border-radius: 0;
-    }
-}
-
-
-@media (min-width: 992px) {
-    .sidebar {
-        left: 0;
-        position: static;
-        height: auto;
-        z-index: auto;
-    }
-}
-
-.btn-dark.d-lg-none {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    border-radius: 8px;
-}
-
+/* Floating open button (mobile only) */
 .sidebar-fab {
     position: fixed;
     top: 50%;
-    left: 0.15rem; /* Move closer to the left edge */
+    left: 0.15rem;
     transform: translateY(-50%);
     width: 48px;
     height: 48px;
-    background: rgba(44, 62, 80, 0.18); /* semi-transparent */
-    color: #fff;
+    background: var(--smo-slate);
+    color: var(--smo-porcelain);
     border: none;
     border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    box-shadow: var(--smo-shadow);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1200;
-    transition: background 0.2s, box-shadow 0.2s;
-    padding: 0; /* Ensure no extra padding */
+    transition: background-color var(--smo-dur) var(--smo-ease-out);
+    padding: 0;
 }
 
-    .sidebar-fab .bi {
-        margin: 0;
-        position: static;
+.sidebar-fab:hover {
+    background: var(--smo-slate-2);
+}
+
+.sidebar-fab .bi {
+    font-size: 1.5rem;
+}
+
+/* ── Responsive: single 992px cutoff ──────────────────────────────── */
+
+/* Mobile: slide-in drawer */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transition: left 0.3s var(--smo-ease-out), box-shadow 0.3s;
+        position: fixed;
         top: 0;
         left: 0;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        height: 100vh;
+        z-index: 1040;
     }
+
+    .sidebar.sidebar-closed {
+        left: -300px;
+        box-shadow: 2px 0 8px rgba(19, 26, 33, 0.18);
+        border-top-right-radius: var(--smo-r-lg);
+        border-bottom-right-radius: var(--smo-r-lg);
+    }
+
+    .sidebar.sidebar-open {
+        left: 0;
+        box-shadow: 2px 0 16px rgba(19, 26, 33, 0.28);
+    }
+}
+
+/* Desktop: always-visible static sidebar, no FAB */
+@media (min-width: 992px) {
+    .sidebar {
+        position: sticky;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: auto;
+        overflow-y: auto;
+    }
+
+    .sidebar-fab {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .sidebar ::deep .nav-link,
+    .sidebar-fab {
+        transition: none;
+    }
+}

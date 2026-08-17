@@ -1,1 +1,42 @@
-﻿
+/* Reviews guide — matches Dashboard/Insights "How to use" guide, global --smo-* tokens. */
+
+.smo-guide-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+
+.smo-guide {
+    background: var(--smo-canvas);
+    border: 1px solid var(--smo-line);
+    border-radius: 13px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: .9rem;
+    color: var(--smo-slate);
+}
+
+.smo-guide strong {
+    display: block;
+    margin: .9rem 0 .5rem;
+    color: var(--smo-slate);
+    font-weight: 700;
+}
+
+.smo-guide strong:first-child { margin-top: 0; }
+
+.smo-guide p { margin: 0 0 .5rem; }
+
+.smo-guide ul {
+    margin: 0 0 .5rem;
+    padding-left: 1.15rem;
+    display: grid;
+    gap: .3rem;
+}
+
+.smo-guide-foot {
+    display: block;
+    margin-top: .5rem;
+    color: var(--smo-muted);
+    font-size: .85rem;
+}

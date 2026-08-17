@@ -1,0 +1,11 @@
+/* NotFoundAlert — brand radius + amber glyph. Warning status color stays
+   semantic. */
+
+.alert {
+    border-radius: var(--smo-r-md);
+    font-size: var(--smo-fs-sm);
+}
+
+.bi {
+    color: var(--smo-amber-ink);
+}

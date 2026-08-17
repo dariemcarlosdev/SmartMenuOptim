@@ -152,6 +152,53 @@ a.smo-focus:focus-visible {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   Bootstrap bridge — retint the three Bootstrap "primary/blue" classes
+   still used by Feature components to brand tokens. Loads after bootstrap
+   (wins by load order / !important where BS forces it), before scoped css
+   (a page may still override). Kills off-brand #0d6efd blue app-wide.
+   Semantic status classes (bg-info, alert-*, text-success/danger) stay
+   Bootstrap — functional color must survive per framework rule.
+   ══════════════════════════════════════════════════════════════════ */
+/* Primary button — amber fill + ink label (mirrors .smo-btn-primary). */
+.btn-primary {
+    background-color: var(--smo-amber);
+    border-color: var(--smo-amber);
+    color: var(--smo-ink);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--smo-amber-bright);
+    border-color: var(--smo-amber-bright);
+    color: var(--smo-ink);
+}
+/* Accent text / icons / spinners — accessible amber-family on light. */
+.text-primary { color: var(--smo-amber-ink) !important; }
+/* Solid brand surface (card headers, price/count badges). Pairs with
+   text-white → white-on-slate contrast holds. */
+.bg-primary { background-color: var(--smo-slate) !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   Responsive / mobile safety net — applies everywhere, no opt-in.
+   Kills horizontal scroll on phones (the #1 "not responsive" symptom):
+   stray 100vw / wide media / fixed-width children can push past the
+   viewport. `overflow-x: clip` on <html> clips that WITHOUT creating a
+   scroll container — so `position: sticky` (desktop sidebar) still works,
+   which plain `overflow-x: hidden` would break. Media caps stop images/
+   video/tables from forcing the page wider than the screen.
+   ══════════════════════════════════════════════════════════════════ */
+html {
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%; /* stop mobile Safari auto-inflating text */
+}
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
+/* ══════════════════════════════════════════════════════════════════
    Accessibility baseline — applies everywhere, no opt-in.
    NOTE: the scroll-reveal ([data-anim] opacity:0) is intentionally NOT
    globalized — it must stay page-scoped + JS-gated, or content with no

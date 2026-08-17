@@ -1,0 +1,7 @@
+/* ErrorAlert — brand radius. Status colors stay semantic (danger/warning/info/
+   success) per functional-color rule; only shape/scale tokenized. */
+
+.alert {
+    border-radius: var(--smo-r-md);
+    font-size: var(--smo-fs-sm);
+}
