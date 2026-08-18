@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using SmartMenuOptim.Application.Contracts.Identity;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 
 namespace SmartMenuOptim.Infrastructure.Identity;
@@ -9,7 +10,7 @@ namespace SmartMenuOptim.Infrastructure.Identity;
 /// identity-provider <c>sub</c> claim. No local password is ever created — <see cref="ApplicationUser.Id"/>
 /// *is* the IdP's <c>sub</c>. See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §3 and ADR-006.
 /// </summary>
-public sealed class JitUserProvisioningService(UserManager<ApplicationUser> userManager)
+public sealed class JitUserProvisioningService(UserManager<ApplicationUser> userManager) : IUserProvisioningService
 {
     public async Task<ApplicationUser> GetOrProvisionAsync(ClaimsPrincipal principal, CancellationToken ct)
     {

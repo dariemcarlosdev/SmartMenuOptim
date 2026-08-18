@@ -31,6 +31,12 @@ public static class WebApplicationExtensions
         
         app.UseHttpsRedirection();
         app.UseStaticFiles();
+
+        // Cookie authentication (local session, issued after server-side Supabase token exchange).
+        // See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §4.
+        app.UseAuthentication();
+        app.UseAuthorization();
+
         app.UseAntiforgery();
 
         app.MapStaticAssets();

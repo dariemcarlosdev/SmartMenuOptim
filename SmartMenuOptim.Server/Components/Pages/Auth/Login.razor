@@ -1,0 +1,37 @@
+@page "/auth/login"
+@using SmartMenuOptim.Server.Components.Layout
+@layout LandingLayout
+
+<PageTitle>Sign in — SmartMenuOptim</PageTitle>
+
+<div class="smo-auth">
+    <div class="smo-auth-card">
+        <h1 class="smo-auth-title">Sign in</h1>
+        <p class="smo-auth-subtitle">Access your SmartMenuOptim dashboard.</p>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="smo-auth-error" role="alert">@ErrorMessage</p>
+        }
+
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleLoginAsync" FormName="login">
+            <DataAnnotationsValidator />
+
+            <div class="smo-auth-field">
+                <label for="email">Email</label>
+                <InputText id="email" @bind-Value="Input.Email" type="email" autocomplete="username" class="smo-auth-input" />
+                <ValidationMessage For="() => Input.Email" />
+            </div>
+
+            <div class="smo-auth-field">
+                <label for="password">Password</label>
+                <InputText id="password" @bind-Value="Input.Password" type="password" autocomplete="current-password" class="smo-auth-input" />
+                <ValidationMessage For="() => Input.Password" />
+            </div>
+
+            <button type="submit" class="smo-btn smo-btn-primary smo-auth-submit" disabled="@IsSubmitting">
+                @(IsSubmitting ? "Signing in..." : "Sign in")
+            </button>
+        </EditForm>
+    </div>
+</div>

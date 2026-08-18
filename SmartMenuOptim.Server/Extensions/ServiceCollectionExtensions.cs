@@ -1,8 +1,10 @@
 using Azure.Identity;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Http.Resilience;
 using MudBlazor.Services;
 using Polly;
 using SmartMenuOptim.Domain.Extensions;
+using SmartMenuOptim.Server.Features.Auth.Services;
 using SmartMenuOptim.Server.Features.Restaurants.Services;
 using SmartMenuOptim.Server.Features.Restaurants.State;
 using SmartMenuOptim.Server.Features.Orders.Services;
@@ -38,8 +40,41 @@ public static class ServiceCollectionExtensions
         
         // 4. Configure HttpClients with resilience patterns
         builder.Services.AddHttpClients();
-        
+
+        // 5. Add cookie authentication (local session cookie, issued after server-side Supabase token exchange)
+        builder.Services.AddCookieAuthentication();
+
         return builder;
+    }
+
+    /// <summary>
+    /// Adds cookie-based authentication for the Blazor Server session. The login page exchanges credentials
+    /// with the backend API (Supabase password grant + JIT provisioning), then issues this local cookie â€”
+    /// the Supabase JWT itself is never stored here. See docs/06-Security/AUTHENTICATION_FRAMEWORK.md Â§4.
+    /// </summary>
+    /// <param name="services">The service collection to which cookie authentication will be added.</param>
+    /// <returns>The same instance of <see cref="IServiceCollection"/> that was provided, to allow for method chaining.</returns>
+    public static IServiceCollection AddCookieAuthentication(this IServiceCollection services)
+    {
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
+            {
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SameSite = SameSiteMode.Strict;
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.SlidingExpiration = true;
+                options.LoginPath = "/auth/login";
+            });
+
+        // No FallbackPolicy here (unlike the API's AddIdentityProviderAuthentication): a Server-wide
+        // authenticated-by-default policy would also gate the login page and static assets served
+        // through the same MapRazorComponents endpoint. Default-deny per page is a separate, explicit
+        // task â€” add [Authorize] to individual page components as they're locked down.
+        services.AddAuthorization();
+        services.AddCascadingAuthenticationState();
+
+        return services;
     }
     /// <summary>
     /// Adds Azure Key Vault as a configuration source.
@@ -89,6 +124,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAIClientService, AIClientService>();
         services.AddScoped<ISaleRecordClientService, SaleRecordClientService>();
         services.AddScoped<IReviewClientService, ReviewClientService>();
+        services.AddScoped<IAuthClientService, AuthClientService>();
 
         // Client Services (Restaurant feature)
         services.AddScoped<IRestaurantClientService, RestaurantClientService>();
@@ -155,11 +191,11 @@ public static class ServiceCollectionExtensions
          1.	Circuit Breaker & Retry Policy These are client-side resilience patterns that protect the Blazor server when making calls to the API. 
             They handle transient failures and network issues between the Blazor server and the API.
          
-            •	These are currently in the Server project because they're configured for the HttpClient that calls the API
-            •	This is actually the CORRECT placement because:
-            •	The Server (Blazor) project is the consumer of the API
-            •	These patterns protect the client-side communication with the API
-            •	They handle transient failures between the Blazor server and the API.    
+            ï¿½	These are currently in the Server project because they're configured for the HttpClient that calls the API
+            ï¿½	This is actually the CORRECT placement because:
+            ï¿½	The Server (Blazor) project is the consumer of the API
+            ï¿½	These patterns protect the client-side communication with the API
+            ï¿½	They handle transient failures between the Blazor server and the API.    
         
          */
 

@@ -49,6 +49,10 @@ public static class InfrastructureServiceCollectionExtensions
         // See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §1 and ADR-006.
         services.AddIdentityProviderAdminClient(configuration);
 
+        // Add identity-provider authenticator (Supabase Auth password-grant sign-in for the Blazor login flow)
+        // See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §4 and ADR-006.
+        services.AddIdentityProviderAuthenticator(configuration);
+
         // JIT-provisions a local ApplicationUser shadow record on first-seen IdP 'sub' claim.
         // See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §3 and ADR-006.
         services.AddScoped<JitUserProvisioningService>();
@@ -195,6 +199,36 @@ public static class InfrastructureServiceCollectionExtensions
             var supabaseServiceKey = configuration["IdentityProvider:SupabaseServiceKey"];
             if (!string.IsNullOrEmpty(supabaseServiceKey))
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", supabaseServiceKey);
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the Supabase Auth (GoTrue) password-grant authenticator as a typed <see cref="HttpClient"/>,
+    /// implementing the <see cref="IIdentityProviderAuthenticator"/> port defined in the Application layer.
+    /// </summary>
+    /// <remarks>
+    /// <c>IdentityProvider:Authority</c> and <c>IdentityProvider:SupabasePublishableKey</c> must come from user-secrets
+    /// (dev) / environment variables (Azure) per the config-loading convention in <c>Program.cs</c> — never
+    /// <c>appsettings.json</c>. <c>SupabasePublishableKey</c> is Supabase's publishable key (safe to expose to
+    /// clients by Supabase's own design) — sourced via config regardless, for consistency with every other
+    /// identity-provider key. See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §4.
+    /// </remarks>
+    /// <param name="services">The service collection to which the authenticator will be added.</param>
+    /// <param name="configuration">The application configuration providing the identity provider's Authority/SupabasePublishableKey.</param>
+    /// <returns>The same service collection instance, enabling method chaining.</returns>
+    public static IServiceCollection AddIdentityProviderAuthenticator(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddHttpClient<IIdentityProviderAuthenticator, SupabaseIdentityProviderAuthenticator>(client =>
+        {
+            var authority = configuration["IdentityProvider:Authority"]; // e.g. https://<project>.supabase.co/auth/v1
+            if (!string.IsNullOrEmpty(authority))
+                client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
+
+            var publishableKey = configuration["IdentityProvider:SupabasePublishableKey"];
+            if (!string.IsNullOrEmpty(publishableKey))
+                client.DefaultRequestHeaders.Add("apikey", publishableKey);
         });
 
         return services;
