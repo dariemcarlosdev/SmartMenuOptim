@@ -1,5 +1,9 @@
 @page "/auth/login"
 @using SmartMenuOptim.Server.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
 @layout LandingLayout
 
 <PageTitle>Sign in — SmartMenuOptim</PageTitle>

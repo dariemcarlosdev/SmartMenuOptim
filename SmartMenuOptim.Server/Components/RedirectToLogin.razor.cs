@@ -8,7 +8,14 @@ public sealed partial class RedirectToLogin : ComponentBase
 
     protected override void OnInitialized()
     {
-        var returnUrl = Uri.EscapeDataString(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
+        var relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+        // Already on the login page (or already carrying a returnUrl to it) — navigating again would
+        // re-encode this URL into its own returnUrl each pass, nesting forever. Stop here instead.
+        if (relativePath.StartsWith("auth/login", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var returnUrl = Uri.EscapeDataString(relativePath);
         NavigationManager.NavigateTo($"/auth/login?returnUrl={returnUrl}", forceLoad: true);
     }
 }
