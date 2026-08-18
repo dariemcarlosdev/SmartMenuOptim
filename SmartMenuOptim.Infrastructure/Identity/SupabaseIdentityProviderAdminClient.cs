@@ -8,7 +8,7 @@ namespace SmartMenuOptim.Infrastructure.Identity;
 /// </summary>
 /// <remarks>
 /// Calls the GoTrue Admin API (https://{project}.supabase.co/auth/v1/admin/...), authenticated with the
-/// project's service-role key. The <see cref="HttpClient"/> is registered as a typed client in
+/// project's secret API key (<c>sb_secret_...</c>, formerly "service_role"). The <see cref="HttpClient"/> is registered as a typed client in
 /// <c>InfrastructureServiceCollectionExtensions.AddIdentityProviderAdminClient</c> with
 /// <c>BaseAddress</c> and <c>Authorization</c> header sourced from config (user-secrets/env vars, never
 /// <c>appsettings.json</c>). See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §1.

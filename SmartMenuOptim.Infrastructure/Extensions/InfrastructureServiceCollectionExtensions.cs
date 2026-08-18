@@ -165,14 +165,16 @@ public static class InfrastructureServiceCollectionExtensions
     /// <see cref="IIdentityProviderAdminClient"/> port defined in the Application layer.
     /// </summary>
     /// <remarks>
-    /// <c>IdentityProvider:Authority</c> and <c>IdentityProvider:ServiceRoleKey</c> must come from user-secrets
+    /// <c>IdentityProvider:Authority</c> and <c>IdentityProvider:SupabaseServiceKey</c> must come from user-secrets
     /// (dev) / environment variables (Azure) per the config-loading convention in <c>Program.cs</c> — never
-    /// <c>appsettings.json</c>. Until a Supabase project exists, these keys are unset: the typed client will
-    /// have no base address and calls will fail, which is acceptable for a foundation not yet wired to a live
-    /// admin call site. See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §1.
+    /// <c>appsettings.json</c>. <c>Authority</c> stays provider-agnostic (also used by JWT bearer validation);
+    /// <c>SupabaseServiceKey</c> is named explicitly because it's only ever read here, by the Supabase-specific
+    /// adapter — naming it generically would buy no abstraction benefit. Until a Supabase project exists, these
+    /// keys are unset: the typed client will have no base address and calls will fail, which is acceptable for
+    /// a foundation not yet wired to a live admin call site. See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §1.
     /// </remarks>
     /// <param name="services">The service collection to which the admin client will be added.</param>
-    /// <param name="configuration">The application configuration providing the identity provider's Authority/ServiceRoleKey.</param>
+    /// <param name="configuration">The application configuration providing the identity provider's Authority/SupabaseServiceKey.</param>
     /// <returns>The same service collection instance, enabling method chaining.</returns>
     public static IServiceCollection AddIdentityProviderAdminClient(this IServiceCollection services, IConfiguration configuration)
     {
@@ -182,9 +184,9 @@ public static class InfrastructureServiceCollectionExtensions
             if (!string.IsNullOrEmpty(authority))
                 client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
 
-            var serviceRoleKey = configuration["IdentityProvider:ServiceRoleKey"];
-            if (!string.IsNullOrEmpty(serviceRoleKey))
-                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceRoleKey);
+            var supabaseServiceKey = configuration["IdentityProvider:SupabaseServiceKey"];
+            if (!string.IsNullOrEmpty(supabaseServiceKey))
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", supabaseServiceKey);
         });
 
         return services;
