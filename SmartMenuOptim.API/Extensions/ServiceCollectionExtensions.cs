@@ -1,6 +1,9 @@
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
 using SmartMenuOptim.Application.Extensions;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Extensions;
@@ -38,7 +41,11 @@ public static class ServiceCollectionExtensions
         
         // 4. Add Identity services (ASP.NET Core specific)
         builder.Services.AddNetCoreIdentity();
-        
+
+        // 4b. Add identity-provider JWT authentication (OIDC/JWT, provider-agnostic contract).
+        // See docs/06-Security/AUTHENTICATION_FRAMEWORK.md and ADR-006.
+        builder.Services.AddIdentityProviderAuthentication(builder.Configuration);
+
         // 5. Add Application layer services (use cases and orchestration)
         builder.Services.AddApplicationServices();
         
@@ -132,6 +139,48 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Adds JWT bearer authentication validated against an external, OIDC-compliant identity provider
+    /// (initially Supabase Auth). Provider-agnostic: swapping providers is a config change only, see ADR-006.
+    /// </summary>
+    /// <remarks>
+    /// <c>IdentityProvider:Authority</c> and <c>IdentityProvider:Audience</c> must come from user-secrets
+    /// (dev) / environment variables (Azure) per the config-loading convention in <c>Program.cs</c> â€”
+    /// never <c>appsettings.json</c>. Until a Supabase project exists, these keys are unset: token
+    /// validation will fail closed (no valid signing key resolvable), which is the correct default-deny
+    /// behavior, not a bug.
+    /// </remarks>
+    /// <param name="services">The service collection to which authentication services will be added.</param>
+    /// <param name="configuration">The application configuration providing the identity provider's Authority/Audience.</param>
+    /// <returns>The same service collection instance, enabling method chaining.</returns>
+    public static IServiceCollection AddIdentityProviderAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Authority = configuration["IdentityProvider:Authority"]; // e.g. https://<project>.supabase.co/auth/v1
+                options.Audience = configuration["IdentityProvider:Audience"]; // "authenticated"
+                options.RequireHttpsMetadata = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true, // resolved from Authority's JWKS
+                };
+            });
+
+        services.AddAuthorization(options =>
+        {
+            // Default deny: any endpoint/page without an explicit [Authorize(Policy = ...)] still requires auth.
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
+
+        return services;
+    }
+
+    /// <summary>
     /// Adds a custom CORS policy to the service collection using origins specified in the configuration.
     /// </summary>
     /// <remarks>The policy allows requests from the specified origins with any HTTP method and header, and
@@ -167,10 +216,10 @@ public static class ServiceCollectionExtensions
 
     /*
      2.	Rate Limiting is a server-side concern that should be implemented at the API level to protect the API from being overwhelmed by requests from any client, not just the Blazor server:
-        •	This should be moved to the API project because:
-        •	Rate limiting is a server-side concern that protects the API from being overwhelmed
-        •	It needs to be enforced at the API level to properly control access from all clients
-        •	The current implementation in the Server project only limits calls from that specific Blazor server instance.     
+        ï¿½	This should be moved to the API project because:
+        ï¿½	Rate limiting is a server-side concern that protects the API from being overwhelmed
+        ï¿½	It needs to be enforced at the API level to properly control access from all clients
+        ï¿½	The current implementation in the Server project only limits calls from that specific Blazor server instance.     
      */
 
     /// <summary>

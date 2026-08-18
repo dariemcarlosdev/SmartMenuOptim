@@ -26,6 +26,7 @@ public static class WebApplicationExtensions
     ///     <item><strong>MapHealthChecks("/health")</strong> - Exposes health check endpoint</item>
     ///     <item><strong>UseCors()</strong> - Enables Cross-Origin Resource Sharing</item>
     ///     <item><strong>UseHttpsRedirection()</strong> - Redirects HTTP to HTTPS</item>
+    ///     <item><strong>UseAuthentication()</strong> - Validates the JWT and populates the ClaimsPrincipal</item>
     ///     <item><strong>UseAuthorization()</strong> - Enforces authorization policies</item>
     ///     <item><strong>MapControllers()</strong> - Maps controller endpoints</item>
     /// </list>
@@ -58,6 +59,9 @@ public static class WebApplicationExtensions
     /// │                 │                                                       │
     /// │                 ▼                                                       │
     /// │              UseHttpsRedirection()                                     │
+    /// │                 │                                                       │
+    /// │                 ▼                                                       │
+    /// │              UseAuthentication()                                       │
     /// │                 │                                                       │
     /// │                 ▼                                                       │
     /// │              UseAuthorization()                                        │
@@ -122,10 +126,14 @@ public static class WebApplicationExtensions
         // 8. HTTPS REDIRECTION - Redirect HTTP to HTTPS for security
         app.UseHttpsRedirection();
 
-        // 9. AUTHORIZATION - Enforce authorization policies
+        // 9. AUTHENTICATION - Validate the JWT and populate the ClaimsPrincipal
+        // See: docs/06-Security/AUTHENTICATION_FRAMEWORK.md, ADR-006
+        app.UseAuthentication();
+
+        // 10. AUTHORIZATION - Enforce authorization policies
         app.UseAuthorization();
 
-        // 10. CONTROLLERS - Map controller actions to endpoints
+        // 11. CONTROLLERS - Map controller actions to endpoints
         app.MapControllers();
 
         return app;
