@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using SmartMenuOptim.Application.Contracts;
+using SmartMenuOptim.Application.Contracts.Identity;
 using SmartMenuOptim.Domain.Entities.GlobalEntities;
 using SmartMenuOptim.Domain.Repositories;
 using SmartMenuOptim.Domain.Services.Abstractions;
@@ -11,6 +12,7 @@ using SmartMenuOptim.Infrastructure.Features.Sales.BackgroundJobs;
 using SmartMenuOptim.Infrastructure.Features.Reservations.BackgroundJobs;
 using SmartMenuOptim.Infrastructure.EventDispatching;
 using SmartMenuOptim.Infrastructure.Features.AI.Services;
+using SmartMenuOptim.Infrastructure.Identity;
 using SmartMenuOptim.Infrastructure.Persistence.Context;
 using SmartMenuOptim.Infrastructure.Persistence.Repositories;
 using SmartMenuOptim.Infrastructure.Services.Caching;
@@ -41,6 +43,10 @@ public static class InfrastructureServiceCollectionExtensions
         
         // Add external service adapters (Hexagonal Architecture adapters implementing domain ports)
         services.AddExternalServiceAdapters();
+
+        // Add identity-provider admin client (Supabase Auth admin operations: force-logout, disable, password reset)
+        // See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §1 and ADR-006.
+        services.AddIdentityProviderAdminClient(configuration);
 
         // Register domain event dispatcher (MediatR-based event publishing)
         services.AddScoped<IDomainEventDispatcher, MediatRDomainEventDispatcher>();
@@ -150,6 +156,36 @@ public static class InfrastructureServiceCollectionExtensions
         // Alternative implementations (uncomment to use):
         // services.AddScoped<IAiTextGenerator, AzureAiTextGeneratorService>(); // Azure OpenAI
         // services.AddScoped<IAiTextGenerator, MockAiTextGenerator>(); // Testing
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the Supabase Auth (GoTrue) admin client as a typed <see cref="HttpClient"/>, implementing the
+    /// <see cref="IIdentityProviderAdminClient"/> port defined in the Application layer.
+    /// </summary>
+    /// <remarks>
+    /// <c>IdentityProvider:Authority</c> and <c>IdentityProvider:ServiceRoleKey</c> must come from user-secrets
+    /// (dev) / environment variables (Azure) per the config-loading convention in <c>Program.cs</c> — never
+    /// <c>appsettings.json</c>. Until a Supabase project exists, these keys are unset: the typed client will
+    /// have no base address and calls will fail, which is acceptable for a foundation not yet wired to a live
+    /// admin call site. See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §1.
+    /// </remarks>
+    /// <param name="services">The service collection to which the admin client will be added.</param>
+    /// <param name="configuration">The application configuration providing the identity provider's Authority/ServiceRoleKey.</param>
+    /// <returns>The same service collection instance, enabling method chaining.</returns>
+    public static IServiceCollection AddIdentityProviderAdminClient(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddHttpClient<IIdentityProviderAdminClient, SupabaseIdentityProviderAdminClient>(client =>
+        {
+            var authority = configuration["IdentityProvider:Authority"]; // e.g. https://<project>.supabase.co/auth/v1
+            if (!string.IsNullOrEmpty(authority))
+                client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
+
+            var serviceRoleKey = configuration["IdentityProvider:ServiceRoleKey"];
+            if (!string.IsNullOrEmpty(serviceRoleKey))
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceRoleKey);
+        });
 
         return services;
     }
