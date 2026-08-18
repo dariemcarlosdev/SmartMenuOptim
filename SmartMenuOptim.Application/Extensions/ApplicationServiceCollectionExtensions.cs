@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using SmartMenuOptim.Application.Behaviors;
 using SmartMenuOptim.Application.Handlers.LoyaltyEventHandlers;
 using SmartMenuOptim.Application.Handlers.MenuEventHandlers;
 using SmartMenuOptim.Application.Handlers.OrderEventHandlers;
@@ -41,6 +42,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceCollectionExtensions).Assembly);
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
         // Register FluentValidation validators
