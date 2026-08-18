@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -51,6 +52,9 @@ public static class InfrastructureServiceCollectionExtensions
         // JIT-provisions a local ApplicationUser shadow record on first-seen IdP 'sub' claim.
         // See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §3 and ADR-006.
         services.AddScoped<JitUserProvisioningService>();
+
+        // Call site for the above: runs after JWT bearer validation on every authenticated request.
+        services.AddScoped<IClaimsTransformation, JitClaimsTransformation>();
 
         // Register domain event dispatcher (MediatR-based event publishing)
         services.AddScoped<IDomainEventDispatcher, MediatRDomainEventDispatcher>();
