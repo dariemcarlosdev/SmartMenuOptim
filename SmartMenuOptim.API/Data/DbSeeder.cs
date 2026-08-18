@@ -184,7 +184,7 @@ namespace SmartMenuOptim.API.Data
                 };
                 foreach (var (username, email, fullName, adminRoleType) in adminData)
                 {
-                    await SeedHelper.CreateAdminUser(userManager, username, email, AuthConstants.DefaultPasswords.AdminPassword, fullName, adminRoleType);
+                    await SeedHelper.CreateAdminUser(userManager, username, email, fullName, adminRoleType);
                 }
                 await context.SaveChangesAsync();
             }
@@ -223,7 +223,6 @@ namespace SmartMenuOptim.API.Data
                     await SeedHelper.CreateCustomerUser(userManager,
                         email.Split('@')[0], // username from email
                         email,
-                        AuthConstants.DefaultPasswords.CustomerPassword,
                         name);
                 }
             }
@@ -246,7 +245,6 @@ namespace SmartMenuOptim.API.Data
                     await SeedHelper.CreateStaffUser(userManager,
                         email.Split('@')[0], // username from email
                         email,
-                        AuthConstants.DefaultPasswords.StaffPassword,
                         name,
                         role,
                         assignedRestaurant.Id);

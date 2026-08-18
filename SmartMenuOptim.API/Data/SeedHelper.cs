@@ -66,8 +66,6 @@ namespace SmartMenuOptim.API.Data
         /// <param name="userManager">The user manager instance used to create and manage the underlying application user.</param>
         /// <param name="username">The username for the new admin user. Must be unique within the system.</param>
         /// <param name="email">The email address for the new admin user. Must be a valid email format.</param>
-        /// <param name="password">The password for the new admin user account. Must meet the password requirements enforced by the user
-        /// manager.</param>
         /// <param name="fullName">The full name to associate with the admin user's profile.</param>
         /// <param name="adminRoleType">The administrative role to assign to the new user.</param>
         /// <param name="emailConfirmed">Indicates whether the user's email address should be marked as confirmed. Defaults to <see
@@ -78,7 +76,6 @@ namespace SmartMenuOptim.API.Data
             UserManager<ApplicationUser> userManager,
             string username,
             string email,
-            string password,
             string fullName,
             AdminRoleType adminRoleType,
             bool emailConfirmed = true)
@@ -97,8 +94,8 @@ namespace SmartMenuOptim.API.Data
                 IsDeleted = false
             };
 
-            // 2. Create the user in the identity store
-            var result = await userManager.CreateAsync(applicationUser, password);
+            // 2. Create the user in the identity store — no local password; Supabase owns credentials (see JitUserProvisioningService).
+            var result = await userManager.CreateAsync(applicationUser);
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -134,8 +131,6 @@ namespace SmartMenuOptim.API.Data
         /// <param name="userManager">The user manager instance used to create and manage the application user.</param>
         /// <param name="username">The username for the new customer user account. Must be unique within the system.</param>
         /// <param name="email">The email address associated with the new customer user account. Cannot be null or empty.</param>
-        /// <param name="password">The password for the new customer user account. Must meet the password requirements defined by the user
-        /// manager.</param>
         /// <param name="fullName">The full name of the customer to be associated with the account.</param>
         /// <param name="emailConfirmed">Specifies whether the customer's email address should be marked as confirmed. Defaults to <see
         /// langword="true"/>.</param>
@@ -145,7 +140,6 @@ namespace SmartMenuOptim.API.Data
             UserManager<ApplicationUser> userManager,
             string username,
             string email,
-            string password,
             string fullName,
             bool emailConfirmed = true)
         {
@@ -177,8 +171,8 @@ namespace SmartMenuOptim.API.Data
             applicationUser.CustomerProfile = customer;
 
             // 4. Now, create the user. UserManager will call SaveChanges,
-            //    and the user will have its CustomerProfile correctly linked.
-            var result = await userManager.CreateAsync(applicationUser, password);
+            //    and the user will have its CustomerProfile correctly linked. No local password — Supabase owns credentials.
+            var result = await userManager.CreateAsync(applicationUser);
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -203,7 +197,6 @@ namespace SmartMenuOptim.API.Data
         /// <param name="userManager">The user manager instance used to create and manage the application user.</param>
         /// <param name="username">The username for the new staff user account. Must be unique within the system.</param>
         /// <param name="email">The email address associated with the staff user. Cannot be null or empty.</param>
-        /// <param name="password">The password for the new staff user account. Must meet the application's password requirements.</param>
         /// <param name="fullName">The full name of the staff member to be associated with the user profile.</param>
         /// <param name="role">The staff role to assign to the new staff member.</param>
         /// <param name="restaurantId">The identifier of the restaurant to associate with the staff member.</param>
@@ -214,7 +207,6 @@ namespace SmartMenuOptim.API.Data
             UserManager<ApplicationUser> userManager,
             string username,
             string email,
-            string password,
             string fullName,
             StaffRole role,
             int restaurantId,
@@ -247,7 +239,7 @@ namespace SmartMenuOptim.API.Data
 
             applicationUser.StaffProfile = staffMember;
 
-            var result = await userManager.CreateAsync(applicationUser, password);
+            var result = await userManager.CreateAsync(applicationUser); // no local password — Supabase owns credentials
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));

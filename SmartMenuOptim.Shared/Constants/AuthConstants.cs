@@ -104,24 +104,6 @@ namespace SmartMenuOptim.Shared.Constants
         }
 
         /// <summary>
-        /// Defines default passwords for different user types during initial setup or testing.
-        /// These should be changed in production environments.
-        /// </summary>
-        /// <remarks>
-        /// These passwords are primarily used for development and testing purposes.
-        /// In production, secure password policies should be enforced.
-        /// </remarks>
-        public static class DefaultPasswords
-        {
-            /// <summary>Default password for administrator accounts.</summary>
-            public const string AdminPassword = "Admin@123";
-            /// <summary>Default password for staff accounts.</summary>
-            public const string StaffPassword = "Staff@123";
-            /// <summary>Default password for customer accounts.</summary>
-            public const string CustomerPassword = "Customer@123";
-        }
-
-        /// <summary>
         /// Defines standard values for claim operations that can be performed on resources.
         /// </summary>
         /// <remarks>

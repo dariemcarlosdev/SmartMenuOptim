@@ -108,29 +108,20 @@ public static class ServiceCollectionExtensions
 
 
     /// <summary>
-    /// Adds ASP.NET Core Identity services with custom configuration to the specified service collection.
+    /// Registers ASP.NET Core Identity's <see cref="UserManager{TUser}"/>/<see cref="RoleManager{TRole}"/>
+    /// stores only — no local password/lockout policy. Supabase (the external identity provider) owns credential
+    /// validation; local sign-in (<c>SignInManager</c>) is never invoked. UserManager/RoleManager are still needed
+    /// here for JIT shadow-record provisioning (<c>JitUserProvisioningService</c>) and role/claim management
+    /// (<c>SeedHelper.CreateRolesAndClaims</c>). This is kept in the API layer as it's an ASP.NET Core-specific
+    /// concern that requires web framework dependencies. See docs/06-Security/AUTHENTICATION_FRAMEWORK.md §6.
     /// </summary>
-    /// <remarks>This method configures Identity with specific password, user, and lockout settings, and
-    /// registers Entity Framework stores and default token providers. This is kept in the API layer as it's
-    /// an ASP.NET Core-specific concern that requires web framework dependencies.</remarks>
     /// <param name="services">The service collection to which the Identity services will be added.</param>
     /// <returns>The same service collection instance, enabling further configuration.</returns>
     public static IServiceCollection AddNetCoreIdentity(this IServiceCollection services)
     {
-        // Register Identity services with custom configurations.
-        services.AddIdentity<ApplicationUser, IdentityRole>(options => {
-            // Configure password requirements.
-            options.Password.RequireDigit = true;
-            options.Password.RequiredLength = 8;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireLowercase = true;
-            // Configure user settings.
+        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        {
             options.User.RequireUniqueEmail = true;
-            // Configure lockout settings.
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.AllowedForNewUsers = true;
         })
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
