@@ -1,5 +1,6 @@
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Http.Resilience;
 using MudBlazor.Services;
 using Polly;
@@ -72,6 +73,19 @@ public static class ServiceCollectionExtensions
         // through the same MapRazorComponents endpoint. Default-deny per page is a separate, explicit
         // task — add [Authorize] to individual page components as they're locked down.
         services.AddAuthorization();
+
+        // AuthorizeRouteView requires a resolvable Task<AuthenticationState>, so an
+        // AuthenticationStateProvider must be registered (it throws otherwise — even with no
+        // [Authorize] page). ServerAuthenticationStateProvider derives from
+        // RevalidatingServerAuthenticationStateProvider: the circuit host feeds it the cookie
+        // principal captured at circuit start, so the user is available inside the interactive
+        // WebSocket circuit (where there is no HttpContext).
+        //
+        // NB: this provider did NOT fix BUG-012 (every route 302→/auth/login). That was a missing
+        // '@using Microsoft.AspNetCore.Components.Authorization' in Components/_Imports.razor, which
+        // silently degraded <AuthorizeRouteView>/<NotAuthorized> to inert HTML. See
+        // docs/10-ISSUES-QUICK-FIX/BUG-012.
+        services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
         services.AddCascadingAuthenticationState();
 
         return services;

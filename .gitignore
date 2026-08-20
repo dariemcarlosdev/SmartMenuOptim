@@ -371,3 +371,6 @@ FodyWeavers.xsd
 
 # NexSynapse IP-guard marker (local-only, auto-created)
 .nexsynapse-ip-guard
+
+# Runtime auth-redirect audit logs
+App_Data/Logs/
